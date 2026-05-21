@@ -1,0 +1,68 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  UV_INDEX_SYNTHPOP_PKGS_USERNAME: ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME }}
+  UV_INDEX_SYNTHPOP_PKGS_PASSWORD: ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD }}
+  UV_INDEX_URL: https://${{ secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME }}:${{ secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD }}@dirac.synthpop.ai/synthpop/pkgs/+simple/
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow the action to push changes to the repository
+      pull-requests: write  # Allow the action to create pull requests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: main  # Ensure we are on the main branch
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set $PY environment variable
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv pip install --system -e "." --group={dev,lint}
+
+      - name: Bump version
+        id: bump-version
+        # nosemgrep: yaml.github-actions.security.run-shell-injection.run-shell-injection
+        run: uv version --bump ${{ inputs.bump_type }}
+
+      - name: Get new version
+        id: get-version
+        run: |
+          NEW_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Bump version to ${{ steps.get-version.outputs.new_version }}"
+          title: "Bump version to ${{ steps.get-version.outputs.new_version }}"
+          body: |
+            This PR bumps the version to ${{ steps.get-version.outputs.new_version }}.
+
+            Type: ${{ inputs.bump_type }}
+          branch: bump-version-${{ steps.get-version.outputs.new_version }}
+          delete-branch: true

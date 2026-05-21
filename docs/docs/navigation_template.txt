@@ -1,0 +1,9 @@
+---
+search:
+  exclude: true
+---
+- [Home](index.md)
+- Reference - Code API
+{public_api}
+{api}
+- [Contributing](contributing.md)

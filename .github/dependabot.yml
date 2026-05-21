@@ -1,0 +1,50 @@
+version: 2
+registries:
+  synthpop-pkgs:
+    type: python-index
+    url: https://none
+    username: ${{secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME}}
+    password: ${{secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD}}
+    replaces-base: false
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    # https://til.simonwillison.net/github/dependabot-python-setup
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: uv
+    directory: "/" # pyproject.toml is in the repo's root
+    schedule:
+      interval: "daily"
+      time: "00:00" # UTC
+    cooldown:
+      default-days: 3
+    groups:
+      pip:
+        patterns:
+          - "*"
+    # open-pull-requests-limit: 0 # Do not open any pull requests
+    # The following is apparently needed to access private repos.
+    # https://github.com/orgs/community/discussions/58657
+    insecure-external-code-execution: allow
+    registries:
+      - synthpop-pkgs
+
+
+# Currently disabled ecosystems because it is not working properly.
+  # - package-ecosystem: devcontainers
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   groups:
+  #     devcontainers:
+  #       patterns:
+  #         - "*"
