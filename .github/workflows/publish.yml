@@ -1,0 +1,98 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger on semantic version tags only
+  workflow_dispatch:  # Allow manual trigger from GitHub.com
+
+env:
+  UV_INDEX_SYNTHPOP_PKGS_USERNAME: ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME }}
+  UV_INDEX_SYNTHPOP_PKGS_PASSWORD: ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD }}
+  UV_INDEX_URL: https://${{ secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME }}:${{ secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD }}@dirac.synthpop.ai/synthpop/pkgs/+simple/
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Get version from pyproject.toml
+        id: version
+        run: |
+          VERSION=$(tools/get-version.sh)
+          TAG=${GITHUB_REF#refs/tags/}
+
+          echo "package_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          echo "📦 Publishing version: $VERSION"
+          echo "🏷️  From tag: $TAG"
+
+      - name: Build package
+        run: uv build
+
+      - name: Verify build artifacts
+        run: |
+          ls -lh dist/
+
+          # Verify expected files exist
+          if [ ! -f dist/mononet-${{ steps.version.outputs.package_version }}-py3-none-any.whl ]; then
+            echo "❌ ERROR: Expected wheel file not found"
+            exit 1
+          fi
+
+          if [ ! -f dist/mononet-${{ steps.version.outputs.package_version }}.tar.gz ]; then
+            echo "❌ ERROR: Expected source distribution not found"
+            exit 1
+          fi
+
+          echo "✅ Build artifacts verified"
+
+      - name: Publish to private PyPI
+        run: |
+          uv publish \
+            --publish-url https://dirac.synthpop.ai/synthpop/pkgs/ \
+            --username ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME }} \
+            --password ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD }}
+          echo "✅ Package published to private PyPI"
+
+      - name: Verify package availability
+        run: |
+          echo "⏳ Waiting for package to be available on private PyPi..."
+          sleep 10
+
+          VERSION="${{ steps.version.outputs.package_version }}"
+
+          # Retry logic: Try up to 3 times with 5 second delays
+          for i in {1..3}; do
+            echo "Attempt $i: Installing mononet==$VERSION from private PyPI..."
+            if uv pip install \
+              --system \
+              --no-deps \
+              mononet==$VERSION; then
+              echo "✅ Package verified on PyPI server"
+              exit 0
+            fi
+
+            if [ $i -lt 3 ]; then
+              echo "⏳ Retry in 5 seconds..."
+              sleep 5
+            fi
+          done
+
+          echo "❌ Failed to verify package after 3 attempts"
+          exit 1

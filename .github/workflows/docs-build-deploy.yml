@@ -1,0 +1,80 @@
+name: Build MkDocs on All Branches, Deploy only on Main
+
+on:
+  push:
+    branches: ['*']  # All branches for build validation
+    paths:
+      - "mononet/**"
+      - "docs/**"
+      - ".github/workflows/docs-build-deploy.yml"
+      - "tools/build-docs.sh"
+      - "tools/serve-docs.sh"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  UV_INDEX_SYNTHPOP_PKGS_USERNAME: ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME }}
+  UV_INDEX_SYNTHPOP_PKGS_PASSWORD: ${{ secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD }}
+  UV_INDEX_URL: https://${{ secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME }}:${{ secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD }}@dirac.synthpop.ai/synthpop/pkgs/+simple/
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Fetch all history for proper git revision date
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -e "." --group={dev,devdocs}
+
+      - name: Build documentation
+        run: |
+          ./tools/build-docs.sh
+
+      # Deployment steps - only run on main branch
+      - name: Configure Git user
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy docs to GH Pages
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Extract version from pyproject.toml via UV
+          VERSION=$(uv version --short)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+          # Check if version contains any pre-release tag (e.g., rc, beta, alpha)
+          IS_RC=$(echo "$VERSION" | grep -Eq "(rc|a|b|alpha|beta)" && echo "True" || echo "False")
+          echo "IS_RC=$IS_RC" >> $GITHUB_ENV
+
+          echo "VERSION=$VERSION"
+          echo "IS_RC=$IS_RC"
+
+          cd docs
+
+          if [ "$IS_RC" == "False" ]; then
+            mike deploy -F mkdocs.yml --update-aliases $VERSION latest
+            mike set-default --push --allow-empty -F mkdocs.yml latest
+          else
+            mike deploy --push -F mkdocs.yml --update-aliases $VERSION
+          fi

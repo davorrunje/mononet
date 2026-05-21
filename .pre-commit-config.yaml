@@ -1,0 +1,74 @@
+default_stages: [pre-commit, pre-merge-commit]
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+    -   id: trailing-whitespace
+        stages: [pre-commit, pre-merge-commit, manual]
+    -   id: end-of-file-fixer
+        stages: [pre-commit, pre-merge-commit, manual]
+    -   id: check-yaml
+        stages: [pre-commit, pre-merge-commit, manual]
+        exclude: 'docs/mkdocs.yml'
+    -   id: check-added-large-files
+        stages: [pre-commit, pre-merge-commit, manual]
+
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.20.0
+    hooks:
+    -   id: pyupgrade
+        stages: [pre-commit, pre-merge-commit, manual]
+        args: [--py313-plus]
+
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+    -   id: codespell
+        stages: [pre-commit, pre-merge-commit, manual]
+        args: [--ignore-words=.codespell-whitelist.txt]
+        exclude: |
+            (?x)^(
+                uv.lock|
+                synthpop/utils/standardize.py
+            )$
+
+-   repo: local
+    hooks:
+    -   id: lint
+        name: Linter
+        stages: [pre-commit, pre-merge-commit, manual]
+        entry: "tools/lint-pre-commit.sh"
+        language: python
+        types: [python]
+        require_serial: true
+        verbose: true
+
+-   repo: local
+    hooks:
+    -   id: static-analysis
+        name: Static analysis
+        entry: "tools/static-pre-commit.sh"
+        language: python
+        types: [python]
+        require_serial: true
+        verbose: true
+
+-   repo: local
+    hooks:
+    -   id: docs
+        name: Build docs
+        entry: "tools/build-docs-pre-commit.sh"
+        language: python
+        files: ^docs
+        require_serial: true
+        verbose: true
+
+-   repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+    -   id: detect-secrets
+        args: [
+            '--baseline', '.secrets.baseline',
+        ]
+        exclude: uv.lock
+        stages: [pre-commit, pre-merge-commit, manual]
