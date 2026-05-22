@@ -1,6 +1,6 @@
-# Benchmarks — reproducing the paper
+# Benchmarks
 
-These notebooks reproduce experiments from
+Reproducing the paper. These notebooks reproduce experiments from
 [Runje & Shankaranarayana (2023)](https://arxiv.org/abs/2205.11775) using
 `mononet`. They are committed with their outputs and re-executed manually
 before each release — see
