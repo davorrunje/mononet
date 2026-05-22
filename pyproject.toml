@@ -227,7 +227,7 @@ case-sensitive = true
 docstring-code-format = true
 
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "pep257"
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [
