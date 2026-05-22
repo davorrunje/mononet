@@ -1,4 +1,4 @@
-"""sphinx-polyversion driver for mononet docs.
+r"""sphinx-polyversion driver for mononet docs.
 
 Builds the ``main`` branch (and any future ``v*.*.*`` tag) into
 ``docs/_build/html/<ref-name>/``. The PyData theme version switcher reads
@@ -13,6 +13,16 @@ that invokes this driver (set up by ``uv sync --group docs --extra all``).
 This is correct as long as docs dependencies stay the same across refs. Once
 released tags pin specific dependency versions for their own docs builds,
 switch ``env`` to ``Pip.factory(...)`` or an equivalent isolating env class.
+
+Refs are enumerated from **local** ``refs/heads/*`` (branches) and
+``refs/tags/*`` (tags), not from ``refs/remotes/origin/*``. ``sphinx-polyversion``
+2.0's parser misclassifies remote-tracking refs (the ``\\w+`` alternative in its
+ref regex greedily consumes ``"remotes"``), so we leave ``remote`` unset and
+require the caller to have the desired branches/tags present locally. In CI,
+``actions/checkout`` with ``fetch-depth: 0`` and ``fetch-tags: true`` gives us
+``refs/heads/main`` and ``refs/tags/v*`` locally. For local dev, run
+``git fetch --tags && git branch -f main origin/main`` before invoking this
+driver.
 """
 
 from __future__ import annotations
@@ -29,9 +39,6 @@ BRANCH_REGEX = r"^main$"
 
 #: Tags to build (semver tags only).
 TAG_REGEX = r"^v\d+\.\d+\.\d+$"
-
-#: Only consider refs from this remote.
-REMOTE = "origin"
 
 #: Build output dir, relative to repo root.
 OUTPUT_DIR = "docs/_build/html"
@@ -51,7 +58,6 @@ DefaultDriver(
     vcs=Git(
         branch_regex=BRANCH_REGEX,
         tag_regex=TAG_REGEX,
-        remote=REMOTE,
         buffer_size=1 * 10**9,  # 1 GB; large enough for the worktree exports
         predicate=file_predicate([src]),
     ),
