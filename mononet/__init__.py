@@ -1,17 +1,17 @@
-"""Implementation of unconstrained neural networks."""
+"""mononet — Unconstrained monotonic neural networks.
+
+Multi-backend support for PyTorch, JAX (Flax NNX), and Keras 3.
+See https://arxiv.org/abs/2205.11775 for the reference paper.
+
+Backends are imported lazily: `import mononet` does **not** import
+torch / jax / keras. Use `from mononet.torch import ...` (or the
+equivalent for jax/keras) to access backend layers.
+"""
 
 from importlib.metadata import version
 
+from mononet.core.types import MonotonicityMask
+
 __version__ = version("mononet")
 
-
-# The below class is a placeholder to test the API documentation.
-class HelloWorld:
-    """PLACEHOLDER: A simple hello world class."""
-
-    def say_hello(self) -> str:
-        """PLACEHOLDER: Say hello to the world."""
-        return "Hello, world!"
-
-
-__all__ = ["HelloWorld", "__version__"]
+__all__ = ["MonotonicityMask", "__version__"]

@@ -81,7 +81,7 @@ Key technologies: Python 3.11+, uv, pytest, ruff, mypy, bandit, semgrep, MkDocs 
 - Pydantic for structured data; dataclasses for simple value objects
 - Async-first where applicable (pytest-asyncio)
 
-## Pull Request & Linear Workflow
+## Pull Request Workflow
 
 - **PRs**: see [PULL_REQUEST_GUIDE.md](PULL_REQUEST_GUIDE.md)
-- **Linear issues**: see [LINEAR_GUIDE.md](LINEAR_GUIDE.md) or use the `linear-cli` skill in `.claude/skills/linear-cli/`
+- **Issues**: tracked in this repository's GitHub Issues tab.

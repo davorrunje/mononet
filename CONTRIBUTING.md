@@ -1,150 +1,126 @@
 # Contributing to mononet
 
-Thank you for your interest in contributing to mononet! This guide will help you get started.
+Thank you for your interest in contributing to mononet! This guide
+covers the development workflow.
 
-## Development Setup
+## License & patent reminder
 
-### Prerequisites
+`mononet` is distributed under the PolyForm Noncommercial License 1.0.0,
+and the underlying technique is covered by U.S. Patent 11,551,063. By
+contributing, you confirm that your contribution is your own work and
+that you license it under the same terms. See [`NOTICE.md`](NOTICE.md)
+for the full statement. For commercial use questions, contact
+**licensing@airt.ai**.
 
-- Python 3.11 or higher
-- [uv](https://docs.astral.sh/uv/) for dependency management
-- Git
+## Development environments
 
-### Getting Started
+The repo ships four devcontainer flavors. Pick the one matching your
+hardware:
 
-1. **Fork and clone the repository**
-   ```bash
-   git clone https://github.com/davorrunje/mononet.git
-   cd mononet
-   ```
+| Flavor          | When to use                                                      |
+|-----------------|------------------------------------------------------------------|
+| `default`       | CPU work: writing code, running unit tests, building docs.       |
+| `gpu-torch`     | GPU benchmarks against the paper's PyTorch baseline.             |
+| `gpu-jax`       | GPU work with JAX (Flax NNX).                                    |
+| `gpu-keras`     | GPU work with Keras 3 (backed by JAX with CUDA 12 by default).   |
 
-2. **Create a virtual environment and install dependencies**
-   ```bash
-   uv sync
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
+In VS Code, `Ctrl/Cmd+Shift+P` → `Dev Containers: Reopen in Container`,
+then pick the flavor by name.
 
-3. **Install pre-commit hooks**
-   ```bash
-   pre-commit install
-   ```
+Outside devcontainers, you need Python ≥3.11, [uv](https://docs.astral.sh/uv/),
+and git.
 
-4. **Run tests to verify setup**
-   ```bash
-   pytest
-   ```
+## Setup
 
-## Development Workflow
-
-### Making Changes
-
-1. **Create a feature branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Make your changes**
-   - Write clear, concise code
-   - Add tests for new functionality
-   - Update documentation as needed
-
-3. **Run the development tools**
-   ```bash
-   # Run tests
-   pytest
-
-   # Run linting and formatting
-   ./tools/lint.sh
-
-   # Run static analysis
-   ./tools/static-analysis.sh
-   ```
-
-4. **Commit your changes**
-   ```bash
-   git add .
-   git commit -m "feat: add your feature description"
-   ```
-
-### Commit Message Format
-
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat: add new feature`
-- `fix: resolve bug in component`
-- `docs: update README`
-- `style: format code`
-- `refactor: restructure without changing behavior`
-- `test: add or update tests`
-- `chore: update build process`
-
-## Code Style
-
-- **Python**: We use [Ruff](https://docs.astral.sh/ruff/) for linting and formatting
-- **Type Hints**: All new code should include type hints
-- **Docstrings**: Use [Google style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
-- **Line Length**: 88 characters maximum
-
-## Testing
-
-- Write tests for all new functionality
-- Maintain or improve test coverage
-- Use descriptive test names
-- Follow the arrange-act-assert pattern
-
-```python
-def test_feature_does_what_it_should():
-    # Arrange
-    input_data = create_test_data()
-
-    # Act
-    result = your_function(input_data)
-
-    # Assert
-    assert result == expected_output
+```bash
+git clone https://github.com/davorrunje/mononet.git
+cd mononet
+uv sync                            # install runtime + dev + docs + lint
+uv run pre-commit install          # install git hooks
 ```
 
-## Pull Request Process
+## Running tests
 
-1. **Ensure your branch is up to date**
-   ```bash
-   git checkout main
-   git pull upstream main
-   git checkout your-branch
-   git rebase main
-   ```
+```bash
+uv run pytest                      # full suite (skips backends not installed)
+uv run pytest tests/core           # framework-agnostic tests only
+uv run pytest tests/torch          # PyTorch-only tests
+uv run pytest tests/jax            # JAX-only tests
+uv run pytest tests/keras          # Keras-only tests
+uv run pytest tests/equivalence    # cross-backend numerical equivalence
+```
 
-2. **Push your changes**
-   ```bash
-   git push origin your-branch
-   ```
+Set the active backend with `MONONET_TEST_BACKEND={torch|jax|keras}` when
+running the equivalence suite to mirror what a single CI matrix cell
+does.
 
-3. **Create a pull request**
-   - Use the pull request template
-   - Provide a clear description of changes
-   - Link any related issues
-   - Request review from maintainers
+## Lint, format, static analysis
 
-4. **Address feedback**
-   - Respond to review comments
-   - Make requested changes
-   - Push updates to your branch
+```bash
+uv run ruff check --exit-non-zero-on-fix    # lint
+uv run ruff format                           # format
+uv run mypy                                  # strict type check
+uv run bandit -c pyproject.toml -r mononet   # security scan
+uv run semgrep scan --config auto --error    # semgrep
+uv run pre-commit run --all-files            # everything pre-commit runs
+```
 
-## Documentation
+## Building docs
 
-- Update docstrings for any modified functions/classes
-- Add or update relevant documentation in `/docs`
-- Include examples for new features
-- Update the CHANGELOG.md for significant changes
+```bash
+./tools/build-docs.sh              # one-shot build
+./tools/serve-docs.sh              # live preview
+```
 
-## Getting Help
+Benchmark notebooks under `docs/docs/benchmarks/` are committed with
+their outputs and are **not** re-executed during a docs build. To
+re-execute them before a release, see "Release process" below.
 
-- **Questions**: Open a [Discussion](https://github.com/davorrunje/mononet/discussions)
-- **Bugs**: Open an [Issue](https://github.com/davorrunje/mononet/issues) using the bug report template
-- **Feature Requests**: Open an [Issue](https://github.com/davorrunje/mononet/issues) using the feature request template
+## Release process
 
-## Code of Conduct
+1. Open a `gpu-*` devcontainer.
+2. Run `./tools/execute-benchmarks.sh` to re-execute the benchmark
+   notebooks against the GPU.
+3. `git diff docs/docs/benchmarks/` — sanity-check the new outputs.
+4. Commit the notebook updates.
+5. Trigger the `Bump Version` workflow on GitHub Actions, then merge
+   the resulting version PR.
+6. Tag the merge commit `vX.Y.Z` and push. The `Publish` workflow ships
+   the wheel to PyPI via trusted publishing; the `Docs` workflow
+   deploys versioned docs with `mike`.
 
-Please note that this project is released with a [Contributor Code of Conduct](https://www.contributor-covenant.org/). By participating in this project you agree to abide by its terms.
+### One-time PyPI setup (maintainer only)
 
-Thank you for contributing! 🎉
+Before the first release, register the project at <https://pypi.org/manage/projects/>, then under Settings → Publishing add a "trusted publisher" for:
+
+- Owner: `davorrunje`
+- Repository: `mononet`
+- Workflow filename: `publish.yml`
+- Environment: `pypi`
+
+After that, every tag-pushed release publishes via OIDC with no API tokens.
+
+## Commit messages
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `build:`.
+
+## Pull requests
+
+See [`PULL_REQUEST_GUIDE.md`](PULL_REQUEST_GUIDE.md) for repo-specific
+PR conventions. New issues go to the project's GitHub Issues tab.
+
+## Coding conventions
+
+- Python 3.11+, line length 88 (ruff).
+- Google-style docstrings on all public functions and classes.
+- Strict mypy throughout. Type hints on every function and method.
+- Stdlib `dataclasses` for simple value objects; avoid adding new
+  runtime dependencies without discussion.
+- Tests use `pytest`. Per-backend tests live under `tests/<backend>/`
+  and use `pytest.importorskip("<framework>")` so they skip cleanly
+  when the backend is not installed.
+
+## Reporting security issues
+
+See [`SECURITY.md`](SECURITY.md).

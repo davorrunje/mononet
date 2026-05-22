@@ -28,8 +28,7 @@ repos:
         args: [--ignore-words=.codespell-whitelist.txt]
         exclude: |
             (?x)^(
-                uv.lock|
-                synthpop/utils/standardize.py
+                uv.lock
             )$
 
 -   repo: local

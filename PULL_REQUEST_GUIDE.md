@@ -206,7 +206,7 @@ gh api repos/$REPO/pulls/$PR/comments/3072484363/replies \
 # 4. Get GraphQL thread IDs to resolve threads
 gh api graphql -f query='
 {
-  repository(owner: "synthpop", name: "cookiecutter-python-template") {
+  repository(owner: "davorrunje", name: "mononet") {
     pullRequest(number: 9) {
       reviewThreads(first: 20) {
         nodes { id isResolved comments(first:1) { nodes { body } } }
