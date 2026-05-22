@@ -70,6 +70,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/apidocs/
 
 # PyBuilder
 .pybuilder/
@@ -143,8 +144,6 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
 
 # mypy
 .mypy_cache/
@@ -203,6 +202,3 @@ cython_debug/
 *.icloud
 
 # Documentation
-docs/site/
-docs/docs/SUMMARY.md
-docs/docs/api/

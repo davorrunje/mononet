@@ -34,10 +34,10 @@ updates:
       docs:
         dependency-type: "development"
         patterns:
-          - "mkdocs*"
-          - "mike*"
-          - "mdx-include*"
-          - "typer*"
+          - "sphinx*"
+          - "pydata-sphinx-theme*"
+          - "myst-nb*"
+          - "linkify-it-py*"
       dev:
         dependency-type: "development"
         patterns:
