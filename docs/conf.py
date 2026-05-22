@@ -24,6 +24,7 @@ extensions = [
 ]
 exclude_patterns = [
     "_build",
+    "superpowers",
 ]
 templates_path = ["_templates"]
 source_suffix = {

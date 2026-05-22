@@ -50,8 +50,8 @@ The documentation is built using **[Material for MkDocs](https://squidfunk.githu
 
 * **Manual**:
 
-    * Markdown files like `index.md`, `contributing.md`, etc., located in the `docs/docs/` directory.
-    * After creating a manual page, add its entry to `docs/docs/navigation_template.txt` and commit this file.
+    * Markdown files like `index.md`, `contributing.md`, etc., located in the `docs/` directory.
+    * After creating a manual page, reference it in a `toctree` directive in `docs/index.md`.
 
 ## Making Changes
 
@@ -60,16 +60,16 @@ The documentation is built using **[Material for MkDocs](https://squidfunk.githu
 1. **Create a Markdown File:**
 
     ```
-    docs/docs/your-new-page.md
+    docs/your-new-page.md
     ```
 
 2. **Update Navigation:**
 
-    Add an entry to `docs/docs/navigation_template.txt`.
+    Add a `toctree` entry to `docs/index.md` to reference the new page.
 
 ### Editing Existing Content
 
-Edit markdown files directly in the `docs/docs/` directory. Changes appear after rebuilding documentation.
+Edit markdown files directly in the `docs/` directory. Changes appear after rebuilding documentation.
 
 ## Building and Serving Documentation
 
