@@ -1,14 +1,8 @@
 """Sphinx configuration for mononet documentation."""
 
-# NOTE: Phase 1-2 invocation:
-#   sphinx-build -c docs docs/docs docs/_build/html
-# After Task 7 (content moves up), invocation becomes:
-#   sphinx-build docs docs/_build/html
-
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 # -- Project information ---------------------------------------------------
 project = "mononet"
@@ -16,15 +10,7 @@ author = "Davor Runje"
 copyright = "2026, Davor Runje"
 html_baseurl = "https://davorrunje.github.io/mononet/"
 
-# -- Source layout ---------------------------------------------------------
-# Temporary: source files still live in docs/docs/ (existing MkDocs layout).
-# After Task 7, content moves up one level and this file becomes the source
-# directory itself.
-_HERE = Path(__file__).resolve().parent
-_SOURCE_SUFFIX_DIR = _HERE / "docs"
-if _SOURCE_SUFFIX_DIR.is_dir():
-    # Phase 1-2: point at docs/docs/
-    master_doc = "index_sphinx"
+master_doc = "index"
 
 # -- General configuration -------------------------------------------------
 extensions = [
@@ -38,11 +24,6 @@ extensions = [
 ]
 exclude_patterns = [
     "_build",
-    "site",
-    "navigation_template.txt",
-    "SUMMARY.md",
-    "index.md",  # MkDocs landing page; Phase 1 uses index_sphinx.md
-    "api",  # MkDocs-generated API stubs; Sphinx uses apidocs/ (autodoc2)
 ]
 templates_path = ["_templates"]
 source_suffix = {
@@ -98,9 +79,8 @@ nb_execution_mode = "off"
 
 # -- sphinx-autodoc2 -------------------------------------------------------
 autodoc2_packages = [
-    # Phase 1-2 (srcdir=docs/docs/): use "../../mononet".
-    # Task 7 onward (srcdir=docs/): change to "../mononet".
-    {"path": "../../mononet", "auto_mode": True},
+    # srcdir is docs/; resolves to <repo>/mononet.
+    {"path": "../mononet", "auto_mode": True},
 ]
 autodoc2_render_plugin = "myst"
 # TODO: autodoc2 has no Google-style docstring parser; "myst" parses Google
