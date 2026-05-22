@@ -21,43 +21,35 @@ pip install "mononet[keras]"      # Keras 3
 pip install "mononet[all]"        # all three
 ```
 
-```{toctree}
-:maxdepth: 1
-:caption: Getting started
+## Citation
 
-guides/pytorch
-guides/jax
-guides/keras
+If you use `mononet` in academic work, please cite the reference paper:
+
+```bibtex
+@inproceedings{runje2023constrained,
+  title     = {Constrained Monotonic Neural Networks},
+  author    = {Runje, Davor and Shankaranarayana, Sharath M.},
+  booktitle = {Proceedings of the 40th International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {202},
+  year      = {2023},
+  publisher = {PMLR},
+  url       = {https://proceedings.mlr.press/v202/runje23a.html},
+  eprint    = {2205.11775},
+  archivePrefix = {arXiv}
+}
 ```
 
-```{toctree}
-:maxdepth: 1
-:caption: Concepts
-
-concepts/monotonicity
-concepts/layers
-```
+> Note: confirm the exact BibTeX entry against the PMLR proceedings page
+> before the first PyPI release — venue, volume, and URL fields are
+> sensitive to typos.
 
 ```{toctree}
-:maxdepth: 1
-:caption: Benchmarks
+:hidden:
 
+guides/index
+concepts/index
 benchmarks/index
-```
-
-```{toctree}
-:maxdepth: 2
-:caption: API reference
-
-apidocs/mononet/mononet
-```
-
-```{toctree}
-:maxdepth: 1
-:caption: About
-
-about/license
-about/changelog
-about/citation
-contributing
+reference
+about/index
 ```
