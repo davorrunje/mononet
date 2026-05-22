@@ -113,7 +113,7 @@ PR conventions. New issues go to the project's GitHub Issues tab.
 ## Coding conventions
 
 - Python 3.11+, line length 88 (ruff).
-- Google-style docstrings on all public functions and classes.
+- MyST field-list docstrings on all public functions and classes (`:param x: ...`, `:returns: ...`, `:raises X: ...`). Types come from signature annotations, never `:type:`/`:rtype:`. See [the spec](docs/superpowers/specs/2026-05-22-myst-docstrings-design.md) for the canonical format.
 - Strict mypy throughout. Type hints on every function and method.
 - Stdlib `dataclasses` for simple value objects; avoid adding new
   runtime dependencies without discussion.

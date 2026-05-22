@@ -78,7 +78,7 @@ Key technologies: Python 3.11+, uv, pytest, ruff, mypy, bandit, semgrep, Sphinx 
 ## Code Style
 
 - Python 3.11+, line length 88 (ruff)
-- Google-style docstrings
+- MyST field-list docstrings: `:param x: ...` / `:returns: ...` / `:raises X: ...`. Types come from signature annotations, never `:type:`/`:rtype:`. Body text is MyST markdown.
 - Strict mypy throughout
 - Type hints on all functions and methods
 - Pydantic for structured data; dataclasses for simple value objects
