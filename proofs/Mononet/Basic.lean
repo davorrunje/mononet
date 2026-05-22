@@ -58,19 +58,16 @@ def masked {n m : ℕ} (W : Matrix (Fin n) (Fin m) ℝ) (t : MonoMask n) :
     | .neg  => -|W i j|
     | .zero =>  W i j
 
-@[simp]
 theorem masked_pos {n m : ℕ} (W : Matrix (Fin n) (Fin m) ℝ) (t : MonoMask n)
     (i : Fin n) (j : Fin m) (h : t i = .pos) :
     masked W t i j = |W i j| := by
   simp [masked, h]
 
-@[simp]
 theorem masked_neg {n m : ℕ} (W : Matrix (Fin n) (Fin m) ℝ) (t : MonoMask n)
     (i : Fin n) (j : Fin m) (h : t i = .neg) :
     masked W t i j = -|W i j| := by
   simp [masked, h]
 
-@[simp]
 theorem masked_zero {n m : ℕ} (W : Matrix (Fin n) (Fin m) ℝ) (t : MonoMask n)
     (i : Fin n) (j : Fin m) (h : t i = .zero) :
     masked W t i j = W i j := by
