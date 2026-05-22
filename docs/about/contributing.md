@@ -1,4 +1,4 @@
-# Contributing to Synthpop mononet Documentation
+# Contributing to mononet Documentation
 
 Thank you for your interest in contributing to the `mononet` documentation! Your help makes our documentation clearer and more helpful for everyone.
 
