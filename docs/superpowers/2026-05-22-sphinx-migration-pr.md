@@ -9,7 +9,10 @@
 ## Summary
 
 Replaces the MkDocs + `mkdocs-material` documentation stack with **Sphinx +
-PyData Sphinx Theme + `sphinx-autodoc2` + `myst-nb` + `sphinx-multiversion`**.
+PyData Sphinx Theme + `sphinx-autodoc2` + `myst-nb` + `sphinx-multiversion`**,
+and switches the project's docstring convention from Google-style to MyST
+field-list (`:param x:` / `:returns:` / `:raises X:`) so the new API pages
+render parameters as structured argument tables.
 
 ### Why now
 
@@ -23,10 +26,15 @@ PyData Sphinx Theme + `sphinx-autodoc2` + `myst-nb` + `sphinx-multiversion`**.
   PyTorch, JAX, Keras, NumPy, SciPy, scikit-learn all use it. Aligning with
   that ecosystem also unlocks `intersphinx` cross-links into those projects'
   docs from our API pages.
+- **`sphinx-autodoc2` has no Google-style docstring parser** — only `rst`,
+  `myst`, or a class FQN. Rather than write a custom parser, this PR switches
+  the convention so the existing API docs render structurally out of the box.
 
-Specs and plan:
-- [docs/superpowers/specs/2026-05-22-sphinx-migration-design.md](docs/superpowers/specs/2026-05-22-sphinx-migration-design.md)
-- [docs/superpowers/plans/2026-05-22-sphinx-migration.md](docs/superpowers/plans/2026-05-22-sphinx-migration.md)
+Specs and plans for both efforts:
+- [Sphinx migration spec](docs/superpowers/specs/2026-05-22-sphinx-migration-design.md)
+- [Sphinx migration plan](docs/superpowers/plans/2026-05-22-sphinx-migration.md)
+- [Docstring conversion spec](docs/superpowers/specs/2026-05-22-myst-docstrings-design.md)
+- [Docstring conversion plan](docs/superpowers/plans/2026-05-22-myst-docstrings.md)
 
 ## What changes
 
@@ -41,6 +49,8 @@ Specs and plan:
 | Versioning | `mike` | `sphinx-multiversion>=0.2` |
 | Navigation | hand-edited `SUMMARY.md` via `mkdocs-literate-nav` | `toctree` directives in `docs/index.md` |
 | Authoring | Markdown + pymdownx extensions | MyST Markdown (`colon_fence`, `dollarmath`, `amsmath`, `linkify`, `tasklist`, `deflist`, `fieldlist`, `substitution`) |
+| Docstring convention | Google-style (`Args:` / `Returns:`) | MyST field-list (`:param:` / `:returns:` / `:raises:`) |
+| Lint convention | `ruff` `pydocstyle.convention = "google"` | `ruff` `pydocstyle.convention = "pep257"` |
 | Build CLI | 125-line `docs/docs.py` Typer wrapper | stock `sphinx-build` / `sphinx-autobuild` |
 | Pre-commit | `tools/build-docs.sh` → `mkdocs build` | `tools/build-docs.sh` → `sphinx-build -W` |
 | CI deploy | `mike deploy --push` | `sphinx-multiversion` + `peaceiris/actions-gh-pages@v4` |
@@ -65,6 +75,19 @@ docs/
 └── _build/                # output (gitignored)
 ```
 
+### Docstring conversion
+
+The four source-code docstrings that had `Args:` / `Returns:` blocks are
+converted to MyST field-list:
+
+- `mononet/core/reference.py` — `monotonic_dense`, `monotonic_mlp`.
+- `mononet/torch/layers.py` — `MonoLinear` class.
+- `tools/gen_versions_json.py` — module docstring.
+
+`CLAUDE.md` and `CONTRIBUTING.md` are updated to describe the new convention.
+The other ~15 docstrings in the package use summary-line-only style (no
+parameter blocks) and remain unchanged.
+
 ### Deleted
 
 `docs/mkdocs.yml`, `docs/docs.py`, `docs/create_api_docs.py`, `docs/__init__.py`,
@@ -85,6 +108,9 @@ docs/
   a `torch.Tensor` annotation in a docstring is now a clickable link to PyTorch's
   official docs.
 - Multi-version docs use a JSON-driven switcher dropdown (PyData theme).
+- API parameter sections render as proper field-list tables
+  (`<dl class="myst field-list">`) instead of flat prose. This is the direct
+  payoff of the docstring convention switch.
 
 **Lost (tracked as follow-ups):**
 - `mkdocs-glightbox` image zoom and `mkdocs-minify-plugin` — both small UX
@@ -92,17 +118,11 @@ docs/
 - `keras` intersphinx target — `keras.io`'s inventory URL 404s; entry commented
   out with a TODO. (PyTorch, JAX, NumPy, Python all work.)
 
-**Resolved during this PR (was originally listed as a follow-up):** the
-project's docstring convention has been switched from Google-style to
-MyST field-list (`:param x:` / `:returns:` / `:raises X:`). All 4 affected
-docstrings are converted; ruff's pydocstyle convention is now `pep257`.
-See the [docstring spec](docs/superpowers/specs/2026-05-22-myst-docstrings-design.md)
-and [plan](docs/superpowers/plans/2026-05-22-myst-docstrings.md) for details.
-
 ## Migration strategy
 
 The plan was designed so **every commit leaves the pre-commit `docs` hook
-green**. 16 commits for the Sphinx migration + 6 for the docstring conversion:
+green**. 22 commits across 7 phases (16 for the Sphinx migration, 6 for the
+docstring conversion):
 
 | Phase | Commits | Outcome |
 | --- | --- | --- |
@@ -112,7 +132,7 @@ green**. 16 commits for the Sphinx migration + 6 for the docstring conversion:
 | 4. Polish | 5da8d8c → d22f13a | Cross-refs converted to MyST `{py:class}`; `-W` restored; OG meta tags ported; PyTorch URL fixed |
 | 5. Versioning + CI | 2a5362a → 2ad05fc | `versions.json` generator added; GitHub Actions workflow switched to `sphinx-multiversion` + `peaceiris/actions-gh-pages@v4` |
 | 6. Documentation + final fixes | e1aa397 → 50b009e | `CLAUDE.md` updated; changelog `{include}` directive fixed; brand colours in `extra.css`; `DOCS_VERSION` env in CI; boolean `preferred` in `versions.json` |
-| 7. MyST docstring conversion | 8561cf9 → 8a3bf99 | Ruff convention switched to `pep257`; 4 docstrings (`monotonic_dense`, `monotonic_mlp`, `MonoLinear`, `gen_versions_json`) converted from Google-style `Args:`/`Returns:` to MyST `:param:`/`:returns:`; `CLAUDE.md` and `CONTRIBUTING.md` updated; obsolete TODO removed from `conf.py` |
+| 7. MyST docstring conversion | 8561cf9 → 8a3bf99 | Ruff convention switched to `pep257`; 4 docstrings converted from Google-style to MyST field-list; `CLAUDE.md` and `CONTRIBUTING.md` updated; obsolete Google-rendering TODO removed from `conf.py` |
 
 ## Test plan
 
@@ -128,6 +148,8 @@ pipeline. Concrete checks for the reviewer:
       triggers a rebuild.
 - [ ] `uv run pytest -q`, `uv run mypy`, `uv run ruff check`,
       `uv run pre-commit run --all-files` all pass.
+- [ ] `grep -rn 'Args:\|Returns:\|Yields:\|Raises:' mononet/ tools/ --include='*.py'`
+      returns no matches (all converted to MyST).
 
 ### Build output (open `docs/_build/html/index.html` in a browser)
 
@@ -142,6 +164,9 @@ pipeline. Concrete checks for the reviewer:
       cross-reference into the auto-generated API page.
 - [ ] On any API page, a `torch.Tensor` annotation is a clickable
       cross-reference to the PyTorch docs (intersphinx).
+- [ ] The `mononet.core.reference` API page shows parameters in a structured
+      `<dl class="myst field-list">` table (not flat prose). Confirms the
+      Phase 7 docstring conversion landed correctly.
 - [ ] Code blocks have a copy button (`sphinx-copybutton`).
 - [ ] OG / Twitter Card meta tags are present in every page (used by social
       link previews — see `docs/_templates/layout.html`).
@@ -165,13 +190,15 @@ pipeline. Concrete checks for the reviewer:
 - **The `superpowers/` directory** under `docs/` contains the spec + plan +
   this PR description. It is excluded from the Sphinx build via
   `exclude_patterns = ["_build", "superpowers"]` in `conf.py`. Internal-only.
-- **Outstanding TODOs** are documented inline in `docs/conf.py` (Google-style
-  docstring parser; `keras` intersphinx URL once available).
+- **Outstanding TODO** documented inline in `docs/conf.py`: `keras` intersphinx
+  URL (commented out until `keras.io` publishes a stable `objects.inv`).
+- **Docstring style is now MyST field-list** project-wide — new code should
+  follow `:param x: ...` / `:returns: ...` / `:raises X: ...`, with types
+  carried in signature annotations (never `:type:` / `:rtype:`). `CLAUDE.md`
+  and `CONTRIBUTING.md` describe the convention.
 
 ## Follow-up issues (not blocking)
 
-- Restore Google-style docstring rendering (custom autodoc2 parser, griffe
-  plugin, or `sphinx.ext.napoleon` adapter).
 - Add `keras` intersphinx target when `keras.io` publishes a stable
   `objects.inv` URL.
 - Once the first `v*.*.*` tag exists, verify the multiversion build correctly
