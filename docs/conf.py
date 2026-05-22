@@ -99,11 +99,3 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable", None),
 }
 intersphinx_disabled_reftypes = ["std:doc"]
-
-# -- sphinx-multiversion ---------------------------------------------------
-smv_latest_version = "main"
-smv_branch_whitelist = r"^main$"
-smv_tag_whitelist = r"^v\d+\.\d+\.\d+$"
-smv_released_pattern = r"^refs/tags/v\d+\.\d+\.\d+$"
-smv_remote_whitelist = r"^origin$"
-smv_outputdir_format = "{ref.name}"

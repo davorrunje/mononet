@@ -6,21 +6,21 @@ on:
     tags: ['v*.*.*']
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  # Pages deploys should run to completion; cancelling mid-flight can leave
+  # the site in a partial state. Match GitHub's own Pages starter template.
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          # required so sphinx-multiversion can see all branches/tags
           fetch-tags: true
 
       - uses: actions/setup-python@v6
@@ -32,20 +32,20 @@ jobs:
       - name: Install dependencies
         run: uv sync --group docs --extra all
 
+      - name: Ensure local main ref exists
+        # sphinx-polyversion 2.0 enumerates only local refs; on tag-push or
+        # workflow_dispatch triggers HEAD may be detached without a local main.
+        run: git branch -f main origin/main
+
       - name: Build all versions
-        env:
-          DOCS_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          uv run sphinx-multiversion -W docs docs/_build/html
+        run: uv run sphinx-polyversion docs/poly.py
 
       - name: Generate versions.json
         run: |
           uv run python tools/gen_versions_json.py \
             docs/_build/html https://davorrunje.github.io/mononet
 
-      - name: Write a root index.html that redirects to /main/
+      - name: Write root index.html redirecting to /main/
         run: |
           cat > docs/_build/html/index.html <<'EOF'
           <!doctype html>
@@ -54,11 +54,26 @@ jobs:
           <link rel="canonical" href="./main/">
           EOF
 
-      - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/html
-          publish_branch: gh-pages
-          keep_files: false
-          commit_message: "Deploy docs from ${{ github.sha }}"
+          path: docs/_build/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

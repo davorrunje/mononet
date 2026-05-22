@@ -1,6 +1,6 @@
 """Generate versions.json for the PyData Sphinx Theme version switcher.
 
-Run after `sphinx-multiversion` has populated docs/_build/html/<version>/
+Run after `sphinx-polyversion` has populated docs/_build/html/<version>/
 directories. Writes versions.json at the root of the build output.
 
 :param build_dir: Path to the multiversion build output
