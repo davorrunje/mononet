@@ -84,10 +84,6 @@ autodoc2_packages = [
     {"path": "../mononet", "auto_mode": True},
 ]
 autodoc2_render_plugin = "myst"
-# TODO: autodoc2 has no Google-style docstring parser; "myst" parses Google
-# sections as flat prose. Args:/Returns: blocks won't render structured
-# until a griffe/napoleon-based parser is added (or src docstrings rewrite).
-# Spec calls for Google-style preservation — visual fidelity lost for now.
 autodoc2_docstring_parser_regexes = [
     (r".*", "myst"),
 ]
