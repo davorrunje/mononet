@@ -1,5 +1,10 @@
 """Sphinx configuration for mononet documentation."""
 
+# NOTE: Phase 1-2 invocation:
+#   sphinx-build -c docs docs/docs docs/_build/html
+# After Task 7 (content moves up), invocation becomes:
+#   sphinx-build docs docs/_build/html
+
 from __future__ import annotations
 
 import os
@@ -19,7 +24,7 @@ _HERE = Path(__file__).resolve().parent
 _SOURCE_SUFFIX_DIR = _HERE / "docs"
 if _SOURCE_SUFFIX_DIR.is_dir():
     # Phase 1-2: point at docs/docs/
-    master_doc = "index"
+    master_doc = "index_sphinx"
 
 # -- General configuration -------------------------------------------------
 extensions = [
@@ -31,10 +36,17 @@ extensions = [
     "sphinx_design",
     "sphinx_togglebutton",
 ]
-exclude_patterns = ["_build", "site", "navigation_template.txt", "SUMMARY.md"]
+exclude_patterns = [
+    "_build",
+    "site",
+    "navigation_template.txt",
+    "SUMMARY.md",
+    "index.md",  # MkDocs landing page; Phase 1 uses index_sphinx.md
+    "api",  # MkDocs-generated API stubs; Sphinx uses apidocs/ (autodoc2)
+]
 templates_path = ["_templates"]
 source_suffix = {
-    ".md": "markdown",
+    ".md": "myst-nb",
     ".ipynb": "myst-nb",
 }
 
@@ -86,11 +98,11 @@ nb_execution_mode = "off"
 
 # -- sphinx-autodoc2 -------------------------------------------------------
 autodoc2_packages = [
-    {"path": "../mononet", "auto_mode": True},
+    {"path": "../../mononet", "auto_mode": True},
 ]
 autodoc2_render_plugin = "myst"
 autodoc2_docstring_parser_regexes = [
-    (r".*", "google"),
+    (r".*", "myst"),
 ]
 autodoc2_hidden_objects = ["private", "dunder"]
 autodoc2_index_template = None  # let Sphinx handle the index via toctree
@@ -99,13 +111,16 @@ autodoc2_index_template = None  # let Sphinx handle the index via toctree
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "torch": ("https://pytorch.org/docs/stable", None),
-    "jax": ("https://docs.jax.dev", None),
-    "keras": ("https://keras.io/api", None),
+    # "jax": ("https://docs.jax.dev", None),   # TODO: confirm correct inventory URL
+    # "keras": ("https://keras.io", None),      # TODO: confirm correct inventory URL
     "numpy": ("https://numpy.org/doc/stable", None),
 }
 intersphinx_disabled_reftypes = ["std:doc"]
+# TEMPORARY: suppress myst cross-ref misses until Task 8 fixes the links
+suppress_warnings = ["myst.xref_missing"]
 
 # -- sphinx-multiversion ---------------------------------------------------
+smv_latest_version = "main"
 smv_branch_whitelist = r"^main$"
 smv_tag_whitelist = r"^v\d+\.\d+\.\d+$"
 smv_released_pattern = r"^refs/tags/v\d+\.\d+\.\d+$"

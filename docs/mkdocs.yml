@@ -18,6 +18,7 @@ edit_uri: https://github.com/davorrunje/mononet/tree/main/docs/docs
 exclude_docs: |
   navigation_template.txt
   SUMMARY.md
+  index_sphinx.md
 
 theme:
   name: material
