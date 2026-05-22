@@ -3,7 +3,9 @@
 # Common installation script for devcontainer setup
 # This script contains all the common tool installations shared across different devcontainers
 
-set -e  # Exit on error
+set -euo pipefail
+
+cd /workspaces/mononet
 
 echo -e "\033[36m=== Installing Common Tools ===\033[0m"
 
@@ -16,20 +18,36 @@ if [ -f "$REPO_ROOT/.gitattributes" ] && grep -q 'filter=lfs' "$REPO_ROOT/.gitat
   echo -e "\033[32mGit LFS has been installed and artifacts pulled.\033[0m"
 fi
 
-# Install UV
-echo -e "\033[32mInstalling UV...\033[0m"
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install uv only when missing.
+if command -v uv >/dev/null 2>&1; then
+  echo "uv already installed: $(uv --version)"
+else
+  echo -e "\033[32mInstalling uv...\033[0m"
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  # Add ~/.local/bin (the default uv install location) to interactive shells
+  # launched after the install. Only on first install to avoid duplicates.
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.bashrc
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.zshrc 2>/dev/null || true
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+echo "uv installed: $(uv --version)"
 
 # Authenticate GitHub CLI (installed via devcontainer feature)
-echo -e "\033[32mAuthenticating GitHub CLI...\033[0m"
-if [ -n "$GITHUB_TOKEN" ]; then
+echo -e "\033[32mAuthenticating GitHub CLI (if token provided)...\033[0m"
+if [ -n "${GITHUB_TOKEN:-}" ]; then
   echo "$GITHUB_TOKEN" | gh auth login --with-token && echo -e "\033[32mGitHub CLI authenticated.\033[0m" || echo -e "\033[1;33mWARNING: GitHub CLI authentication failed.\033[0m"
 else
   echo -e "\033[1;33mWARNING: GITHUB_TOKEN not set; gh CLI installed but not authenticated.\033[0m"
 fi
 
-# Install Claude Code via official installer
-# nosemgrep
-curl -fsSL https://claude.ai/install.sh | bash
+# Install Claude Code via official installer only when missing.
+if command -v claude >/dev/null 2>&1; then
+  echo "claude already installed: $(claude --version || echo 'version unavailable')"
+else
+  echo -e "\033[32mInstalling Claude Code...\033[0m"
+  # nosemgrep
+  curl -fsSL https://claude.ai/install.sh | bash
+fi
 
 echo -e "\033[32m✓ Common tools installation completed\033[0m"
