@@ -103,8 +103,6 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable", None),
 }
 intersphinx_disabled_reftypes = ["std:doc"]
-# TEMPORARY: suppress myst cross-ref misses until Task 8 fixes the links
-suppress_warnings = ["myst.xref_missing"]
 
 # -- sphinx-multiversion ---------------------------------------------------
 smv_latest_version = "main"

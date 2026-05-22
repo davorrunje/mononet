@@ -10,8 +10,8 @@ are `flax.nnx.Module` subclasses, fully compatible with `jax.jit` and
 
 ## Public API
 
-- [`MonoLinear`](../api/mononet/jax/MonoLinear.md)
-- [`MonoMLP`](../api/mononet/jax/MonoMLP.md)
+- {py:class}`mononet.jax.layers.MonoLinear`
+- {py:class}`mononet.jax.models.MonoMLP`
 
 A worked example lands once the algorithm implementation is in.
 
