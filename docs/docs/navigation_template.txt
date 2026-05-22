@@ -3,7 +3,20 @@ search:
   exclude: true
 ---
 - [Home](index.md)
+- Getting started:
+    - [PyTorch](guides/pytorch.md)
+    - [JAX](guides/jax.md)
+    - [Keras](guides/keras.md)
+- Concepts:
+    - [Monotonicity](concepts/monotonicity.md)
+    - [Layer reference](concepts/layers.md)
+- Benchmarks:
+    - [Overview](benchmarks/index.md)
 - Reference - Code API
 {public_api}
 {api}
+- About:
+    - [License & patent](about/license.md)
+    - [Changelog](about/changelog.md)
+    - [Citation](about/citation.md)
 - [Contributing](contributing.md)

@@ -1,11 +1,4 @@
 version: 2
-registries:
-  synthpop-pkgs:
-    type: python-index
-    url: https://none
-    username: ${{secrets.UV_INDEX_SYNTHPOP_PKGS_USERNAME}}
-    password: ${{secrets.UV_INDEX_SYNTHPOP_PKGS_PASSWORD}}
-    replaces-base: false
 
 updates:
   - package-ecosystem: github-actions
@@ -14,37 +7,46 @@ updates:
       interval: weekly
     cooldown:
       default-days: 3
-    # https://til.simonwillison.net/github/dependabot-python-setup
     groups:
       github-actions:
         patterns:
           - "*"
 
   - package-ecosystem: uv
-    directory: "/" # pyproject.toml is in the repo's root
+    directory: "/"
     schedule:
       interval: "daily"
-      time: "00:00" # UTC
+      time: "00:00"
     cooldown:
       default-days: 3
     groups:
-      pip:
+      lint:
+        dependency-type: "development"
+        patterns:
+          - "ruff*"
+          - "mypy*"
+          - "bandit*"
+          - "semgrep*"
+          - "codespell*"
+          - "detect-secrets*"
+          - "pre-commit*"
+          - "types-*"
+      docs:
+        dependency-type: "development"
+        patterns:
+          - "mkdocs*"
+          - "mike*"
+          - "mdx-include*"
+          - "typer*"
+      dev:
+        dependency-type: "development"
+        patterns:
+          - "pytest*"
+          - "hypothesis*"
+          - "ipython*"
+          - "ipykernel*"
+          - "nest-asyncio*"
+      production:
+        dependency-type: "production"
         patterns:
           - "*"
-    # open-pull-requests-limit: 0 # Do not open any pull requests
-    # The following is apparently needed to access private repos.
-    # https://github.com/orgs/community/discussions/58657
-    insecure-external-code-execution: allow
-    registries:
-      - synthpop-pkgs
-
-
-# Currently disabled ecosystems because it is not working properly.
-  # - package-ecosystem: devcontainers
-  #   directory: /
-  #   schedule:
-  #     interval: weekly
-  #   groups:
-  #     devcontainers:
-  #       patterns:
-  #         - "*"

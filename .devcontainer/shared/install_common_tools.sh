@@ -20,15 +20,6 @@ fi
 echo -e "\033[32mInstalling UV...\033[0m"
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install Linear CLI
-echo -e "\033[32mInstalling Linear CLI...\033[0m"
-npm install -g @schpet/linear-cli
-if [ -n "$LINEAR_API_KEY" ]; then
-  linear auth login --key $LINEAR_API_KEY --plaintext || echo -e "\033[1;33mWARNING: Linear CLI authentication failed.\033[0m"
-else
-  echo -e "\033[1;33mWARNING: LINEAR_API_KEY not set; Linear CLI installed but not authenticated.\033[0m"
-fi
-
 # Authenticate GitHub CLI (installed via devcontainer feature)
 echo -e "\033[32mAuthenticating GitHub CLI...\033[0m"
 if [ -n "$GITHUB_TOKEN" ]; then

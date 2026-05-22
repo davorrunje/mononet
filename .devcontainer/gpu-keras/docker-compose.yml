@@ -1,0 +1,25 @@
+version: '3'
+name: mononet-devcontainer-gpu-keras
+
+services:
+  python-3.13-mononet-gpu-keras:  # nosemgrep
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mononet-${USER}-python-3.13-gpu-keras
+    volumes:
+      - ../../:/workspaces/mononet:cached
+    command: sleep infinity
+    networks:
+      - mononet-network-gpu-keras
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+networks:
+  mononet-network-gpu-keras:
+    name: mononet-${USER}-network-gpu-keras

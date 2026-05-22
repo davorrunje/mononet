@@ -1,0 +1,40 @@
+{
+    "name": "python-3.13 — GPU (Keras)",
+    "dockerComposeFile": ["./docker-compose.yml"],
+    "service": "python-3.13-mononet-gpu-keras",
+    "shutdownAction": "stopCompose",
+    "workspaceFolder": "/workspaces/mononet",
+    "remoteEnv": {},
+    "containerEnv": {
+        "CLAUDE_CONFIG_DIR": "/root/.claude",
+        "PATH": "/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "KERAS_BACKEND": "jax"
+    },
+    "runArgs": ["--gpus=all"],
+    "postCreateCommand": "bash .devcontainer/shared/post-create.sh",
+    "remoteUser": "root",
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "updateContentCommand": "bash .devcontainer/gpu-keras/setup.sh",
+    "mounts": [
+        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.linting.enabled": true,
+                "python.testing.pytestEnabled": true,
+                "editor.formatOnSave": true,
+                "editor.rulers": [88]
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-toolsai.jupyter",
+                "ms-python.vscode-pylance",
+                "anthropic.claude-code"
+            ]
+        }
+    }
+}

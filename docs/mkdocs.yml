@@ -1,9 +1,9 @@
-site_name: Davor Runje-mononet
+site_name: mononet
 # description to improve website indexing
-site_description: Implementation of unconstrained neural networks
+site_description: Unconstrained monotonic neural networks for PyTorch, JAX, and Keras
 site_url: https://davorrunje.github.io/mononet/
 site_author: Davor Runje
-copyright: '&copy; 2025 <a href="https://davorrunje.github.io/" target="_blank" rel="noopener">Davor Runje</a>'
+copyright: '&copy; 2026 <a href="https://davorrunje.github.io/" target="_blank" rel="noopener">Davor Runje</a>'
 
 docs_dir: docs
 
@@ -112,6 +112,10 @@ plugins:
   - mike:                        # versioning
       alias_type: copy
       canonical_version: latest
+  - mkdocs-jupyter:
+      execute: false
+      include_source: true
+      ignore_h1_titles: true
 
 hooks:
   - create_api_docs.py
@@ -139,6 +143,6 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra:
-  social_image: https://opengraph.githubassets.com/1671805243.560327/synthpop-inc/mononet
+  social_image: https://opengraph.githubassets.com/1671805243.560327/davorrunje/mononet
   version:
     provider: mike

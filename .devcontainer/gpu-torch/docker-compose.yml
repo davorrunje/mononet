@@ -1,0 +1,25 @@
+version: '3'
+name: mononet-devcontainer-gpu-torch
+
+services:
+  python-3.13-mononet-gpu-torch:  # nosemgrep
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mononet-${USER}-python-3.13-gpu-torch
+    volumes:
+      - ../../:/workspaces/mononet:cached
+    command: sleep infinity
+    networks:
+      - mononet-network-gpu-torch
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+networks:
+  mononet-network-gpu-torch:
+    name: mononet-${USER}-network-gpu-torch

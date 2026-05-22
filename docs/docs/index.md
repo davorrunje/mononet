@@ -2,21 +2,37 @@
 hide:
   - navigation
 search:
-  exclude: true
+  exclude: false
 ---
 
-# Monotonic Neural Networks
+# mononet
 
+**Unconstrained monotonic neural networks**, with first-class support for
+**PyTorch**, **JAX** (Flax NNX), and **Keras 3**.
 
-## Development
+Reference implementation of:
 
-To develop this library, use [VSCode](https://code.visualstudio.com/) and use devcontainers feature to set up the development environment. The devcontainer is configured to use Python 3.13 and has all the necessary dependencies installed.
+> Runje, D., Shankaranarayana, S. M. (2023). *Constrained Monotonic
+> Neural Networks.* ICML 2023.
+> [arXiv:2205.11775](https://arxiv.org/abs/2205.11775)
 
-### Starting the devcontainer
+## Install
 
-1. Make sure that you have 1password CLI installed. If not, then install it using the command `brew install 1password-cli` on Mac or follow the [official installation guide](https://developer.1password.com/docs/cli/get-started/#step-1-install-1password-cli) for your OS.
-2. Make sure that 1password desktop app is integrated with the 1password CLI. If not, open the 1password desktop app and go to `Settings` -> `Developer` -> `Integrate with 1Password CLI`. Follow the instructions at [1Password CLI Integration](https://developer.1password.com/docs/cli/get-started/#step-2-turn-on-the-1password-desktop-app-integration) to set it up.
-3. Open the project in VSCode.
-4. Make sure that you have the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed in VSCode.
-5. Press `Ctrl+Shift+P` or `Cmd+Shift+P` (on Mac) to open the command palette.
-6. Type `Dev Containers: Reopen in Container` and select it and wait for the container to build and start.
+    pip install "mononet[torch]"      # PyTorch
+    pip install "mononet[jax]"        # JAX + Flax NNX
+    pip install "mononet[keras]"      # Keras 3
+    pip install "mononet[all]"        # all three
+
+## Where to go next
+
+- [PyTorch guide](guides/pytorch.md)
+- [JAX guide](guides/jax.md)
+- [Keras guide](guides/keras.md)
+- [Concepts: monotonicity](concepts/monotonicity.md)
+- [Benchmarks (reproducing the paper)](benchmarks/index.md)
+
+## License & patent
+
+Code: PolyForm Noncommercial 1.0.0. Patent: US 11,551,063 reserved
+(assignee: AIRT Technologies Ltd.). Commercial users contact
+**licensing@airt.ai**. See [License & patent](about/license.md).

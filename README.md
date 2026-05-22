@@ -1,62 +1,60 @@
-# Monotonic Neural Networks
+# mononet — Unconstrained Monotonic Neural Networks
 
+[![PyPI version](https://img.shields.io/pypi/v/mononet)](https://pypi.org/project/mononet/)
+[![Python versions](https://img.shields.io/pypi/pyversions/mononet)](https://pypi.org/project/mononet/)
+[![Docs](https://img.shields.io/badge/docs-mononet-blue)](https://davorrunje.github.io/mononet/)
+[![Build](https://github.com/davorrunje/mononet/actions/workflows/build.yml/badge.svg)](https://github.com/davorrunje/mononet/actions/workflows/build.yml)
 
-## Development
+Reference implementation of the unconstrained monotonic neural network
+construction from:
 
-To develop this library, use [VSCode](https://code.visualstudio.com/) and use devcontainers feature to set up the development environment. The devcontainer is configured to use Python 3.13 and has all the necessary dependencies installed.
+> Runje, D., Shankaranarayana, S. M. (2023). *Constrained Monotonic
+> Neural Networks.* ICML 2023. <https://arxiv.org/abs/2205.11775>
 
-## Clone ussing HTTPS
+First-class support for **PyTorch**, **JAX** (Flax NNX), and **Keras 3**.
 
-```
-git clone https://github.com/synthpop-inc/mononet.git
-```
+## Install
 
-## Starting the devcontainer
+    pip install "mononet[torch]"      # PyTorch
+    pip install "mononet[jax]"        # JAX + Flax NNX
+    pip install "mononet[keras]"      # Keras 3
+    pip install "mononet[all]"        # all three
 
-### Currently not needed, but it will be very soon. Just skip for now
-1. Make sure that you have 1password CLI installed. If not, then install it using the command `brew install 1password-cli` on Mac or follow the [official installation guide](https://developer.1password.com/docs/cli/get-started/#step-1-install-1password-cli) for your OS.
-2. Make sure that 1password desktop app is integrated with the 1password CLI. If not, open the 1password desktop app and go to `Settings` -> `Developer` -> `Integrate with 1Password CLI`. Follow the instructions at [1Password CLI Integration](https://developer.1password.com/docs/cli/get-started/#step-2-turn-on-the-1password-desktop-app-integration) to set it up.
+## Quick start
 
-### Continue from here
-3. Open the project in VSCode.
-4. Make sure that you have the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed in VSCode.
-5. Press `Ctrl+Shift+P` or `Cmd+Shift+P` (on Mac) to open the command palette.
-6. Type `Dev Containers: Reopen in Container` and select it and wait for the container to build and start.
+A 60-second tour will appear here once the algorithm implementation lands.
+Each backend exposes the same composed model (`MonoMLP`) and the
+framework-idiomatic layer name (`MonoLinear` for PyTorch and JAX,
+`MonoDense` for Keras).
 
-## GitHub Repository Configuration
+```python
+# PyTorch
+from mononet.torch import MonoMLP
 
-### Setting up Secrets for GitHub Actions and Dependabot
+# JAX
+from mononet.jax import MonoMLP
 
-To enable proper CI/CD functionality and dependency management, you need to configure the following secrets in your GitHub repository:
-
-1. **Navigate to your repository settings:**
-   - Go to `Settings` → `Secrets and variables` → `Actions`
-
-2. **Add the following repository secrets:**
-
-   | Secret Name | Description | Required For |
-   |-------------|-------------|-------------|
-   | `UV_INDEX_SYNTHPOP_PKGS_USERNAME` | Username for Synthpop package index | GitHub Actions, Dependabot |
-   | `UV_INDEX_SYNTHPOP_PKGS_PASSWORD` | Password/token for Synthpop package index | GitHub Actions, Dependabot |
-   | `CODECOV_TOKEN` | Token for Codecov integration | GitHub Actions, Dependabot |
-
-3. **For Dependabot secrets:**
-   - Go to `Settings` → `Secrets and variables` → `Dependabot`
-   - Add all three secrets: `UV_INDEX_SYNTHPOP_PKGS_USERNAME`, `UV_INDEX_SYNTHPOP_PKGS_PASSWORD`, and `CODECOV_TOKEN`
-
-**Note:** You can obtain the `CODECOV_TOKEN` from your [Codecov dashboard](https://codecov.io/) after setting up your repository there.
-
-## Examples for local testing
-
-Phase 1: pass pdf file -> get the individual pages as png images
-```bash
-python utils/image_converter.py
-```
-Phase 2: pass the directory containing the png images -> get the structured page results
-```bash
-python utils/model_proxy.py
+# Keras 3
+from mononet.keras import MonoMLP
 ```
 
-## Release Process
+## License & patent
 
-For detailed instructions on releasing new versions of `mononet`, please refer to our comprehensive [Release Process Guide](https://stunning-adventure-6l394vr.pages.github.io/latest/guides/release-process/).
+Code: PolyForm Noncommercial 1.0.0. Patent: US 11,551,063 reserved
+(assignee: AIRT Technologies Ltd.). Commercial users contact
+**licensing@airt.ai**. See [`NOTICE.md`](NOTICE.md) for full details.
+
+## Documentation
+
+Full docs at <https://davorrunje.github.io/mononet/>. Source for guides
+and benchmarks lives in [`docs/docs/`](docs/docs/).
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development workflow:
+devcontainer choice, `uv sync`, pre-commit, per-backend test commands.
+
+## Citation
+
+If you use `mononet` in academic work, please cite the paper. BibTeX is
+in [`docs/docs/about/citation.md`](docs/docs/about/citation.md).

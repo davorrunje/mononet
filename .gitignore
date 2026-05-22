@@ -202,9 +202,6 @@ cython_debug/
 .apdisk
 *.icloud
 
-# Project specific files
-devcontainer.env.tmp
-
 # Documentation
 docs/site/
 docs/docs/SUMMARY.md
