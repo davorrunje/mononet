@@ -5,6 +5,10 @@ set -euo pipefail
 
 cd /workspaces/mononet
 
+bash .devcontainer/shared/install_common_tools.sh
+
+# Dev/docs/lint groups are pulled in automatically via
+# [tool.uv] default-groups in pyproject.toml.
 EXTRAS="${MONONET_EXTRAS:-all}"
-echo ">>> installing mononet[${EXTRAS}] with dev + docs + lint groups"
-uv pip install --system -e ".[${EXTRAS}]" --group=dev --group=docs --group=lint
+echo ">>> uv sync --extra ${EXTRAS}"
+uv sync --extra "${EXTRAS}"
