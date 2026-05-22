@@ -13,7 +13,7 @@ mkdir -p "${SECRETS_DIR}"
 chmod 700 "${SECRETS_DIR}"
 
 if command -v gh >/dev/null 2>&1 && token="$(gh auth token 2>/dev/null)" && [ -n "${token}" ]; then
-    printf '%s' "${token}" > "${TOKEN_FILE}"
+    (umask 077 && printf '%s' "${token}" > "${TOKEN_FILE}")
     chmod 600 "${TOKEN_FILE}"
 else
     rm -f "${TOKEN_FILE}"
