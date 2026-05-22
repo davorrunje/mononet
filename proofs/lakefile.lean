@@ -11,9 +11,9 @@ package «mononet-proofs» where
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.15.0"
 
-@[default_target]
 lean_lib «Mononet» where
-  -- root namespace exported by the project
+  -- library containing all Mononet namespace modules
 
+@[default_target]
 lean_lib «Proofs» where
-  -- entry-point library that imports the rest
+  -- entry-point library that imports the rest as modules land
