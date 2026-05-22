@@ -98,9 +98,15 @@ nb_execution_mode = "off"
 
 # -- sphinx-autodoc2 -------------------------------------------------------
 autodoc2_packages = [
+    # Phase 1-2 (srcdir=docs/docs/): use "../../mononet".
+    # Task 7 onward (srcdir=docs/): change to "../mononet".
     {"path": "../../mononet", "auto_mode": True},
 ]
 autodoc2_render_plugin = "myst"
+# TODO: autodoc2 has no Google-style docstring parser; "myst" parses Google
+# sections as flat prose. Args:/Returns: blocks won't render structured
+# until a griffe/napoleon-based parser is added (or src docstrings rewrite).
+# Spec calls for Google-style preservation — visual fidelity lost for now.
 autodoc2_docstring_parser_regexes = [
     (r".*", "myst"),
 ]
@@ -111,7 +117,7 @@ autodoc2_index_template = None  # let Sphinx handle the index via toctree
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "torch": ("https://pytorch.org/docs/stable", None),
-    # "jax": ("https://docs.jax.dev", None),   # TODO: confirm correct inventory URL
+    "jax": ("https://docs.jax.dev/en/latest", None),
     # "keras": ("https://keras.io", None),      # TODO: confirm correct inventory URL
     "numpy": ("https://numpy.org/doc/stable", None),
 }
