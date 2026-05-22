@@ -4,7 +4,7 @@ import Mononet.Layers
 import Mononet.Lemma1Mono
 import Mononet.Lemma2Combined
 import Mononet.Lemma5Heaviside
--- import Mononet.Lemma6Equiv
+import Mononet.Lemma6Equiv
 -- import Mononet.DanielsVelikova
 -- import Mononet.Theorem7Universal
 
