@@ -35,7 +35,12 @@ jobs:
       - name: Ensure local main ref exists
         # sphinx-polyversion 2.0 enumerates only local refs; on tag-push or
         # workflow_dispatch triggers HEAD may be detached without a local main.
-        run: git branch -f main origin/main
+        # On push-to-main triggers HEAD is already on `main`, in which case
+        # creating it again would fail ("cannot force update the branch used
+        # by worktree"), so guard with a presence check.
+        run: |
+          git show-ref --verify --quiet refs/heads/main \
+            || git branch main origin/main
 
       - name: Build all versions
         run: uv run sphinx-polyversion docs/poly.py
