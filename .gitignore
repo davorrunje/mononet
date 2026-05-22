@@ -201,4 +201,7 @@ cython_debug/
 .apdisk
 *.icloud
 
+# Superpowers brainstorming visual-companion artifacts
+.superpowers/
+
 # Documentation
