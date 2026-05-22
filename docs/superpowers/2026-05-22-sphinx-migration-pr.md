@@ -87,20 +87,22 @@ docs/
 - Multi-version docs use a JSON-driven switcher dropdown (PyData theme).
 
 **Lost (tracked as follow-ups):**
-- Google-style docstring `Args:` / `Returns:` sections currently render as flat
-  prose. `sphinx-autodoc2` has no Google parser — it accepts only `rst`, `myst`,
-  or a class FQN. There's an inline TODO at [docs/conf.py](docs/conf.py) marking
-  this as future work (either a custom parser, a griffe-based plugin, or a
-  source-side rewrite). 3 docstrings in 2 files are affected today.
 - `mkdocs-glightbox` image zoom and `mkdocs-minify-plugin` — both small UX
   features that PyData theme doesn't ship; not on the spec's must-have list.
 - `keras` intersphinx target — `keras.io`'s inventory URL 404s; entry commented
   out with a TODO. (PyTorch, JAX, NumPy, Python all work.)
 
+**Resolved during this PR (was originally listed as a follow-up):** the
+project's docstring convention has been switched from Google-style to
+MyST field-list (`:param x:` / `:returns:` / `:raises X:`). All 4 affected
+docstrings are converted; ruff's pydocstyle convention is now `pep257`.
+See the [docstring spec](docs/superpowers/specs/2026-05-22-myst-docstrings-design.md)
+and [plan](docs/superpowers/plans/2026-05-22-myst-docstrings.md) for details.
+
 ## Migration strategy
 
 The plan was designed so **every commit leaves the pre-commit `docs` hook
-green**. 16 commits in 6 phases:
+green**. 16 commits for the Sphinx migration + 6 for the docstring conversion:
 
 | Phase | Commits | Outcome |
 | --- | --- | --- |
@@ -110,6 +112,7 @@ green**. 16 commits in 6 phases:
 | 4. Polish | 5da8d8c → d22f13a | Cross-refs converted to MyST `{py:class}`; `-W` restored; OG meta tags ported; PyTorch URL fixed |
 | 5. Versioning + CI | 2a5362a → 2ad05fc | `versions.json` generator added; GitHub Actions workflow switched to `sphinx-multiversion` + `peaceiris/actions-gh-pages@v4` |
 | 6. Documentation + final fixes | e1aa397 → 50b009e | `CLAUDE.md` updated; changelog `{include}` directive fixed; brand colours in `extra.css`; `DOCS_VERSION` env in CI; boolean `preferred` in `versions.json` |
+| 7. MyST docstring conversion | 8561cf9 → 8a3bf99 | Ruff convention switched to `pep257`; 4 docstrings (`monotonic_dense`, `monotonic_mlp`, `MonoLinear`, `gen_versions_json`) converted from Google-style `Args:`/`Returns:` to MyST `:param:`/`:returns:`; `CLAUDE.md` and `CONTRIBUTING.md` updated; obsolete TODO removed from `conf.py` |
 
 ## Test plan
 
