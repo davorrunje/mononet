@@ -61,19 +61,6 @@ dev = [
     "hypothesis>=6.115",
 ]
 docs = [
-    # MkDocs stack (kept temporarily — removed in Task 6)
-    "mkdocs-material==9.7.6",
-    "mkdocstrings==1.0.4",
-    "mkdocstrings-python==2.0.3",
-    "mkdocs-literate-nav==0.6.3",
-    "mkdocs-glightbox==0.5.2",
-    "mkdocs-jupyter>=0.25",
-    "mdx-include==1.4.2",
-    "mkdocs-git-revision-date-localized-plugin==1.5.2",
-    "typer==0.25.1",
-    "mkdocs-minify-plugin==0.8.0",
-    "mike==2.2.0",
-    # Sphinx stack
     "sphinx>=8.1",
     "pydata-sphinx-theme>=0.16",
     "sphinx-autodoc2>=0.5",
