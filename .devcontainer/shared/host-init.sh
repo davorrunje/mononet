@@ -9,8 +9,11 @@ set -u
 SECRETS_DIR="${HOME}/.config/mononet-devcontainer"
 TOKEN_FILE="${SECRETS_DIR}/gh-token"
 
-mkdir -p "${SECRETS_DIR}"
-chmod 700 "${SECRETS_DIR}"
+if ! mkdir -p "${SECRETS_DIR}"; then
+    echo "WARNING: host-init.sh: could not create ${SECRETS_DIR}; skipping gh token forwarding." >&2
+    exit 0
+fi
+chmod 700 "${SECRETS_DIR}" || true
 
 if command -v gh >/dev/null 2>&1 && token="$(gh auth token 2>/dev/null)" && [ -n "${token}" ]; then
     (umask 077 && printf '%s' "${token}" > "${TOKEN_FILE}")
