@@ -62,16 +62,16 @@ dev = [
 ]
 docs = [
     "mkdocs-material==9.7.6",
-    "mkdocstrings==1.0.3",
+    "mkdocstrings==1.0.4",
     "mkdocstrings-python==2.0.3",
     "mkdocs-literate-nav==0.6.3",
     "mkdocs-glightbox==0.5.2",
     "mkdocs-jupyter>=0.25",
     "mdx-include==1.4.2",
-    "mkdocs-git-revision-date-localized-plugin==1.5.1",
-    "typer==0.24.1",
+    "mkdocs-git-revision-date-localized-plugin==1.5.2",
+    "typer==0.25.1",
     "mkdocs-minify-plugin==0.8.0",
-    "mike==2.1.4",
+    "mike==2.2.0",
 ]
 lint = [
     "pre-commit==4.5.1",
