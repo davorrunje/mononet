@@ -17,8 +17,10 @@
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "updateContentCommand": "bash .devcontainer/gpu-torch/setup.sh",
+    "initializeCommand": "bash .devcontainer/shared/host-init.sh",
     "mounts": [
-        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume"
+        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume",
+        "source=${localEnv:HOME}/.config/mononet-devcontainer,target=/var/run/devcontainer-host-secrets,type=bind,readonly"
     ],
     "customizations": {
         "vscode": {

@@ -33,13 +33,31 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 echo "uv installed: $(uv --version)"
 
-# Authenticate GitHub CLI (installed via devcontainer feature)
-echo -e "\033[32mAuthenticating GitHub CLI (if token provided)...\033[0m"
+# Authenticate GitHub CLI. Two token sources, in order:
+#   1. $GITHUB_TOKEN (Codespaces auto-injects this).
+#   2. /var/run/devcontainer-host-secrets/gh-token (forwarded from the
+#      host by .devcontainer/shared/host-init.sh via initializeCommand).
+echo -e "\033[32mAuthenticating GitHub CLI (if a token is available)...\033[0m"
+
+HOST_TOKEN_FILE="/var/run/devcontainer-host-secrets/gh-token"
+gh_token=""
+
 if [ -n "${GITHUB_TOKEN:-}" ]; then
-  echo "$GITHUB_TOKEN" | gh auth login --with-token && echo -e "\033[32mGitHub CLI authenticated.\033[0m" || echo -e "\033[1;33mWARNING: GitHub CLI authentication failed.\033[0m"
-else
-  echo -e "\033[1;33mWARNING: GITHUB_TOKEN not set; gh CLI installed but not authenticated.\033[0m"
+  gh_token="${GITHUB_TOKEN}"
+elif [ -s "${HOST_TOKEN_FILE}" ] && [ -r "${HOST_TOKEN_FILE}" ]; then
+  gh_token="$(cat "${HOST_TOKEN_FILE}")"
 fi
+
+if [ -n "${gh_token}" ]; then
+  if printf '%s' "${gh_token}" | gh auth login --with-token; then
+    echo -e "\033[32mGitHub CLI authenticated.\033[0m"
+  else
+    echo -e "\033[1;33mWARNING: GitHub CLI authentication failed.\033[0m"
+  fi
+else
+  echo -e "\033[1;33mWARNING: No GitHub token available (neither \$GITHUB_TOKEN nor host-forwarded token); gh CLI is unauthenticated.\033[0m"
+fi
+unset gh_token HOST_TOKEN_FILE
 
 # Install Claude Code via official installer only when missing.
 if command -v claude >/dev/null 2>&1; then
