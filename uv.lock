@@ -1756,7 +1756,7 @@ docs = [
     { name = "sphinx-autodoc2", specifier = ">=0.5" },
     { name = "sphinx-copybutton", specifier = ">=0.5" },
     { name = "sphinx-design", specifier = ">=0.6" },
-    { name = "sphinx-polyversion", specifier = ">=1.0" },
+    { name = "sphinx-polyversion", specifier = ">=2.0" },
     { name = "sphinx-togglebutton", specifier = ">=0.3" },
 ]
 lint = [

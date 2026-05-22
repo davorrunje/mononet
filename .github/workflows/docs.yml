@@ -8,7 +8,9 @@ on:
 
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  # Pages deploys should run to completion; cancelling mid-flight can leave
+  # the site in a partial state. Match GitHub's own Pages starter template.
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -52,11 +54,6 @@ jobs:
           <link rel="canonical" href="./main/">
           EOF
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -72,6 +69,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
