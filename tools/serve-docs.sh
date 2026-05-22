@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-
 set -e
 set -x
 
-cd docs; uv run python docs.py live "$@"
+uv run sphinx-autobuild docs docs/_build/html \
+  --port 8008 --host 0.0.0.0 \
+  --watch mononet

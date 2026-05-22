@@ -63,10 +63,7 @@ jobs:
       - name: Install dependencies
         run: uv pip install --system -e ".[all]" --group=docs
       - name: Build docs (strict)
-        run: |
-          cd docs
-          python docs.py build-api-docs
-          mkdocs build --strict
+        run: ./tools/build-docs.sh
 
   test:
     runs-on: ${{ matrix.os }}
