@@ -44,7 +44,7 @@ gh_token=""
 
 if [ -n "${GITHUB_TOKEN:-}" ]; then
   gh_token="${GITHUB_TOKEN}"
-elif [ -s "${HOST_TOKEN_FILE}" ]; then
+elif [ -s "${HOST_TOKEN_FILE}" ] && [ -r "${HOST_TOKEN_FILE}" ]; then
   gh_token="$(cat "${HOST_TOKEN_FILE}")"
 fi
 
