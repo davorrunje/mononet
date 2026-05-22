@@ -48,9 +48,12 @@ uv run pre-commit run --all-files                    # run all hooks
 ```
 
 ### Documentation
+Built with Sphinx + PyData Sphinx Theme. See `docs/conf.py`.
+
 ```bash
-./tools/build-docs.sh                                # build docs
-./tools/serve-docs.sh                                # live preview
+./tools/build-docs.sh                                # build docs (sphinx-build -W)
+./tools/serve-docs.sh                                # live preview (sphinx-autobuild)
+uv run sphinx-multiversion -W docs docs/_build/html  # build all versions (CI uses this)
 ```
 
 ### Dependencies
@@ -64,13 +67,13 @@ uv sync                                              # install / sync lockfile
 mononet/
 ├── mononet/   # main package
 ├── tests/                           # test suite (mirrors package structure)
-├── docs/                            # documentation (MkDocs Material)
+├── docs/                            # documentation (Sphinx)
 ├── tools/                           # dev scripts
 ├── .github/                         # workflows & PR/issue templates
 └── pyproject.toml                   # project config
 ```
 
-Key technologies: Python 3.11+, uv, pytest, ruff, mypy, bandit, semgrep, MkDocs Material.
+Key technologies: Python 3.11+, uv, pytest, ruff, mypy, bandit, semgrep, Sphinx + PyData Theme.
 
 ## Code Style
 
