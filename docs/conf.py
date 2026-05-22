@@ -97,7 +97,7 @@ autodoc2_index_template = None  # let Sphinx handle the index via toctree
 # -- intersphinx -----------------------------------------------------------
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "torch": ("https://pytorch.org/docs/stable", None),
+    "torch": ("https://docs.pytorch.org/docs/stable", None),
     "jax": ("https://docs.jax.dev/en/latest", None),
     # "keras": ("https://keras.io", None),      # TODO: confirm correct inventory URL
     "numpy": ("https://numpy.org/doc/stable", None),
