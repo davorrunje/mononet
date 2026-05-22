@@ -156,6 +156,7 @@ include = [
     "mononet/**/*.pyi",
     "tests/**/*.py",
     "docs/**/*.py",
+    "tools/**/*.py",
     "pyproject.toml",
 ]
 exclude = ["docs/docs_src"]
@@ -198,6 +199,11 @@ ignore = [
     "D106",     # missing docstring in public nested class
     "D107",     # missing docstring in __init__
     "T20",      # flake8-print
+]
+
+"tools/**/*.py" = [
+    "D103",     # missing docstring in public function (CLI entry points)
+    "T20",      # flake8-print (tools use print for user feedback)
 ]
 
 "tests/**/*.py" = [
