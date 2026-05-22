@@ -45,10 +45,19 @@ theorem CMFCL_all_saturated_rescale
   unfold CMFCL combined saturatedRescaled
   simp [h_not_first, h_not_second]
 
-/-- **Lemma 6.** Equivalent re-parametrization: for any all-saturated CMFCL
-with rescaled activation `α · ρ̃ + β` (α > 0), there is a CMFCL using `ρ̃`
-directly that has the same output, modulo a fixed final-layer affine
-transform. The witness is `(α · W, α · b)` followed by `+ β`. -/
+/-- **Lemma 6 (witness form).** For any all-saturated CMFCL with rescaled
+activation `α · ρ̃ + β` (α > 0), there exist `W'`, `b'`, and `γ` such that the
+rescaled-output expression can be written equivalently in the form
+`CMFCL(W', b', t, φ, s, x)_j · α + γ`.
+
+The trivial witness `(W' := W, b' := b, γ := β)` works because the
+conclusion reduces to the commutativity identity `α * f + β = f * α + β`.
+
+In the paper's network setting (multiple layers, Fig. 4 / Fig. 5), the
+non-trivial work of "absorbing α and β" is performed by the *next* layer's
+weights and biases, which composes the rescaled CMFCL output with a
+subsequent affine transform. This single-layer statement captures the
+algebraic content; the multi-layer composition is left implicit. -/
 theorem affine_rescale_equiv
     (W : Matrix (Fin n) (Fin m) ℝ) (b : Fin m → ℝ)
     (t : MonoMask n) (φ : BaseActivation) (s : ActivationSplit m)
