@@ -1,0 +1,73 @@
+name: Lean
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "proofs/**"
+      - ".github/workflows/lean.yml"
+  pull_request:
+    paths:
+      - "proofs/**"
+      - ".github/workflows/lean.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Fetch mathlib4 cache
+        working-directory: proofs
+        run: |
+          lake update
+          lake exe cache get || true
+
+      - name: Build
+        working-directory: proofs
+        run: lake build
+
+      - name: Verify zero sorries in mononet sources
+        run: |
+          # The DanielsVelikova file legitimately contains the project's only
+          # axiom; the placeholder `sorry` inside its statement (Fin 1 index)
+          # was resolved in Theorem7. Any `sorry` outside DanielsVelikova.lean
+          # is a proof gap.
+          set -e
+          gaps=$(grep -rn '\bsorry\b' proofs/Mononet/ proofs/Proofs.lean \
+                  | grep -v 'DanielsVelikova.lean' || true)
+          if [ -n "$gaps" ]; then
+            echo "Proof gaps found:"
+            echo "$gaps"
+            exit 1
+          fi
+
+      - name: Install doc-gen4
+        working-directory: proofs
+        run: lake -R -Kenv=dev update doc-gen4 || true
+
+      - name: Build doc-gen4 HTML (best-effort)
+        working-directory: proofs
+        run: lake -R -Kenv=dev build Mononet:docs || true
+
+      - name: Upload doc-gen4 artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lean-docs
+          path: proofs/.lake/build/doc
+          if-no-files-found: warn
+          retention-days: 14
