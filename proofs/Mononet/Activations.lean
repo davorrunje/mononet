@@ -1,5 +1,4 @@
 import Mathlib.Analysis.Convex.Function
-import Mathlib.Topology.Order.Basic
 import Mathlib.Tactic.Linarith
 import Mononet.Basic
 
