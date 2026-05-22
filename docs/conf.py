@@ -35,11 +35,12 @@ source_suffix = {
 # -- HTML output -----------------------------------------------------------
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
+html_favicon = "_static/favicon.png"
 html_title = "mononet"
 html_theme_options = {
     "logo": {
-        "image_light": "_static/logo.png",
-        "image_dark": "_static/logo.png",
+        "image_light": "_static/logo-light.svg",
+        "image_dark": "_static/logo-dark.svg",
     },
     "github_url": "https://github.com/davorrunje/mononet",
     "use_edit_page_button": True,

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="mononet">
+  <title>mononet</title>
+  <path d="M 8 52 L 56 52" stroke="#7c3aed" stroke-width="1.5" opacity="0.45"/>
+  <path d="M 8 52 L 8 12" stroke="#7c3aed" stroke-width="1.5" opacity="0.45"/>
+  <path d="M 8 52 C 22 52, 28 18, 56 12 L 56 52 Z" fill="#7c3aed" fill-opacity="0.22"/>
+  <path d="M 8 52 C 22 52, 28 18, 56 12" fill="none" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+</svg>

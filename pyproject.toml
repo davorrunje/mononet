@@ -71,6 +71,7 @@ docs = [
     "sphinx-autobuild>=2024.10",
     "sphinx-polyversion>=2.0",
     "linkify-it-py>=2.0",
+    "cairosvg>=2.7",
 ]
 lint = [
     "pre-commit==4.6.0",
