@@ -26,7 +26,7 @@ def main() -> None:
     args = parser.parse_args()
 
     base = args.base_url.rstrip("/")
-    entries: list[dict[str, str]] = []
+    entries: list[dict[str, str | bool]] = []
 
     version_dirs = sorted(p.name for p in args.build_dir.iterdir() if p.is_dir())
     tagged = [v for v in version_dirs if VERSION_RE.match(v)]
@@ -42,13 +42,13 @@ def main() -> None:
         )
 
     for v in tagged:
-        entry: dict[str, str] = {
+        entry: dict[str, str | bool] = {
             "name": v,
             "version": v,
             "url": f"{base}/{v}/",
         }
         if v == tagged[0]:
-            entry["preferred"] = "true"
+            entry["preferred"] = True
         entries.append(entry)
 
     out = args.build_dir / "versions.json"

@@ -33,6 +33,8 @@ jobs:
         run: uv sync --group docs --extra all
 
       - name: Build all versions
+        env:
+          DOCS_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
