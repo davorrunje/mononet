@@ -1,5 +1,7 @@
 import Mathlib.Analysis.Convex.Function
 import Mathlib.Tactic.Linarith
+import Mathlib.Topology.Algebra.Order.Field
+import Mathlib.Topology.Instances.Real
 import Mononet.Basic
 
 /-!
@@ -10,6 +12,8 @@ zero-centred, monotone-increasing, convex, and lower-bounded. From a
 `BaseActivation`, the concave reflection `ρ̂` and the saturated piecewise
 `ρ̃` are defined (eqs. 4 and 5).
 -/
+
+open Filter Topology
 
 namespace Mononet
 
@@ -29,6 +33,8 @@ structure BaseActivation where
   convex       : ConvexOn ℝ Set.univ f
   lower_bound  : ℝ
   bounded_below : ∀ x : ℝ, lower_bound ≤ f x
+  -- New: f attains its infimum at -∞ (true for ReLU, ELU, SELU, GELU)
+  tendsto_lower : Filter.Tendsto f Filter.atBot (𝓝 lower_bound)
 
 namespace BaseActivation
 
