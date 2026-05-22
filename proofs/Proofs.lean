@@ -6,7 +6,7 @@ import Mononet.Lemma2Combined
 import Mononet.Lemma5Heaviside
 import Mononet.Lemma6Equiv
 import Mononet.DanielsVelikova
--- import Mononet.Theorem7Universal
+import Mononet.Theorem7Universal
 
 /-!
 # Mononet Proofs — entry point
