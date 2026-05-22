@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-
 set -e
 set -x
 
-cd docs; uv run python docs.py build
+uv run sphinx-build -W docs docs/_build/html

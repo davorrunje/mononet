@@ -13,5 +13,5 @@ without constraining the underlying weights — see the paper at
 
 ## API
 
-See [`MonotonicityMask`](../api/mononet/core/types/MonotonicityMask.md) for
+See {py:class}`mononet.core.types.MonotonicityMask` for
 the type used to declare per-input monotonicity in code.

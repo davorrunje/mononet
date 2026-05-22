@@ -9,7 +9,6 @@ repos:
         stages: [pre-commit, pre-merge-commit, manual]
     -   id: check-yaml
         stages: [pre-commit, pre-merge-commit, manual]
-        exclude: 'docs/mkdocs.yml'
     -   id: check-added-large-files
         stages: [pre-commit, pre-merge-commit, manual]
 

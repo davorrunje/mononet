@@ -29,15 +29,13 @@ def monotonic_dense(
 ) -> npt.NDArray[np.floating]:
     """Single-layer monotonic transformation (NumPy reference).
 
-    Args:
-        x: Input array of shape (batch, in_features).
-        weights: Unconstrained weights of shape (in_features, out_features).
-        bias: Bias vector of shape (out_features,).
-        mask: Per-input monotonicity mask.
-        activation: Activation specification.
-
-    Returns:
-        Output array of shape (batch, out_features).
+    :param x: Input array of shape `(batch, in_features)`.
+    :param weights: Unconstrained weights of shape
+        `(in_features, out_features)`.
+    :param bias: Bias vector of shape `(out_features,)`.
+    :param mask: Per-input monotonicity mask.
+    :param activation: Activation specification.
+    :returns: Output array of shape `(batch, out_features)`.
     """
     raise NotImplementedError(
         "monotonic_dense reference implementation lands in the follow-up plan."
@@ -53,15 +51,12 @@ def monotonic_mlp(
 ) -> npt.NDArray[np.floating]:
     """Multi-layer monotonic MLP (NumPy reference).
 
-    Args:
-        x: Input array of shape (batch, in_features).
-        weights: Per-layer weight arrays.
-        biases: Per-layer bias vectors.
-        mask: Monotonicity mask applied to the first layer.
-        activation: Activation used between hidden layers.
-
-    Returns:
-        Output array of shape (batch, weights[-1].shape[1]).
+    :param x: Input array of shape `(batch, in_features)`.
+    :param weights: Per-layer weight arrays.
+    :param biases: Per-layer bias vectors.
+    :param mask: Monotonicity mask applied to the first layer.
+    :param activation: Activation used between hidden layers.
+    :returns: Output array of shape `(batch, weights[-1].shape[1])`.
     """
     raise NotImplementedError(
         "monotonic_mlp reference implementation lands in the follow-up plan."

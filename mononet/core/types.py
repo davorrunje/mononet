@@ -48,7 +48,7 @@ class MonotonicityMask:
         return self.values.shape
 
     def __len__(self) -> int:
-        """Number of input features covered by this mask."""
+        """Return the number of input features covered by this mask."""
         return int(self.values.shape[0])
 
 

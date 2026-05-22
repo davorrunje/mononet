@@ -10,9 +10,9 @@ PyTorch, PyTorch Lightning, etc.).
 
 ## Public API
 
-- [`MonoLinear`](../api/mononet/torch/MonoLinear.md) — monotonic
-  analogue of `torch.nn.Linear`.
-- [`MonoMLP`](../api/mononet/torch/MonoMLP.md) — multi-layer composition.
+- {py:class}`mononet.torch.layers.MonoLinear` — monotonic analogue of
+  {py:class}`torch.nn.Module`.
+- {py:class}`mononet.torch.models.MonoMLP` — multi-layer composition.
 
 A worked example lands once the algorithm implementation is in.
 

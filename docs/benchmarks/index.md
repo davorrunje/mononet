@@ -14,3 +14,10 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 
 - [Overview](00-overview.ipynb) — placeholder; full set of benchmarks
   lands in the follow-up algorithm plan.
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+00-overview
+```

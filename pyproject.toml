@@ -61,17 +61,16 @@ dev = [
     "hypothesis>=6.115",
 ]
 docs = [
-    "mkdocs-material==9.7.6",
-    "mkdocstrings==1.0.4",
-    "mkdocstrings-python==2.0.3",
-    "mkdocs-literate-nav==0.6.3",
-    "mkdocs-glightbox==0.5.2",
-    "mkdocs-jupyter>=0.25",
-    "mdx-include==1.4.2",
-    "mkdocs-git-revision-date-localized-plugin==1.5.2",
-    "typer==0.25.1",
-    "mkdocs-minify-plugin==0.8.0",
-    "mike==2.2.0",
+    "sphinx>=8.1",
+    "pydata-sphinx-theme>=0.16",
+    "sphinx-autodoc2>=0.5",
+    "myst-nb>=1.1",
+    "sphinx-copybutton>=0.5",
+    "sphinx-design>=0.6",
+    "sphinx-togglebutton>=0.3",
+    "sphinx-autobuild>=2024.10",
+    "sphinx-multiversion>=0.2",
+    "linkify-it-py>=2.0",
 ]
 lint = [
     "pre-commit==4.6.0",
@@ -157,6 +156,7 @@ include = [
     "mononet/**/*.pyi",
     "tests/**/*.py",
     "docs/**/*.py",
+    "tools/**/*.py",
     "pyproject.toml",
 ]
 exclude = ["docs/docs_src"]
@@ -201,6 +201,11 @@ ignore = [
     "T20",      # flake8-print
 ]
 
+"tools/**/*.py" = [
+    "D103",     # missing docstring in public function (CLI entry points)
+    "T20",      # flake8-print (tools use print for user feedback)
+]
+
 "tests/**/*.py" = [
     "D100",     # missing docstring in public module
     "D101",
@@ -222,7 +227,7 @@ case-sensitive = true
 docstring-code-format = true
 
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "pep257"
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [

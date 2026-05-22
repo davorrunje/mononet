@@ -14,11 +14,10 @@ if TYPE_CHECKING:
 class MonoLinear(nn.Module):
     """Monotonic analogue of `torch.nn.Linear`.
 
-    Args:
-        in_features: Number of input features.
-        out_features: Number of output features.
-        monotonicity: Per-input-feature monotonicity mask.
-        activation: Activation specification (resolved by the kernel).
+    :param in_features: Number of input features.
+    :param out_features: Number of output features.
+    :param monotonicity: Per-input-feature monotonicity mask.
+    :param activation: Activation specification (resolved by the kernel).
     """
 
     def __init__(

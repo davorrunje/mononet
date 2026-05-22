@@ -1,0 +1,9 @@
+/* Brand colours for PyData Sphinx Theme. */
+:root {
+    --pst-color-primary: #003257;
+    --pst-color-link: #48A8D8;
+}
+
+html[data-theme="dark"] {
+    --pst-color-link: #48A8D8;
+}
