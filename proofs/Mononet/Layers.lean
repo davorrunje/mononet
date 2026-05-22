@@ -1,4 +1,3 @@
-import Mathlib.Data.Matrix.Mul
 import Mononet.Basic
 import Mononet.Activations
 
@@ -10,8 +9,6 @@ Eqs. 3 (constrained linear layer), 6 (combined activation `ρ_s`), and 7
 -/
 
 namespace Mononet
-
-open Matrix
 
 /-- The constrained linear layer of Definition 1:
 `h = (|W|_t)ᵀ · x + b`. Returns a vector in `ℝ^m` (indexed by `Fin m`). -/
