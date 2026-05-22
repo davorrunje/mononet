@@ -3,10 +3,9 @@
 Run after `sphinx-multiversion` has populated docs/_build/html/<version>/
 directories. Writes versions.json at the root of the build output.
 
-Args:
-    build_dir: path to the multiversion build output
-        (e.g. docs/_build/html).
-    base_url: the site's base URL (used to construct per-version URLs).
+:param build_dir: Path to the multiversion build output
+    (e.g. `docs/_build/html`).
+:param base_url: The site's base URL (used to construct per-version URLs).
 """
 
 from __future__ import annotations
