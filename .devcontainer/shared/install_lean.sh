@@ -11,9 +11,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 echo -e "\033[36m=== Installing Lean toolchain ===\033[0m"
 
+# Make ~/.elan/bin reachable for the rest of this script regardless of
+# whether elan was installed already or is being installed below.
+export PATH="$HOME/.elan/bin:$PATH"
+
 # 1. Install elan only when missing.
-if command -v elan >/dev/null 2>&1 || [ -x "$HOME/.elan/bin/elan" ]; then
-  echo "elan already installed: $($HOME/.elan/bin/elan --version 2>&1 | head -1)"
+if command -v elan >/dev/null 2>&1; then
+  echo "elan already installed: $(elan --version 2>&1 | head -1)"
 else
   echo -e "\033[32mInstalling elan...\033[0m"
   # --default-toolchain none keeps elan from installing a global toolchain;
@@ -26,7 +30,6 @@ else
   echo 'export PATH="$HOME/.elan/bin:$PATH"' >> /root/.bashrc
   echo 'export PATH="$HOME/.elan/bin:$PATH"' >> /root/.zshrc 2>/dev/null || true
 fi
-export PATH="$HOME/.elan/bin:$PATH"
 echo "elan: $(elan --version)"
 
 # 2. The toolchain install + smoke build only make sense if the Lean
