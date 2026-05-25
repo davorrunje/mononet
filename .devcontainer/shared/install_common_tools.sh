@@ -11,7 +11,7 @@ echo -e "\033[36m=== Installing Common Tools ===\033[0m"
 
 # Conditionally install git-lfs if .gitattributes has LFS entries
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-if [ -f "$REPO_ROOT/.gitattributes" ] && grep -q 'filter=lfs' "$REPO_ROOT/.gitattributes"; then
+if [ -f "$REPO_ROOT/.gitattributes" ] && grep -qE '^[[:space:]]*[^#[:space:]].*filter=lfs' "$REPO_ROOT/.gitattributes"; then
   echo "[setup.sh] Installing git-lfs..."
   git lfs install --force
   git lfs pull || echo -e "\033[1;33mWARNING: git lfs pull failed (repo may not be committed yet).\033[0m"

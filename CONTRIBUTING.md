@@ -14,7 +14,7 @@ for the full statement. For commercial use questions, contact
 
 ## Development environments
 
-The repo ships four devcontainer flavors. Pick the one matching your
+The repo ships five devcontainer flavors. Pick the one matching your
 hardware:
 
 | Flavor          | When to use                                                      |
@@ -23,6 +23,7 @@ hardware:
 | `gpu-torch`     | GPU benchmarks against the paper's PyTorch baseline.             |
 | `gpu-jax`       | GPU work with JAX (Flax NNX).                                    |
 | `gpu-keras`     | GPU work with Keras 3 (backed by JAX with CUDA 12 by default).   |
+| `proofs`        | Reviewing the Lean 4 / mathlib4 formalization under `proofs/` (CPU, no ML extras). |
 
 In VS Code, `Ctrl/Cmd+Shift+P` → `Dev Containers: Reopen in Container`,
 then pick the flavor by name.

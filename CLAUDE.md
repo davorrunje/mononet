@@ -87,6 +87,7 @@ Four devcontainer flavors under [.devcontainer/](.devcontainer/):
 | `gpu-torch` | GPU benchmarks with PyTorch |
 | `gpu-jax` | GPU work with JAX (Flax NNX) |
 | `gpu-keras` | GPU work with Keras 3 (JAX backend + CUDA 12 by default) |
+| `proofs` | Reviewing the Lean 4 / mathlib4 formalization under `proofs/` (CPU, no ML extras) |
 
 `shared/` holds scripts reused across flavors. Selection guidance is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
