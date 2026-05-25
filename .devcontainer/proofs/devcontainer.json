@@ -23,6 +23,9 @@
             "userGid": "1000"
         },
         "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers-extra/features/apt-packages:1": {
+            "packages": "git-lfs"
+        },
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "updateContentCommand": "bash .devcontainer/proofs/setup.sh",
