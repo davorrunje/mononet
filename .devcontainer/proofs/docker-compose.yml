@@ -4,7 +4,7 @@ name: mononet-devcontainer
 services:
   python-3.13-mononet-proofs:  # nosemgrep
     image: mcr.microsoft.com/devcontainers/python:3.13
-    container_name: mononet-${USER}-python-3.13
+    container_name: mononet-${USER}-python-3.13-proofs
     pull_policy: always
     volumes:
       - ../../:/workspaces/mononet:cached
