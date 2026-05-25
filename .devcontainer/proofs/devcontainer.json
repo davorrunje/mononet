@@ -1,0 +1,53 @@
+{
+    "name": "python-3.13 — proofs (Lean)",
+    "dockerComposeFile": [
+        "./docker-compose.yml"
+    ],
+    "service": "python-3.13-mononet-proofs",
+    "shutdownAction": "stopCompose",
+    "workspaceFolder": "/workspaces/mononet",
+    "remoteEnv": {},
+    "containerEnv": {
+        "CLAUDE_CONFIG_DIR": "/root/.claude",
+        "PATH": "/root/.elan/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    },
+    "postCreateCommand": "bash .devcontainer/shared/post-create.sh",
+    "remoteUser": "root",
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "installOhMyZsh": true,
+            "configureZshAsDefaultShell": true,
+            "username": "vscode",
+            "userUid": "1000",
+            "userGid": "1000"
+        },
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "updateContentCommand": "bash .devcontainer/proofs/setup.sh",
+    "initializeCommand": "bash .devcontainer/shared/host-init.sh",
+    "mounts": [
+        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume",
+        "source=${localEnv:HOME}/.config/mononet-devcontainer,target=/var/run/devcontainer-host-secrets,type=bind,readonly"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "editor.formatOnSave": true,
+                "editor.rulers": [88],
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "terminal.integrated.profiles.linux": {
+                    "zsh": { "path": "/bin/zsh" }
+                },
+                "lean4.serverEnv": {
+                    "PATH": "/root/.elan/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                }
+            },
+            "extensions": [
+                "leanprover.lean4",
+                "anthropic.claude-code"
+            ]
+        }
+    }
+}
