@@ -44,6 +44,13 @@ Code: PolyForm Noncommercial 1.0.0. Patent: US 11,551,063 reserved
 (assignee: AIRT Technologies Ltd.). Commercial users contact
 **licensing@airt.ai**. See [`NOTICE.md`](NOTICE.md) for full details.
 
+## Formal proofs
+
+Every theorem in the paper is mechanized in Lean 4 + mathlib4 under
+[`proofs/`](proofs/). See
+[the cross-reference page](https://davorrunje.github.io/mononet/concepts/proofs.html)
+for the paper-claim ↔ Lean-theorem ↔ Python-test mapping.
+
 ## Documentation
 
 Full docs at <https://davorrunje.github.io/mononet/>. Source for guides
