@@ -29,10 +29,13 @@ fi
 export PATH="$HOME/.elan/bin:$PATH"
 echo "elan: $(elan --version)"
 
-# 2. The toolchain install + smoke build only make sense if proofs/ is
-#    on disk (this branch may run before PR #18 lands).
-if [ ! -d "$REPO_ROOT/proofs" ]; then
-  echo -e "\033[1;33mproofs/ directory not present; skipping toolchain install and smoke build.\033[0m"
+# 2. The toolchain install + smoke build only make sense if the Lean
+#    project files are actually on disk (testing the presence of the
+#    proofs/lean-toolchain file is more robust than testing the
+#    directory itself — `proofs/.lake/` artifact dirs can be left
+#    behind by prior work without the source files being there).
+if [ ! -f "$REPO_ROOT/proofs/lean-toolchain" ]; then
+  echo -e "\033[1;33mproofs/lean-toolchain not present; skipping toolchain install and smoke build.\033[0m"
   echo -e "\033[1;33mThis is expected when this script runs before the Lean proofs PR has merged.\033[0m"
   echo -e "\033[32m✓ elan installed; Lean toolchain install deferred\033[0m"
   exit 0
