@@ -7,4 +7,5 @@ Background reading on monotonic neural networks.
 
 monotonicity
 layers
+proofs
 ```
