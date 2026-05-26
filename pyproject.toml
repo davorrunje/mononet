@@ -46,8 +46,8 @@ all         = ["mononet[torch,jax,keras]"]
 # GPU backends — devcontainer-level scripts configure the framework's
 # CUDA wheel index when needed.
 torch-gpu   = ["torch>=2.4"]
-jax-gpu     = ["jax[cuda12]>=0.4.30", "flax>=0.10"]
-keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.4.30"]
+jax-gpu     = ["jax[cuda12]>=0.10.1", "flax>=0.10"]
+keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.10.1"]
 
 [dependency-groups]
 dev = [
