@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -55,7 +55,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -83,7 +83,7 @@ jobs:
           - { os: windows-latest, python-version: "3.13", backend: jax }
           - { os: windows-latest, python-version: "3.13", backend: keras }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
