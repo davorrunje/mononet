@@ -91,13 +91,13 @@ class MonoLinear(nnx.Module):
         :returns: Output tensor of shape ``(batch, units)``.
         """
         bias = (
-            self.bias.value
+            self.bias[...]
             if self.bias is not None
-            else jnp.zeros((self.weight.value.shape[1],), dtype=x.dtype)
+            else jnp.zeros((self.weight[...].shape[1],), dtype=x.dtype)
         )
         return _kernels.monotonic_dense(
             x,
-            self.weight.value,
+            self.weight[...],
             bias,
             self.mode,
             self.activation_name,
@@ -162,11 +162,11 @@ class MonoResidual(nnx.Module):
         :param x: Input tensor of shape ``(batch, in_features)``.
         :returns: Output tensor of shape ``(batch, units)``.
         """
-        skip = x if self.skip_weight is None else x @ jnp.exp(self.skip_weight.value)
+        skip = x if self.skip_weight is None else x @ jnp.exp(self.skip_weight[...])
         fx: jnp.ndarray = self.F(x)  # type: ignore[assignment]
         return (
-            _kernels.gate(self.alpha_gate, self.alpha.value) * skip
-            + _kernels.gate(self.beta_gate, self.beta.value) * fx
+            _kernels.gate(self.alpha_gate, self.alpha[...]) * skip
+            + _kernels.gate(self.beta_gate, self.beta[...]) * fx
         )
 
 
@@ -192,4 +192,4 @@ class MonoInput(nnx.Module):
         :param x: Input tensor of shape ``(batch, features)``.
         :returns: Sign-flipped tensor of the same shape.
         """
-        return x * self.directions.value.astype(x.dtype)
+        return x * self.directions[...].astype(x.dtype)
