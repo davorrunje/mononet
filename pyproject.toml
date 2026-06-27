@@ -137,7 +137,6 @@ module = [
     "mononet.torch.models",
     "mononet.jax.layers",
     "mononet.keras.layers",
-    "mononet.keras.models",
 ]
 disallow_subclassing_any = false
 

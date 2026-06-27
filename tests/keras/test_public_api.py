@@ -4,40 +4,44 @@ from __future__ import annotations
 
 import os
 
+import numpy as np
 import pytest
 
 os.environ.setdefault("KERAS_BACKEND", "jax")
 keras = pytest.importorskip("keras")
+from keras import ops  # noqa: E402
 
 
-def test_mono_dense_exists_and_is_keras_layer() -> None:
+def test_exports() -> None:
+    import mononet.keras as kmod
+
+    assert set(kmod.__all__) == {"MonoDense", "MonoResidual", "MonoInput"}
+
+
+def test_mono_dense_runs_and_serializes() -> None:
     from mononet.keras import MonoDense
 
-    assert issubclass(MonoDense, keras.layers.Layer)
+    layer = MonoDense(5, mode="absolute", convex_fraction=0.25)
+    y = layer(ops.zeros((2, 3)))
+    assert tuple(y.shape) == (2, 5)
+    cfg = layer.get_config()
+    clone = MonoDense.from_config(cfg)
+    assert clone.mode == "absolute"
+    assert clone.convex_fraction == 0.25
 
 
-def test_mono_mlp_exists_and_is_keras_model() -> None:
-    from mononet.keras import MonoMLP
+def test_mono_residual_warm_start_near_identity() -> None:
+    from mononet.keras import MonoResidual
 
-    assert issubclass(MonoMLP, keras.Model)
-
-
-def test_instantiating_mono_dense_raises_not_implemented() -> None:
-    import numpy as np
-
-    from mononet.core.types import ActivationSpec, MonotonicityMask
-    from mononet.keras import MonoDense
-
-    with pytest.raises(NotImplementedError):
-        MonoDense(
-            units=4,
-            monotonicity=MonotonicityMask(np.ones(8, dtype=np.int8)),
-            activation=ActivationSpec(name="relu"),
-        )
+    block = MonoResidual(4, mode="switch")
+    x = ops.convert_to_tensor(np.random.default_rng(0).normal(size=(3, 4)))
+    assert bool(ops.all(ops.abs(block(x) - x) < 5e-3))
 
 
-def test_no_unexpected_top_level_exports() -> None:
-    import mononet.keras as k
+def test_mono_input_flips_signs() -> None:
+    from mononet.core.types import MonotonicityMask
+    from mononet.keras import MonoInput
 
-    expected = {"MonoDense", "MonoMLP"}
-    assert set(k.__all__) == expected
+    layer = MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
+    x = ops.convert_to_tensor(np.array([[1.0, 2.0, 3.0]]))
+    assert bool(ops.all(layer(x) == ops.convert_to_tensor(np.array([[1.0, -2.0, 3.0]]))))
