@@ -53,24 +53,23 @@ Each backend mirrors the same internal shape so contributors can move between th
 ```
 mononet/<backend>/        # backend ∈ {torch, jax, keras}
 ├── _kernels.py           # private, pure-functional ops — the math, in framework-native tensors
-├── layers.py             # public, Module/Layer wrappers around _kernels
-└── models.py             # public, composed models (MonoMLP, MonoFeatureBlock)
+└── layers.py             # public, Module/Layer wrappers around _kernels
 ```
 
 - `_kernels.py` is **stateless**. Everything (weights, masks, splits) is passed in. This is what the equivalence harness validates.
-- `layers.py` wraps a kernel in the framework-idiomatic stateful container (`nn.Module`, `nnx.Module`, `keras.Layer`).
-- `models.py` composes layers into the two architectures from the paper (Fig. 4 → `MonoMLP`, Fig. 5 → `MonoFeatureBlock`).
+- `layers.py` holds all public layer classes: `MonoLinear`/`MonoDense`, `MonoResidual`, and `MonoInput`. There are no composed model classes — users stack layers with the framework's native `Sequential` (or equivalent).
 
 [mononet/core/reference.py](mononet/core/reference.py) holds the **NumPy reference implementation** — the arithmetic ground truth. Every backend kernel is asserted equivalent to it within fixed tolerance. Currently stubbed with `NotImplementedError`; signatures are locked.
 
-[mononet/core/types.py](mononet/core/types.py) and [mononet/core/config.py](mononet/core/config.py) hold the **shared types** (`MonotonicityMask`, `ActivationSpec`, `InitSpec`, `MonoLinearConfig`). These are stdlib `dataclasses`, not Pydantic, with JSON round-trip for benchmark reproducibility. **Pydantic was deliberately rejected** to keep the wheel light and avoid Rust-binary conflicts with other ML libraries — do not reintroduce it.
+[mononet/core/types.py](mononet/core/types.py) and [mononet/core/config.py](mononet/core/config.py) hold the **shared types** (`MonotonicityMask`, `ActivationSpec`, `InitSpec`, `MonoConfig`, `MonoResidualConfig`). These are stdlib `dataclasses`, not Pydantic, with JSON round-trip for benchmark reproducibility. **Pydantic was deliberately rejected** to keep the wheel light and avoid Rust-binary conflicts with other ML libraries — do not reintroduce it.
 
 ### Naming
 
 - PyTorch and JAX: `MonoLinear` (mirrors their `Linear`).
 - Keras: `MonoDense` (mirrors its `Dense`).
-- Composed models share `MonoMLP` / `MonoFeatureBlock` across backends.
-- Pure-function NumPy reference uses `snake_case` (`monotonic_dense`, `monotonic_mlp`) to flag it as the reference, not a layer.
+- `MonoResidual` and `MonoInput` share one name across all three backends.
+- There are no composed model classes (`MonoMLP`/`MonoFeatureBlock` were dropped).
+- Pure-function NumPy reference uses `snake_case` (`monotonic_dense`, `monotonic_residual`) to flag it as the reference, not a layer.
 
 ### Lazy backend imports
 

@@ -4,6 +4,12 @@
 **Author:** Davor Runje
 **Status:** Approved (brainstorming output); pending implementation plan.
 
+> **Note (2026-06-27):** Sub-project A was redesigned after initial scaffolding. The current
+> implementation is described in
+> [2026-06-27-A-core-algorithm-and-backends-design.md](2026-06-27-A-core-algorithm-and-backends-design.md).
+> Sections below reflect the original design; where they conflict with the redesign spec, the
+> redesign spec takes precedence.
+
 ## 1. Goals & non-goals
 
 ### Goals
@@ -48,18 +54,15 @@ mononet/                                # repo root
 │   ├── torch/
 │   │   ├── __init__.py
 │   │   ├── _kernels.py                 # private: framework-native math
-│   │   ├── layers.py                   # public: nn.Module subclasses
-│   │   └── models.py                   # public: composed models matching the paper
+│   │   └── layers.py                   # public: MonoLinear, MonoResidual, MonoInput
 │   ├── jax/
 │   │   ├── __init__.py                 # Flax NNX
 │   │   ├── _kernels.py
-│   │   ├── layers.py
-│   │   └── models.py
+│   │   └── layers.py                   # public: MonoLinear, MonoResidual, MonoInput
 │   ├── keras/
 │   │   ├── __init__.py                 # Keras 3, backend-agnostic via keras.ops
 │   │   ├── _kernels.py
-│   │   ├── layers.py
-│   │   └── models.py
+│   │   └── layers.py                   # public: MonoDense, MonoResidual, MonoInput
 │   └── py.typed                        # PEP 561 marker
 ├── tests/
 │   ├── core/                           # NumPy reference + property tests
@@ -121,10 +124,10 @@ Lazy — each user pays only the backend they ask for. `import mononet` works
 even with zero backends installed:
 
 ```python
-from mononet.torch import MonoLinear, MonoMLP        # imports torch only
-from mononet.jax   import MonoLinear, MonoMLP        # imports jax only
-from mononet.keras import MonoDense, MonoMLP         # imports keras only
-from mononet.core.reference import monotonic_dense   # NumPy, no framework needed
+from mononet.torch import MonoLinear, MonoResidual, MonoInput   # imports torch only
+from mononet.jax   import MonoLinear, MonoResidual, MonoInput   # imports jax only
+from mononet.keras import MonoDense, MonoResidual, MonoInput    # imports keras only
+from mononet.core.reference import monotonic_dense              # NumPy, no framework needed
 ```
 
 `mononet/__init__.py` exports `__version__` and `mononet.core` symbols only —
@@ -135,23 +138,26 @@ no eager backend imports.
 Each backend mirrors its host framework's vocabulary for the analogous
 unconstrained layer.
 
-| Concept                  | Core (NumPy)                 | PyTorch                   | JAX (Flax NNX)              | Keras 3                       |
-|--------------------------|------------------------------|---------------------------|-----------------------------|-------------------------------|
-| Single monotonic layer   | `monotonic_dense` (function) | `MonoLinear(nn.Module)`   | `MonoLinear(nnx.Module)`    | `MonoDense(keras.Layer)`      |
-| Stack of monotonic layers| `monotonic_mlp` (function)   | `MonoMLP(nn.Module)`      | `MonoMLP(nnx.Module)`       | `MonoMLP(keras.Model)`        |
-| Monotonicity spec        | `MonotonicityMask` (shared, in `mononet.core.types`)                                                       |
+| Concept                       | Core (NumPy)                      | PyTorch                        | JAX (Flax NNX)                 | Keras 3                        |
+|-------------------------------|-----------------------------------|--------------------------------|--------------------------------|--------------------------------|
+| Single monotonic layer        | `monotonic_dense` (function)      | `MonoLinear(nn.Module)`        | `MonoLinear(nnx.Module)`       | `MonoDense(keras.Layer)`       |
+| Residual monotonic block      | `monotonic_residual` (function)   | `MonoResidual(nn.Module)`      | `MonoResidual(nnx.Module)`     | `MonoResidual(keras.Layer)`    |
+| Input projection / gating     | —                                 | `MonoInput(nn.Module)`         | `MonoInput(nnx.Module)`        | `MonoInput(keras.Layer)`       |
+| Monotonicity spec             | `MonotonicityMask` — `{-1,+1}` per feature (shared in `mononet.core.types`); enforced by `MonoInput` |
 
 Rules:
 - PyTorch and JAX/Flax: `MonoLinear` (both frameworks call the standard
   analog `Linear`).
 - Keras: `MonoDense` (Keras calls it `Dense`).
-- Composed models share the name `MonoMLP` across backends — "MLP" is
-  universal and simplifies cross-backend benchmark notebooks.
+- `MonoResidual` and `MonoInput` share one name across all three backends.
+- There are no composed model classes (`MonoMLP`/`MonoFeatureBlock` were
+  dropped); users stack layers using the framework's native `Sequential`.
 - Pure-function NumPy reference uses `snake_case` (`monotonic_dense`,
-  `monotonic_mlp`) to signal stateless reference implementations, not
+  `monotonic_residual`) to signal stateless reference implementations, not
   layers.
 - Shared config/typing classes (`MonotonicityMask`, `ActivationSpec`,
-  `InitSpec`) live in `mononet.core` and are imported by all backends.
+  `InitSpec`, `MonoConfig`, `MonoResidualConfig`) live in `mononet.core`
+  and are imported by all backends.
 
 ### Files removed from the cookiecutter
 
@@ -177,10 +183,9 @@ between them:
 
 ```
 mononet/<backend>/
-├── __init__.py        # public exports: MonoLinear/MonoDense, MonoMLP
+├── __init__.py        # public exports: MonoLinear/MonoDense, MonoResidual, MonoInput
 ├── _kernels.py        # private — the math, in the framework's native ops
-├── layers.py          # public — thin Module/Layer wrappers around _kernels
-└── models.py          # public — MonoMLP composing layers
+└── layers.py          # public — MonoLinear/MonoDense, MonoResidual, MonoInput
 ```
 
 `_kernels.py` contains pure functional code (e.g. for PyTorch: a function
@@ -205,20 +210,24 @@ ML libraries.
 from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
-class MonoLinearConfig:
+class MonoConfig:
     in_features: int
     out_features: int
-    monotonicity: MonotonicityMask       # +1 / 0 / -1 per input feature
-    activation: ActivationSpec           # "relu" | "tanh" | ...; backend resolves
-    init: InitSpec                       # seed, scheme
+    monotonicity: MonotonicityMask       # +1 / -1 per input feature (no 0)
+    activation: ActivationSpec           # "relu" | "elu" | "selu" | "softplus"
+    init: InitSpec                       # seed, scheme (default: he_normal)
 
     def __post_init__(self) -> None:
-        # one-time validation: in_features > 0, mask values in {-1,0,1}, etc.
+        # one-time validation: in_features > 0, mask values in {-1,+1}, etc.
         ...
+
+@dataclass(frozen=True, slots=True)
+class MonoResidualConfig:
+    ...  # config for MonoResidual blocks
 ```
 
 Each backend layer's `__init__` accepts either the loose kwargs or a
-`MonoLinearConfig`. Configs serialize to JSON via `dataclasses.asdict()`
+`MonoConfig` / `MonoResidualConfig`. Configs serialize to JSON via `dataclasses.asdict()`
 for benchmark reproducibility; load via a `from_dict` constructor (~15
 lines total in `mononet.core.config`).
 
