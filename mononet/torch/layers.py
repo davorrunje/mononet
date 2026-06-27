@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-import numpy as np
 import torch
 from torch import nn
 
@@ -160,10 +159,10 @@ class MonoInput(nn.Module):
         """Initialise MonoInput."""
         super().__init__()
         if isinstance(directions, MonotonicityMask):
-            d = directions.values.astype(np.float32)
+            d = torch.tensor(directions.values.tolist(), dtype=torch.float32)
         else:
-            d = np.array(float(directions), dtype=np.float32)
-        self.register_buffer("directions", torch.tensor(d))
+            d = torch.tensor(float(directions), dtype=torch.float32)
+        self.register_buffer("directions", d)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Negate `-1` columns; pass `+1` columns through."""
