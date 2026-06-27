@@ -26,14 +26,14 @@ class EquivalenceCase:
     atol: float
     rtol: float
 
-    def array(self, key: str, dtype: str = "float64") -> npt.NDArray[np.floating]:
+    def array(self, key: str, dtype: str | None = None) -> npt.NDArray[np.floating]:
         """Return an input array by key, as the case's dtype.
 
         :param key: Key into `self.inputs`.
-        :param dtype: Target numpy dtype string.
+        :param dtype: Target numpy dtype string; defaults to ``self.dtype``.
         :returns: Numpy array with the requested dtype.
         """
-        return np.asarray(self.inputs[key], dtype=dtype)
+        return np.asarray(self.inputs[key], dtype=dtype or self.dtype)
 
     @property
     def dtype(self) -> str:

@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 CASES = Path(__file__).resolve().parent.parent / "tests" / "equivalence" / "cases"
 _FD_H = 1e-6
-GRAD_ATOL, GRAD_RTOL = 1e-4, 1e-3
 OUT_ATOL, OUT_RTOL = 1e-6, 1e-6
 
 
@@ -182,7 +181,7 @@ def _residual_cases() -> None:
                 "expected_output": out.tolist(),
                 "expected_grads": grads,
                 "atol": OUT_ATOL,
-                "rtol": GRAD_RTOL,
+                "rtol": OUT_RTOL,
             },
         )
 
