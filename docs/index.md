@@ -51,5 +51,6 @@ guides/index
 concepts/index
 benchmarks/index
 reference
+releasing
 about/index
 ```

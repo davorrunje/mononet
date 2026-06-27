@@ -79,27 +79,9 @@ re-execute them before a release, see "Release process" below.
 
 ## Release process
 
-1. Open a `gpu-*` devcontainer.
-2. Run `./tools/execute-benchmarks.sh` to re-execute the benchmark
-   notebooks against the GPU.
-3. `git diff docs/docs/benchmarks/` — sanity-check the new outputs.
-4. Commit the notebook updates.
-5. Trigger the `Bump Version` workflow on GitHub Actions, then merge
-   the resulting version PR.
-6. Tag the merge commit `vX.Y.Z` and push. The `Publish` workflow ships
-   the wheel to PyPI via trusted publishing; the `Docs` workflow
-   deploys versioned docs with `mike`.
-
-### One-time PyPI setup (maintainer only)
-
-Before the first release, register the project at <https://pypi.org/manage/projects/>, then under Settings → Publishing add a "trusted publisher" for:
-
-- Owner: `davorrunje`
-- Repository: `mononet`
-- Workflow filename: `publish.yml`
-- Environment: `pypi`
-
-After that, every tag-pushed release publishes via OIDC with no API tokens.
+The full maintainer runbook — one-time Trusted-Publishing setup, the Bump
+Version action, TestPyPI rehearsal, and the GitHub-Release-triggered publish —
+lives in [`docs/releasing.md`](docs/releasing.md).
 
 ## Commit messages
 

@@ -8,10 +8,19 @@ on:
         required: true
         default: 'patch'
         type: choice
+        # alpha/beta/rc/stable bump the *current* version. They work standalone
+        # only when the current version is already a pre-release (e.g.
+        # 0.0.0a0 -> alpha -> 0.0.0a1, or -> stable -> 0.0.0). From a stable
+        # version, `uv version --bump alpha` errors and you must bump a release
+        # component first (use patch/minor/major).
         options:
           - patch
           - minor
           - major
+          - alpha
+          - beta
+          - rc
+          - stable
 
 jobs:
   bump-version:

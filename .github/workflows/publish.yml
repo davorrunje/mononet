@@ -1,10 +1,18 @@
 name: Publish
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Publish target'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - testpypi
+          - pypi
 
 permissions:
   id-token: write
@@ -13,9 +21,11 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Release events always go to real PyPI. Manual dispatch honors `target`.
+    # The environment name selects the matching Trusted-Publishing identity.
     environment:
-      name: pypi
-      url: https://pypi.org/p/mononet
+      name: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi') && 'testpypi' || 'pypi' }}
+      url: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi') && 'https://test.pypi.org/p/mononet' || 'https://pypi.org/p/mononet' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -32,10 +42,20 @@ jobs:
         id: version
         run: |
           VERSION=$(./tools/get-version.sh)
-          TAG=${GITHUB_REF#refs/tags/}
-          echo "package_version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Publishing version: $VERSION (tag: $TAG)"
+          echo "package_version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Package version: $VERSION"
+
+      - name: Verify release tag matches version
+        if: github.event_name == 'release'
+        run: |
+          VERSION="${{ steps.version.outputs.package_version }}"
+          TAG="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${TAG#v}"
+          echo "Release tag: $TAG (-> $TAG_VERSION); pyproject version: $VERSION"
+          if [ "$VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Release tag $TAG (-> $TAG_VERSION) does not match pyproject version $VERSION" >&2
+            exit 1
+          fi
 
       - name: Build package
         run: uv build
@@ -46,5 +66,9 @@ jobs:
           test -f "dist/mononet-${{ steps.version.outputs.package_version }}-py3-none-any.whl"
           test -f "dist/mononet-${{ steps.version.outputs.package_version }}.tar.gz"
 
-      - name: Publish to PyPI
+      - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Empty repository-url defaults to real PyPI; set to TestPyPI only on
+          # a manual dispatch that selected the testpypi target.
+          repository-url: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi') && 'https://test.pypi.org/legacy/' || '' }}
