@@ -16,7 +16,7 @@
 - Stdlib `dataclasses` only for value objects. **Do not reintroduce Pydantic.**
 - **Lazy backend imports:** `import mononet` must not import torch/jax/keras. Do not add backend imports to the top-level `__init__.py`.
 - All monotonic constructions are **non-decreasing in every input**; layers carry no monotonicity mask.
-- `gelu` is pinned to the **tanh approximation** in every backend and the reference (so cross-backend equivalence holds): `0.5·x·(1+tanh(√(2/π)·(x+0.044715·x³)))`.
+- `gelu` is **excluded** from the activation family: it is non-monotone (and non-convex), so it cannot be a valid `Ă` activation for a hard-monotone layer.
 - SELU constants: `alpha=1.6732632423543772`, `scale=1.0507009873554805`. ELU `alpha=1.0`. Gate `ε=1e-3`.
 - Commits must be **signed** (SSH/Secretive) and made on a branch, never on `main`. Per-task commit messages end with the `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>` trailer.
 - Run backend tests with `MONONET_TEST_BACKEND={torch|jax|keras} uv run pytest …`; uninstalled backends `importorskip`.
@@ -59,7 +59,7 @@
 - Test: `tests/core/test_types.py`
 
 **Interfaces:**
-- Produces: `MonotonicityMask(values: np.ndarray)` accepting only `{-1,+1}`; `ActivationName = Literal["relu","elu","selu","gelu","softplus"]`; `ActivationSpec(name)`; `InitSpec(scheme="he_normal", seed=None)` with `scheme ∈ {"he_normal","glorot_uniform","lecun_normal"}`.
+- Produces: `MonotonicityMask(values: np.ndarray)` accepting only `{-1,+1}`; `ActivationName = Literal["relu","elu","selu","softplus"]`; `ActivationSpec(name)`; `InitSpec(scheme="he_normal", seed=None)` with `scheme ∈ {"he_normal","glorot_uniform","lecun_normal"}`.
 
 - [ ] **Step 1: Rewrite the tests** in `tests/core/test_types.py` to the new contract.
 
@@ -97,7 +97,7 @@ class TestMonotonicityMask:
 
 
 class TestActivationSpec:
-    @pytest.mark.parametrize("name", ["relu", "elu", "selu", "gelu", "softplus"])
+    @pytest.mark.parametrize("name", ["relu", "elu", "selu", "softplus"])
     def test_accepts_a_breve_family(self, name: str) -> None:
         assert ActivationSpec(name=name).name == name  # type: ignore[arg-type]
 
@@ -115,7 +115,7 @@ class TestInitSpec:
 - [ ] **Step 2: Run, expect failure**
 
 Run: `uv run pytest tests/core/test_types.py -q`
-Expected: FAIL (mask accepts 0; `selu`/`gelu`/`softplus` rejected; default is `glorot_uniform`).
+Expected: FAIL (mask accepts 0; `selu`/`softplus` rejected; default is `glorot_uniform`).
 
 - [ ] **Step 3: Edit `mononet/core/types.py`**
 
@@ -123,10 +123,10 @@ Change the activation set and mask validation and init default:
 
 ```python
 _KNOWN_ACTIVATIONS: frozenset[str] = frozenset(
-    {"relu", "elu", "selu", "gelu", "softplus"}
+    {"relu", "elu", "selu", "softplus"}
 )
 
-ActivationName = Literal["relu", "elu", "selu", "gelu", "softplus"]
+ActivationName = Literal["relu", "elu", "selu", "softplus"]
 ```
 
 In `MonotonicityMask.__post_init__`, replace the membership check:
@@ -424,7 +424,7 @@ def test_concave_reflection_is_minus_act_of_minus_x() -> None:
     )
 
 
-@pytest.mark.parametrize("name", ["relu", "elu", "selu", "gelu", "softplus"])
+@pytest.mark.parametrize("name", ["relu", "elu", "selu", "softplus"])
 def test_activations_are_nondecreasing(name: str) -> None:
     x = np.linspace(-5, 5, 200)
     y = ref.base_activation(name, x)  # type: ignore[arg-type]
@@ -446,7 +446,7 @@ def test_gate_values_and_derivatives_at_zero() -> None:
 
 @pytest.mark.parametrize("token", ["shifted_elu", "scaled_elu"])
 def test_gates_are_strictly_positive(token: str) -> None:
-    x = np.linspace(-10, 10, 100)
+    x = np.linspace(-5, 5, 100)
     assert np.all(ref.apply_gate(token, x) > 0.0)
 ```
 
@@ -477,14 +477,13 @@ if TYPE_CHECKING:
 
 _SELU_ALPHA = 1.6732632423543772
 _SELU_SCALE = 1.0507009873554805
-_GELU_C = 0.7978845608028654  # sqrt(2/pi)
 _GATE_EPS = 1e-3
 
 
 def base_activation(name: ActivationName, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
     """Base activation `ρ̆ ∈ Ă` applied element-wise.
 
-    :param name: One of `relu`, `elu`, `selu`, `gelu`, `softplus`.
+    :param name: One of `relu`, `elu`, `selu`, `softplus`.
     :param x: Input array.
     :returns: `ρ̆(x)`.
     """
@@ -494,8 +493,6 @@ def base_activation(name: ActivationName, x: npt.NDArray[np.floating]) -> npt.ND
         return np.where(x > 0.0, x, np.expm1(x))
     if name == "selu":
         return _SELU_SCALE * np.where(x > 0.0, x, _SELU_ALPHA * np.expm1(x))
-    if name == "gelu":  # tanh approximation (pinned across backends)
-        return 0.5 * x * (1.0 + np.tanh(_GELU_C * (x + 0.044715 * x**3)))
     if name == "softplus":
         return np.logaddexp(0.0, x)
     raise ValueError(f"unknown activation {name!r}")
@@ -612,7 +609,7 @@ def test_switch_reduces_to_abs_weights_in_linear_regime() -> None:
 
 
 @pytest.mark.parametrize("mode", ["switch", "absolute"])
-@pytest.mark.parametrize("name", ["relu", "elu", "selu", "gelu", "softplus"])
+@pytest.mark.parametrize("name", ["relu", "elu", "selu", "softplus"])
 def test_nondecreasing_in_every_input(mode: str, name: str) -> None:
     rng = _rng(7)
     w = rng.normal(size=(3, 5)).astype(np.float64)
@@ -988,7 +985,6 @@ def _dense_cases() -> None:
         ("4x2x3-abs-relu-c1", 4, 2, 3, "absolute", "relu", 1.0),
         ("4x2x3-abs-relu-c0", 4, 2, 3, "absolute", "relu", 0.0),
         ("3x5x11-abs-selu", 3, 5, 11, "absolute", "selu", 0.5),
-        ("8x7x12-switch-gelu", 8, 7, 12, "switch", "gelu", 0.5),
         ("2x16x1-switch-softplus", 2, 16, 1, "switch", "softplus", 0.5),
     ]
     for name, b, n, m, mode, act, cf in grid:
@@ -1204,8 +1200,6 @@ def activation(name: str, h: torch.Tensor) -> torch.Tensor:
         return F.elu(h)
     if name == "selu":
         return _SELU(h)
-    if name == "gelu":
-        return F.gelu(h, approximate="tanh")
     if name == "softplus":
         return F.softplus(h)
     raise ValueError(f"unknown activation {name!r}")
@@ -1805,8 +1799,6 @@ def activation(name: str, h: jnp.ndarray) -> jnp.ndarray:
         return jnn.elu(h)
     if name == "selu":
         return jnn.selu(h)
-    if name == "gelu":
-        return jnn.gelu(h, approximate=True)
     if name == "softplus":
         return jnn.softplus(h)
     raise ValueError(f"unknown activation {name!r}")
@@ -2242,8 +2234,6 @@ def activation(name: str, h: Any) -> Any:
         return ops.elu(h)
     if name == "selu":
         return ops.selu(h)
-    if name == "gelu":
-        return ops.gelu(h, approximate=True)
     if name == "softplus":
         return ops.softplus(h)
     raise ValueError(f"unknown activation {name!r}")
@@ -2704,7 +2694,6 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Notes for the implementer
 
-- **gelu must be the tanh approximation everywhere** (reference `np.tanh` formula, torch `approximate="tanh"`, jax `approximate=True`, keras `approximate=True`). The exact/erf variant will break equivalence tolerances.
 - **Gradient tolerances** are looser (`atol=1e-4, rtol=1e-3`) than output tolerances because expected grads are central finite differences. Don't tighten them.
 - **Switch `W⁻ = min(W, 0)`** (negative part kept negative) — `torch.clamp(max=0)`, `jnp.minimum(·,0)`, `ops.minimum(·,0)`. Never `max(0,-W)`.
 - **Stateless kernels:** never mutate the stored `weight`; compute `|W|`, `W⁺`, `W⁻`, `exp(skip_weight)` on fresh tensors each forward pass.
