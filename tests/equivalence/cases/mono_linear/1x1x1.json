@@ -1,0 +1,41 @@
+{
+  "name": "1x1x1",
+  "inputs": {
+    "x": [
+      [
+        0.8641907759039238
+      ]
+    ],
+    "weights": [
+      [
+        -1.1655210669471974
+      ]
+    ],
+    "bias": [
+      -1.4087114551828515
+    ]
+  },
+  "params": {
+    "mode": "switch",
+    "activation": "relu",
+    "convex_fraction": 0.5,
+    "dtype": "float64"
+  },
+  "expected_output": [
+    [
+      0.0
+    ]
+  ],
+  "expected_grads": {
+    "weights": [
+      [
+        0.0
+      ]
+    ],
+    "bias": [
+      0.0
+    ]
+  },
+  "atol": 1e-06,
+  "rtol": 1e-06
+}
