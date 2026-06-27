@@ -1,6 +1,5 @@
 """JAX backend (Flax NNX) for mononet."""
 
-from mononet.jax.layers import MonoLinear
-from mononet.jax.models import MonoMLP
+from mononet.jax.layers import MonoInput, MonoLinear, MonoResidual
 
-__all__ = ["MonoLinear", "MonoMLP"]
+__all__ = ["MonoInput", "MonoLinear", "MonoResidual"]

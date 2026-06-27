@@ -2,41 +2,40 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 torch = pytest.importorskip("torch")
 
 
-def test_mono_linear_exists_and_is_nn_module() -> None:
-    from mononet.torch import MonoLinear
-
-    assert issubclass(MonoLinear, torch.nn.Module)
-
-
-def test_mono_mlp_exists_and_is_nn_module() -> None:
-    from mononet.torch import MonoMLP
-
-    assert issubclass(MonoMLP, torch.nn.Module)
-
-
-def test_instantiating_mono_linear_raises_not_implemented() -> None:
-    import numpy as np
-
-    from mononet.core.types import ActivationSpec, MonotonicityMask
-    from mononet.torch import MonoLinear
-
-    with pytest.raises(NotImplementedError):
-        MonoLinear(
-            in_features=4,
-            out_features=2,
-            monotonicity=MonotonicityMask(np.zeros(4, dtype=np.int8)),
-            activation=ActivationSpec(name="relu"),
-        )
-
-
-def test_no_unexpected_top_level_exports() -> None:
+def test_exports() -> None:
     import mononet.torch as t
 
-    expected = {"MonoLinear", "MonoMLP"}
-    actual = set(t.__all__)
-    assert actual == expected, f"got: {actual}"
+    assert set(t.__all__) == {"MonoLinear", "MonoResidual", "MonoInput"}
+
+
+def test_mono_linear_is_module_and_runs() -> None:
+    import mononet.torch as t
+
+    layer = t.MonoLinear(3, 5, mode="switch")
+    assert isinstance(layer, torch.nn.Module)
+    y = layer(torch.zeros(2, 3))
+    assert y.shape == (2, 5)
+
+
+def test_mono_residual_warm_start_near_identity() -> None:
+    import mononet.torch as t
+
+    block = t.MonoResidual(4, 4, mode="switch")
+    x = torch.randn(3, 4)
+    y = block(x)
+    assert torch.allclose(y, x, atol=5e-3)
+
+
+def test_mono_input_flips_signs() -> None:
+    import mononet.torch as t
+    from mononet.core.types import MonotonicityMask
+
+    layer = t.MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
+    x = torch.tensor([[1.0, 2.0, 3.0]])
+    assert torch.allclose(layer(x), torch.tensor([[1.0, -2.0, 3.0]]))
