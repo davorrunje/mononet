@@ -42,7 +42,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - name: Install dependencies
         run: uv pip install --system -e ".[all]" --group=dev --group=lint
-      - uses: actions/cache@v6
+      - uses: actions/cache@v6.1.0
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ hashFiles('.pre-commit-config.yaml') }}
