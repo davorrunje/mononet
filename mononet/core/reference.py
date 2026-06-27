@@ -14,7 +14,7 @@ import numpy as np
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-    from mononet.core.types import ActivationName, ActivationSpec, MonotonicityMask
+    from mononet.core.types import ActivationName, ActivationSpec
 
 _SELU_ALPHA = 1.6732632423543772
 _SELU_SCALE = 1.0507009873554805
@@ -76,40 +76,39 @@ def monotonic_dense(
     x: npt.NDArray[np.floating],
     weights: npt.NDArray[np.floating],
     bias: npt.NDArray[np.floating],
-    mask: MonotonicityMask,
+    mode: str,
     activation: ActivationSpec,
+    convex_fraction: float = 0.5,
 ) -> npt.NDArray[np.floating]:
-    """Single-layer monotonic transformation (NumPy reference).
+    """Single monotonic dense transformation (NumPy reference).
+
+    Non-decreasing in every input. `switch` uses the post-activation switch
+    `rho(W_pos @ x + b) - rho(W_neg @ x + b)`; `absolute` uses `|W| @ x + b`
+    with the first `ceil(convex_fraction * m)` neurons convex and the rest
+    concave.
 
     :param x: Input array of shape `(batch, in_features)`.
-    :param weights: Unconstrained weights of shape
-        `(in_features, out_features)`.
-    :param bias: Bias vector of shape `(out_features,)`.
-    :param mask: Per-input monotonicity mask.
-    :param activation: Activation specification.
+    :param weights: Weights of shape `(in_features, out_features)`.
+    :param bias: Bias of shape `(out_features,)`.
+    :param mode: `"switch"` or `"absolute"`.
+    :param activation: Base activation rho_breve.
+    :param convex_fraction: Convex-neuron fraction (absolute mode only).
     :returns: Output array of shape `(batch, out_features)`.
+    :raises ValueError: If `mode` is not recognised.
     """
-    raise NotImplementedError(
-        "monotonic_dense reference implementation lands in the follow-up plan."
-    )
-
-
-def monotonic_mlp(
-    x: npt.NDArray[np.floating],
-    weights: list[npt.NDArray[np.floating]],
-    biases: list[npt.NDArray[np.floating]],
-    mask: MonotonicityMask,
-    activation: ActivationSpec,
-) -> npt.NDArray[np.floating]:
-    """Multi-layer monotonic MLP (NumPy reference).
-
-    :param x: Input array of shape `(batch, in_features)`.
-    :param weights: Per-layer weight arrays.
-    :param biases: Per-layer bias vectors.
-    :param mask: Monotonicity mask applied to the first layer.
-    :param activation: Activation used between hidden layers.
-    :returns: Output array of shape `(batch, weights[-1].shape[1])`.
-    """
-    raise NotImplementedError(
-        "monotonic_mlp reference implementation lands in the follow-up plan."
-    )
+    name = activation.name
+    if mode == "switch":
+        w_pos = np.maximum(weights, 0.0)
+        w_neg = np.minimum(weights, 0.0)
+        return base_activation(name, x @ w_pos + bias) - base_activation(
+            name, x @ w_neg + bias
+        )
+    if mode == "absolute":
+        h = x @ np.abs(weights) + bias
+        m = weights.shape[1]
+        c = int(np.ceil(convex_fraction * m))
+        out: npt.NDArray[np.floating] = np.empty_like(h)
+        out[:, :c] = base_activation(name, h[:, :c])
+        out[:, c:] = concave_reflection(name, h[:, c:])
+        return out
+    raise ValueError(f"mode must be 'switch' or 'absolute'; got {mode!r}")
