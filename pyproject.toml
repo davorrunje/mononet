@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mononet"
-version = "0.0.0"
+version = "0.0.0a0"
 description = "Unconstrained monotonic neural networks for PyTorch, JAX, and Keras"
 authors = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
 maintainers = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
