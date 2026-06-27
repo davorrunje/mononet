@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Private PyTorch kernels for monotonic primitives (stateless).
 
 Stateless functions that take tensors and return tensors. Wrapper

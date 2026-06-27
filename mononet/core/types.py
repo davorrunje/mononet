@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Shared types used by all mononet backends.
 
 These dataclasses are deliberately simple value objects — no Pydantic.

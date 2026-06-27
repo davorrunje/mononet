@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Smoke test: the equivalence loader finds committed cases."""
 
 from __future__ import annotations

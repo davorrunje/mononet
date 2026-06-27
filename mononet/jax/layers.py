@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """JAX (Flax NNX) idiomatic layer wrappers."""
 
 from __future__ import annotations

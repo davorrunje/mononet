@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Property test: Keras layers are non-decreasing in every input."""
 
 from __future__ import annotations

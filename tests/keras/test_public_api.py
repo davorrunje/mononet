@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Contract test for the mononet.keras public API surface."""
 
 from __future__ import annotations

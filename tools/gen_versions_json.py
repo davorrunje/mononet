@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Generate versions.json for the PyData Sphinx Theme version switcher.
 
 Run after `sphinx-polyversion` has populated docs/_build/html/<version>/

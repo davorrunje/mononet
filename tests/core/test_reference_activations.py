@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the reference activations, reflection, and gates."""
 
 from __future__ import annotations

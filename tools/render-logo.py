@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Rasterize the mononet logo SVGs to PNG / favicon outputs.
 
 Reads ``docs/_static/logo-light.svg`` and writes:
