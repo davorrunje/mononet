@@ -37,14 +37,14 @@ Paper         = "https://arxiv.org/abs/2205.11775"
 
 [project.optional-dependencies]
 # CPU backends
-torch       = ["torch>=2.4"]
+torch       = ["torch>=2.12.1"]
 jax         = ["jax>=0.4.30", "flax>=0.10"]
 keras       = ["keras>=3.5", "jax>=0.4.30"]
 all         = ["mononet[torch,jax,keras]"]
 
 # GPU backends — devcontainer-level scripts configure the framework's
 # CUDA wheel index when needed.
-torch-gpu   = ["torch>=2.4"]
+torch-gpu   = ["torch>=2.12.1"]
 jax-gpu     = ["jax[cuda12]>=0.4.30", "flax>=0.10"]
 keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.4.30"]
 
