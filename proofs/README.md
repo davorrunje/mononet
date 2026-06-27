@@ -46,5 +46,5 @@ deliberate PR, not an automated dependabot update.
 
 ## License
 
-Same as the parent project: PolyForm Noncommercial 1.0.0. See `../LICENSE`
+Same as the parent project: Apache License 2.0. See `../LICENSE`
 and `../NOTICE.md`.
