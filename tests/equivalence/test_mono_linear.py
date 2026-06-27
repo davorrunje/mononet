@@ -20,9 +20,10 @@ def _run_torch(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]
     torch = pytest.importorskip("torch")
     from mononet.torch import _kernels as k
 
-    x = torch.tensor(case.array("x"), dtype=torch.float64)
-    w = torch.tensor(case.array("weights"), dtype=torch.float64, requires_grad=True)
-    b = torch.tensor(case.array("bias"), dtype=torch.float64, requires_grad=True)
+    dtype = torch.float64 if case.dtype == "float64" else torch.float32
+    x = torch.tensor(case.array("x"), dtype=dtype)
+    w = torch.tensor(case.array("weights"), dtype=dtype, requires_grad=True)
+    b = torch.tensor(case.array("bias"), dtype=dtype, requires_grad=True)
     p = case.params
     y = k.monotonic_dense(x, w, b, p["mode"], p["activation"], p["convex_fraction"])
     y.sum().backward()  # type: ignore[no-untyped-call]

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from mononet.core import numerics
 from mononet.core import reference as ref
 from mononet.core.types import ActivationSpec
 
@@ -102,8 +103,44 @@ def _dense_cases() -> None:
                 },
                 "expected_output": out.tolist(),
                 "expected_grads": {"weights": gw.tolist(), "bias": gb.tolist()},
-                "atol": OUT_ATOL,
-                "rtol": OUT_RTOL,
+                "atol": numerics.default_atol("float64"),
+                "rtol": numerics.default_rtol("float64"),
+            },
+        )
+
+    f32_variants = [
+        ("2x16x1-switch-softplus", 2, 16, 1, "switch", "softplus", 0.5),
+        ("8x7x12-switch-elu", 8, 7, 12, "switch", "elu", 0.5),
+        ("3x5x11-abs-selu", 3, 5, 11, "absolute", "selu", 0.5),
+    ]
+    for orig_name, b, n, m, mode, act, cf in f32_variants:
+        f32_name = f"{orig_name}-f32"
+        rng = np.random.default_rng(_seed(orig_name))
+        x = rng.normal(size=(b, n))
+        w = rng.normal(size=(n, m))
+        bias = rng.normal(size=m)
+        spec = ActivationSpec(act)  # type: ignore[arg-type]
+        out = ref.monotonic_dense(x, w, bias, mode, spec, cf)
+        _write(
+            "mono_linear",
+            f32_name,
+            {
+                "name": f32_name,
+                "inputs": {
+                    "x": x.tolist(),
+                    "weights": w.tolist(),
+                    "bias": bias.tolist(),
+                },
+                "params": {
+                    "mode": mode,
+                    "activation": act,
+                    "convex_fraction": cf,
+                    "dtype": "float32",
+                },
+                "expected_output": out.tolist(),
+                "expected_grads": {},
+                "atol": numerics.default_atol("float32"),
+                "rtol": numerics.default_rtol("float32"),
             },
         )
 
