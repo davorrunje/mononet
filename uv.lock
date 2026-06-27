@@ -1784,14 +1784,14 @@ provides-extras = ["torch", "jax", "keras", "all", "torch-gpu", "jax-gpu", "kera
 
 [package.metadata.requires-dev]
 bench = [
-    { name = "matplotlib", specifier = ">=3.9" },
-    { name = "pandas", specifier = ">=2.2" },
-    { name = "scikit-learn", specifier = ">=1.5" },
+    { name = "matplotlib", specifier = "==3.10.9" },
+    { name = "pandas", specifier = "==3.0.3" },
+    { name = "scikit-learn", specifier = "==1.8.0" },
 ]
 dev = [
     { name = "hypothesis", specifier = ">=6.115" },
-    { name = "ipykernel" },
-    { name = "ipython" },
+    { name = "ipykernel", specifier = "==7.2.0" },
+    { name = "ipython", specifier = "==9.13.0" },
     { name = "mypy", specifier = "==2.1.0" },
     { name = "nest-asyncio", specifier = "==1.6.0" },
     { name = "pytest", specifier = "==9.0.3" },
@@ -1799,17 +1799,18 @@ dev = [
     { name = "pytest-cov", specifier = "==7.1.0" },
 ]
 docs = [
-    { name = "cairosvg", specifier = ">=2.7" },
-    { name = "linkify-it-py", specifier = ">=2.0" },
-    { name = "myst-nb", specifier = ">=1.1" },
-    { name = "pydata-sphinx-theme", specifier = ">=0.16" },
-    { name = "sphinx", specifier = ">=8.1" },
-    { name = "sphinx-autobuild", specifier = ">=2024.10" },
-    { name = "sphinx-autodoc2", specifier = ">=0.5" },
-    { name = "sphinx-copybutton", specifier = ">=0.5" },
-    { name = "sphinx-design", specifier = ">=0.6" },
-    { name = "sphinx-polyversion", specifier = ">=2.0" },
-    { name = "sphinx-togglebutton", specifier = ">=0.3" },
+    { name = "cairosvg", specifier = "==2.9.0" },
+    { name = "linkify-it-py", specifier = "==2.1.0" },
+    { name = "myst-nb", specifier = "==1.4.0" },
+    { name = "pydata-sphinx-theme", specifier = "==0.18.0" },
+    { name = "sphinx", marker = "python_full_version < '3.12'", specifier = "==9.0.4" },
+    { name = "sphinx", marker = "python_full_version >= '3.12'", specifier = "==9.1.0" },
+    { name = "sphinx-autobuild", specifier = "==2025.8.25" },
+    { name = "sphinx-autodoc2", specifier = "==0.5.0" },
+    { name = "sphinx-copybutton", specifier = "==0.5.2" },
+    { name = "sphinx-design", specifier = "==0.7.0" },
+    { name = "sphinx-polyversion", specifier = "==2.0.0" },
+    { name = "sphinx-togglebutton", specifier = "==0.4.5" },
 ]
 lint = [
     { name = "bandit", specifier = "==1.9.4" },
