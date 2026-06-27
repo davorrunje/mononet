@@ -44,4 +44,18 @@ def test_mono_input_flips_signs() -> None:
 
     layer = MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
     x = ops.convert_to_tensor(np.array([[1.0, 2.0, 3.0]]))
-    assert bool(ops.all(layer(x) == ops.convert_to_tensor(np.array([[1.0, -2.0, 3.0]]))))
+    assert bool(
+        ops.all(layer(x) == ops.convert_to_tensor(np.array([[1.0, -2.0, 3.0]])))
+    )
+
+
+def test_mono_input_mask_serializes() -> None:
+    from mononet.core.types import MonotonicityMask
+    from mononet.keras import MonoInput
+
+    layer = MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
+    cfg = layer.get_config()
+    clone = MonoInput.from_config(cfg)
+    x = ops.convert_to_tensor(np.array([[1.0, 2.0, 3.0]]))
+    expected = ops.convert_to_tensor(np.array([[1.0, -2.0, 3.0]]))
+    assert bool(ops.all(clone(x) == expected))

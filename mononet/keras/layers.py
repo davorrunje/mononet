@@ -161,8 +161,10 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         self.init_name = _init_name(init)
         self.alpha_gate = alpha_gate
         self.beta_gate = beta_gate
-        self.F = F if F is not None else MonoDense(
-            units, mode=mode, activation=activation, init=init
+        self.F = (
+            F
+            if F is not None
+            else MonoDense(units, mode=mode, activation=activation, init=init)
         )
 
     def build(self, input_shape: Any) -> None:
@@ -195,11 +197,12 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         :param inputs: Input tensor of shape ``(batch, in_features)``.
         :returns: Output tensor of shape ``(batch, units)``.
         """
-        skip = inputs if self.skip_w is None else ops.matmul(inputs, ops.exp(self.skip_w))
-        return (
-            _kernels.gate(self.alpha_gate, self.alpha) * skip
-            + _kernels.gate(self.beta_gate, self.beta) * self.F(inputs)
+        skip = (
+            inputs if self.skip_w is None else ops.matmul(inputs, ops.exp(self.skip_w))
         )
+        return _kernels.gate(self.alpha_gate, self.alpha) * skip + _kernels.gate(
+            self.beta_gate, self.beta
+        ) * self.F(inputs)
 
     def get_config(self) -> dict[str, Any]:
         """Serialize token/scalar fields.
@@ -224,17 +227,21 @@ class MonoInput(keras.layers.Layer):  # type: ignore[misc]
     """Sign-flip layer mapping prescribed directions onto non-decreasing layers.
 
     :param directions: Either an integer scalar (``+1`` or ``-1``) applied to
-        all inputs, or a :class:`~mononet.core.types.MonotonicityMask` with
-        per-feature signs.
+        all inputs, a :class:`~mononet.core.types.MonotonicityMask` with
+        per-feature signs, or a ``list[float]`` of per-feature signs (the
+        serialized form produced by :meth:`get_config`).
     """
 
-    def __init__(self, directions: int | MonotonicityMask, **kwargs: Any) -> None:
+    def __init__(
+        self, directions: int | MonotonicityMask | list[float], **kwargs: Any
+    ) -> None:
         """Initialise MonoInput."""
         super().__init__(**kwargs)
+        self._directions: float | list[float]
         if isinstance(directions, MonotonicityMask):
-            self._directions: float | list[float] = (
-                directions.values.astype(np.float32).tolist()
-            )
+            self._directions = directions.values.astype(np.float32).tolist()
+        elif isinstance(directions, list):
+            self._directions = directions
         else:
             self._directions = float(directions)
 

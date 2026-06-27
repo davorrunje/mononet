@@ -57,7 +57,9 @@ def _run_keras(case: EquivalenceCase) -> np.ndarray:
     from mononet.core.types import MonotonicityMask
     from mononet.keras import MonoInput
 
-    layer = MonoInput(MonotonicityMask(np.asarray(case.params["directions"], dtype=np.int8)))
+    layer = MonoInput(
+        MonotonicityMask(np.asarray(case.params["directions"], dtype=np.int8))
+    )
     return np.asarray(layer(ops.convert_to_tensor(case.array("x"))))
 
 
