@@ -136,7 +136,6 @@ module = [
     "mononet.torch.layers",
     "mononet.torch.models",
     "mononet.jax.layers",
-    "mononet.jax.models",
     "mononet.keras.layers",
     "mononet.keras.models",
 ]

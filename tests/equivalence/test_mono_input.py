@@ -21,13 +21,33 @@ def _run_torch(case: EquivalenceCase) -> np.ndarray:
 
     directions = case.params["directions"]
     layer = MonoInput(MonotonicityMask(np.asarray(directions, dtype=np.int8)))
-    out: np.ndarray = layer(  # type: ignore[assignment]
-        torch.tensor(case.array("x"), dtype=torch.float64)
-    ).detach().numpy()
+    out: np.ndarray = (
+        layer(  # type: ignore[assignment]
+            torch.tensor(case.array("x"), dtype=torch.float64)
+        )
+        .detach()
+        .numpy()
+    )
     return out
 
 
-_RUNNERS = {"torch": _run_torch}
+def _run_jax(case: EquivalenceCase) -> np.ndarray:
+    import jax
+
+    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
+    pytest.importorskip("jax")
+    import jax.numpy as jnp
+
+    from mononet.core.types import MonotonicityMask
+    from mononet.jax import MonoInput
+
+    layer = MonoInput(
+        MonotonicityMask(np.asarray(case.params["directions"], dtype=np.int8))
+    )
+    return np.asarray(layer(jnp.asarray(case.array("x"))))
+
+
+_RUNNERS = {"torch": _run_torch, "jax": _run_jax}
 
 
 @pytest.mark.parametrize("case", CASES, ids=IDS)
