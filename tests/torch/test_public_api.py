@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Contract test for the mononet.torch public API surface."""
 
 from __future__ import annotations

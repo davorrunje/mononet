@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Cross-backend equivalence for the mono_linear kernel."""
 
 from __future__ import annotations

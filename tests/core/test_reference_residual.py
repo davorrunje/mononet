@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for monotonic_residual reference."""
 
 from __future__ import annotations

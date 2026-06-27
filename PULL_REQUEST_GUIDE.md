@@ -602,7 +602,7 @@ cat > /tmp/new_feature_pr.md << 'EOF'
 This PR adds essential standard files that every professional repository should have.
 
 ## Files Added (10 total)
-- **LICENSE** — PolyForm Noncommercial License 1.0.0
+- **LICENSE** — Apache License 2.0
 - **SECURITY.md** — Responsible disclosure policy
 - **CONTRIBUTING.md** — Development and contribution guidelines
 - **.editorconfig** — Consistent formatting configuration

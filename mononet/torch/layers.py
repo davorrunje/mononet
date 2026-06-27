@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """PyTorch idiomatic layer wrappers around mononet kernels."""
 
 from __future__ import annotations

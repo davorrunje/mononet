@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Keras 3 backend for mononet.
 
 Uses ``keras.ops``, so the same code runs whether the user has Keras set

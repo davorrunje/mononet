@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Smoke tests for the top-level package import surface."""
 
 from __future__ import annotations

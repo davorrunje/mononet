@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """NumPy reference implementations of the monotonic primitives.
 
 Arithmetic ground truth for the cross-backend equivalence harness. Papers:

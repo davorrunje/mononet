@@ -731,6 +731,11 @@ index).
 
 ## 7. License, NOTICE, and documentation
 
+> **Superseded 2026-06-28:** the project relicensed from PolyForm
+> Noncommercial 1.0.0 to **Apache-2.0**. The PolyForm details below are
+> retained as historical record; the current license posture is defined in
+> [`2026-06-28-relicense-apache-2.0-design.md`](2026-06-28-relicense-apache-2.0-design.md).
+
 ### `LICENSE` — verbatim PolyForm Noncommercial 1.0.0
 
 The file holds the unmodified license text from

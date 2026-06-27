@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Unit tests for mononet.core.types."""
 
 from __future__ import annotations

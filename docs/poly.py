@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 r"""sphinx-polyversion driver for mononet docs.
 
 Builds the ``main`` branch (and any future ``v*.*.*`` tag) into

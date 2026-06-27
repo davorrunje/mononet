@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Backend-agnostic configuration objects.
 
 Plain dataclasses with `__post_init__` validation. Round-trip to JSON for
