@@ -7,6 +7,8 @@ import os
 import numpy as np
 import pytest
 
+os.environ.setdefault("KERAS_BACKEND", "jax")
+
 from tests.equivalence._cases import EquivalenceCase, load_cases
 
 BACKEND = os.environ.get("MONONET_TEST_BACKEND", "torch")
@@ -51,7 +53,30 @@ def _run_jax(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     return np.asarray(y), {"weights": np.asarray(gw), "bias": np.asarray(gb)}
 
 
-_RUNNERS = {"torch": _run_torch, "jax": _run_jax}
+def _run_keras(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    pytest.importorskip("keras")
+    import jax  # CI default KERAS_BACKEND=jax
+    import jax.numpy as jnp
+
+    from mononet.keras import _kernels as k
+
+    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
+    p = case.params
+    x = jnp.asarray(case.array("x"))
+
+    def loss(w: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.asarray(
+            k.monotonic_dense(x, w, b, p["mode"], p["activation"], p["convex_fraction"])
+        ).sum()
+
+    w = jnp.asarray(case.array("weights"))
+    b = jnp.asarray(case.array("bias"))
+    y = k.monotonic_dense(x, w, b, p["mode"], p["activation"], p["convex_fraction"])
+    gw, gb = jax.grad(loss, argnums=(0, 1))(w, b)
+    return np.asarray(y), {"weights": np.asarray(gw), "bias": np.asarray(gb)}
+
+
+_RUNNERS = {"torch": _run_torch, "jax": _run_jax, "keras": _run_keras}
 
 
 @pytest.mark.parametrize("case", CASES, ids=IDS)
