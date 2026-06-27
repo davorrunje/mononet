@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import torch
 from torch import nn
@@ -12,8 +12,6 @@ from mononet.torch import _kernels
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-_InitScheme = Literal["he_normal", "glorot_uniform", "lecun_normal"]
 
 _INIT_FNS: dict[str, Callable[[torch.Tensor], torch.Tensor]] = {
     "he_normal": lambda t: nn.init.kaiming_normal_(t, nonlinearity="relu"),

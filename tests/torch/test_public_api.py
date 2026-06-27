@@ -15,27 +15,27 @@ def test_exports() -> None:
 
 
 def test_mono_linear_is_module_and_runs() -> None:
-    from mononet.torch import MonoLinear
+    import mononet.torch as t
 
-    layer = MonoLinear(3, 5, mode="switch")
+    layer = t.MonoLinear(3, 5, mode="switch")
     assert isinstance(layer, torch.nn.Module)
     y = layer(torch.zeros(2, 3))
     assert y.shape == (2, 5)
 
 
 def test_mono_residual_warm_start_near_identity() -> None:
-    from mononet.torch import MonoResidual
+    import mononet.torch as t
 
-    block = MonoResidual(4, 4, mode="switch")
+    block = t.MonoResidual(4, 4, mode="switch")
     x = torch.randn(3, 4)
     y = block(x)
     assert torch.allclose(y, x, atol=5e-3)
 
 
 def test_mono_input_flips_signs() -> None:
+    import mononet.torch as t
     from mononet.core.types import MonotonicityMask
-    from mononet.torch import MonoInput
 
-    layer = MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
+    layer = t.MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
     x = torch.tensor([[1.0, 2.0, 3.0]])
     assert torch.allclose(layer(x), torch.tensor([[1.0, -2.0, 3.0]]))

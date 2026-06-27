@@ -17,25 +17,25 @@ def test_exports() -> None:
 
 
 def test_mono_linear_runs() -> None:
-    from mononet.jax import MonoLinear
+    import mononet.jax as j
 
-    layer = MonoLinear(3, 5, mode="switch", rngs=nnx.Rngs(0))
+    layer = j.MonoLinear(3, 5, mode="switch", rngs=nnx.Rngs(0))
     y = layer(jnp.zeros((2, 3)))
     assert y.shape == (2, 5)
 
 
 def test_mono_residual_warm_start_near_identity() -> None:
-    from mononet.jax import MonoResidual
+    import mononet.jax as j
 
-    block = MonoResidual(4, 4, mode="switch", rngs=nnx.Rngs(0))
+    block = j.MonoResidual(4, 4, mode="switch", rngs=nnx.Rngs(0))
     x = jax.random.normal(jax.random.key(1), (3, 4))
     assert jnp.allclose(block(x), x, atol=5e-3)
 
 
 def test_mono_input_flips_signs() -> None:
+    import mononet.jax as j
     from mononet.core.types import MonotonicityMask
-    from mononet.jax import MonoInput
 
-    layer = MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
+    layer = j.MonoInput(MonotonicityMask(np.array([1, -1, 1], dtype=np.int8)))
     x = jnp.array([[1.0, 2.0, 3.0]])
     assert jnp.allclose(layer(x), jnp.array([[1.0, -2.0, 3.0]]))
