@@ -31,7 +31,7 @@ def test_instantiating_mono_dense_raises_not_implemented() -> None:
     with pytest.raises(NotImplementedError):
         MonoDense(
             units=4,
-            monotonicity=MonotonicityMask(np.zeros(8, dtype=np.int8)),
+            monotonicity=MonotonicityMask(np.ones(8, dtype=np.int8)),
             activation=ActivationSpec(name="relu"),
         )
 

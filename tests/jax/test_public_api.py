@@ -30,7 +30,7 @@ def test_instantiating_mono_linear_raises_not_implemented() -> None:
         MonoLinear(
             in_features=4,
             out_features=2,
-            monotonicity=MonotonicityMask(np.zeros(4, dtype=np.int8)),
+            monotonicity=MonotonicityMask(np.ones(4, dtype=np.int8)),
             activation=ActivationSpec(name="relu"),
             rngs=nnx.Rngs(0),
         )
