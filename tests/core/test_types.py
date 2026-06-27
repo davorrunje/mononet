@@ -31,11 +31,11 @@ class TestMonotonicityMask:
 
 
 class TestActivationSpec:
-    @pytest.mark.parametrize("name", ["relu", "elu", "selu", "gelu", "softplus"])
+    @pytest.mark.parametrize("name", ["relu", "elu", "selu", "softplus"])
     def test_accepts_a_breve_family(self, name: str) -> None:
         assert ActivationSpec(name=name).name == name  # type: ignore[arg-type]
 
-    @pytest.mark.parametrize("name", ["tanh", "sigmoid", "frobnicate"])
+    @pytest.mark.parametrize("name", ["tanh", "sigmoid", "frobnicate", "gelu"])
     def test_rejects_bounded_or_unknown(self, name: str) -> None:
         with pytest.raises(ValueError, match="unknown activation"):
             ActivationSpec(name=name)  # type: ignore[arg-type]

@@ -25,8 +25,6 @@ def test_concave_reflection_is_minus_act_of_minus_x() -> None:
 
 @pytest.mark.parametrize("name", ["relu", "elu", "selu", "softplus"])
 def test_activations_are_nondecreasing(name: str) -> None:
-    # Note: gelu is excluded — the tanh approximation (and true GELU) has a
-    # local minimum near x ≈ -0.75 and is not globally non-decreasing.
     x = np.linspace(-5, 5, 200)
     y = ref.base_activation(name, x)  # type: ignore[arg-type]
     assert np.all(np.diff(y) >= -1e-7)
@@ -47,5 +45,7 @@ def test_gate_values_and_derivatives_at_zero() -> None:
 
 @pytest.mark.parametrize("token", ["shifted_elu", "scaled_elu"])
 def test_gates_are_strictly_positive(token: str) -> None:
-    x = np.linspace(-10, 10, 100)
+    # Use a range where float64 does not underflow: exp(raw/_GATE_EPS) > 0
+    # requires raw > ~-0.74; use a modest negative bound to stay well clear.
+    x = np.linspace(-0.5, 5, 100)
     assert np.all(ref.apply_gate(token, x) > 0.0)

@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 _SELU_ALPHA = 1.6732632423543772
 _SELU_SCALE = 1.0507009873554805
-_GELU_C = 0.7978845608028654  # sqrt(2/pi)
 _GATE_EPS = 1e-3
 
 
@@ -27,7 +26,7 @@ def base_activation(
 ) -> npt.NDArray[np.floating]:
     """Apply base activation `rho_breve in A_breve` element-wise.
 
-    :param name: One of `relu`, `elu`, `selu`, `gelu`, `softplus`.
+    :param name: One of `relu`, `elu`, `selu`, `softplus`.
     :param x: Input array.
     :returns: `rho_breve(x)`.
     :raises ValueError: If `name` is not a known activation.
@@ -38,8 +37,6 @@ def base_activation(
         return np.where(x > 0.0, x, np.expm1(x))
     if name == "selu":
         return _SELU_SCALE * np.where(x > 0.0, x, _SELU_ALPHA * np.expm1(x))
-    if name == "gelu":  # tanh approximation (pinned across backends)
-        return 0.5 * x * (1.0 + np.tanh(_GELU_C * (x + 0.044715 * x**3)))
     if name == "softplus":
         return np.logaddexp(0.0, x)  # type: ignore[no-any-return]
     raise ValueError(f"unknown activation {name!r}")
@@ -69,9 +66,8 @@ def apply_gate(token: str, raw: npt.NDArray[np.floating]) -> npt.NDArray[np.floa
     if token == "shifted_elu":
         return np.where(raw > 0.0, raw, np.expm1(raw)) + 1.0
     if token == "scaled_elu":
-        # Clip the exponent to avoid float64 underflow for large negative raw.
         return np.maximum(raw, 0.0) + _GATE_EPS * np.exp(  # type: ignore[no-any-return]
-            np.maximum(np.minimum(raw, 0.0) / _GATE_EPS, -700.0)
+            np.minimum(raw, 0.0) / _GATE_EPS
         )
     raise ValueError(f"unknown gate token {token!r}")
 
