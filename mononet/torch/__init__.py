@@ -1,10 +1,9 @@
 """PyTorch backend for mononet.
 
-Imports `torch` eagerly — only loaded when the user explicitly
+Imports `torch` eagerly -- only loaded when the user explicitly
 imports `mononet.torch`.
 """
 
-from mononet.torch.layers import MonoLinear
-from mononet.torch.models import MonoMLP
+from mononet.torch.layers import MonoInput, MonoLinear, MonoResidual
 
-__all__ = ["MonoLinear", "MonoMLP"]
+__all__ = ["MonoInput", "MonoLinear", "MonoResidual"]
