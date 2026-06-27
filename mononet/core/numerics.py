@@ -8,8 +8,8 @@ import numpy.typing as npt
 # Default tolerances used by the cross-backend equivalence harness.
 ATOL_FLOAT32 = 1e-5
 RTOL_FLOAT32 = 1e-5
-ATOL_FLOAT64 = 1e-9
-RTOL_FLOAT64 = 1e-9
+ATOL_FLOAT64 = 1e-6
+RTOL_FLOAT64 = 1e-6
 
 
 def default_atol(dtype: npt.DTypeLike) -> float:

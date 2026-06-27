@@ -1,80 +1,42 @@
-"""Unit tests for mononet.core.config."""
+"""Round-trip tests for mononet.core.config."""
 
 from __future__ import annotations
 
-import json
-
-import numpy as np
 import pytest
 
-from mononet.core.config import MonoLinearConfig
-from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
+from mononet.core.config import MonoConfig, MonoResidualConfig
+from mononet.core.types import ActivationSpec, InitSpec
 
 
-def _mask(n: int) -> MonotonicityMask:
-    return MonotonicityMask(np.zeros(n, dtype=np.int8))
+def test_mono_config_roundtrip() -> None:
+    cfg = MonoConfig(
+        units=8,
+        mode="absolute",
+        activation=ActivationSpec("elu"),
+        convex_fraction=0.25,
+        init=InitSpec(scheme="he_normal", seed=3),
+        bias=False,
+    )
+    assert MonoConfig.from_json(cfg.to_json()) == cfg
 
 
-class TestMonoLinearConfig:
-    def test_constructs_with_valid_args(self) -> None:
-        cfg = MonoLinearConfig(
-            in_features=8,
-            out_features=4,
-            monotonicity=_mask(8),
-            activation=ActivationSpec(name="relu"),
-            init=InitSpec(),
-        )
-        assert cfg.in_features == 8
-        assert cfg.out_features == 4
+def test_mono_config_defaults() -> None:
+    cfg = MonoConfig(units=4)
+    assert cfg.mode == "switch"
+    assert cfg.activation.name == "relu"
+    assert cfg.convex_fraction == 0.5
+    assert cfg.bias is True
 
-    def test_rejects_non_positive_in_features(self) -> None:
-        with pytest.raises(ValueError, match="in_features must be positive"):
-            MonoLinearConfig(
-                in_features=0,
-                out_features=4,
-                monotonicity=_mask(8),
-                activation=ActivationSpec(name="relu"),
-                init=InitSpec(),
-            )
 
-    def test_rejects_non_positive_out_features(self) -> None:
-        with pytest.raises(ValueError, match="out_features must be positive"):
-            MonoLinearConfig(
-                in_features=8,
-                out_features=-1,
-                monotonicity=_mask(8),
-                activation=ActivationSpec(name="relu"),
-                init=InitSpec(),
-            )
+def test_mono_config_rejects_bad_units_and_fraction() -> None:
+    with pytest.raises(ValueError, match="units must be positive"):
+        MonoConfig(units=0)
+    with pytest.raises(ValueError, match="convex_fraction"):
+        MonoConfig(units=4, convex_fraction=1.5)
 
-    def test_rejects_mismatched_mask_length(self) -> None:
-        with pytest.raises(ValueError, match="mask length"):
-            MonoLinearConfig(
-                in_features=8,
-                out_features=4,
-                monotonicity=_mask(7),
-                activation=ActivationSpec(name="relu"),
-                init=InitSpec(),
-            )
 
-    def test_round_trips_through_json(self) -> None:
-        cfg = MonoLinearConfig(
-            in_features=8,
-            out_features=4,
-            monotonicity=MonotonicityMask(
-                np.array([1, 1, 0, 0, -1, -1, 0, 0], dtype=np.int8)
-            ),
-            activation=ActivationSpec(name="tanh"),
-            init=InitSpec(scheme="he_normal", seed=42),
-        )
-        payload = cfg.to_json()
-        d = json.loads(payload)
-        assert d["in_features"] == 8
-        round_tripped = MonoLinearConfig.from_json(payload)
-        assert round_tripped.in_features == cfg.in_features
-        assert round_tripped.out_features == cfg.out_features
-        assert round_tripped.activation.name == "tanh"
-        assert round_tripped.init.seed == 42
-        np.testing.assert_array_equal(
-            round_tripped.monotonicity.values, cfg.monotonicity.values
-        )
+def test_mono_residual_config_roundtrip() -> None:
+    cfg = MonoResidualConfig(units=16, mode="switch", activation=ActivationSpec("relu"))
+    assert MonoResidualConfig.from_json(cfg.to_json()) == cfg
+    assert cfg.alpha_gate == "shifted_elu"
+    assert cfg.beta_gate == "scaled_elu"

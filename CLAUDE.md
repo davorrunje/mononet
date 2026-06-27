@@ -14,6 +14,15 @@ A multi-backend implementation of the Constrained Monotonic Neural Network const
 
 The published wheel ships **layers only** — no training loops, no dataset loaders, no benchmark code. Benchmarks live in the repo (under `benchmarks/`, planned in Sub-project B) but are not part of the package.
 
+## Key references
+
+Source papers live under [docs/references/](docs/references/). PDFs are accompanied by a curated Markdown digest (accurate equations, repo-relevant notes) — read the digest first; consult the PDF when precision matters.
+
+| Paper | Implements | Files |
+|---|---|---|
+| Runje & Shankaranarayana, *Constrained Monotonic Neural Networks*, ICML 2023 — arXiv:2205.11775 | The base CMFCL (`mode="absolute"`): `\|W\|_t` weight constraint. Paper uses a 3-class activation split `(s̆, ŝ, s̃)`; `mononet` uses a 2-class convex/concave split (see digest). | [PDF](docs/references/2205.11775v4.pdf) · [digest](docs/references/2205.11775-runje-2023-constrained-mnn.md) |
+| Sartor et al., *Advancing Constrained Monotonic Neural Networks*, ICML 2025 — arXiv:2505.02537 | The activation switch (`mode="switch"`): `f̂(x)=σ(W⁺x+b)−σ(W⁻x+b)`, no activation-split tuning. | [PDF](docs/references/2505.02537v2.pdf) · [digest](docs/references/2505.02537-sartor-2025-advancing-cmnn.md) |
+
 ## Workflow conventions
 
 ### Specs and plans live under `docs/superpowers/`
@@ -25,7 +34,7 @@ The high-level project decomposition lives in five sub-project specs dated 2026-
 
 | Spec | Topic |
 |---|---|
-| [A](docs/superpowers/specs/2026-05-22-A-core-algorithm-and-backends-design.md) | Core algorithm, three backends, cross-backend equivalence |
+| [A](docs/superpowers/specs/2026-06-27-A-core-algorithm-and-backends-design.md) | Core algorithm, three backends, cross-backend equivalence |
 | [B](docs/superpowers/specs/2026-05-22-B-paper-reproduction-design.md) | Reproduction of paper Tables 1 & 2 |
 | [C](docs/superpowers/specs/2026-05-22-C-extended-benchmarks-design.md) | Extended datasets, ablations, scaling |
 | [D](docs/superpowers/specs/2026-05-22-D-injective-monotonic-and-flows-design.md) | Strictly-monotonic primitives and normalizing flows |
@@ -44,24 +53,23 @@ Each backend mirrors the same internal shape so contributors can move between th
 ```
 mononet/<backend>/        # backend ∈ {torch, jax, keras}
 ├── _kernels.py           # private, pure-functional ops — the math, in framework-native tensors
-├── layers.py             # public, Module/Layer wrappers around _kernels
-└── models.py             # public, composed models (MonoMLP, MonoFeatureBlock)
+└── layers.py             # public, Module/Layer wrappers around _kernels
 ```
 
 - `_kernels.py` is **stateless**. Everything (weights, masks, splits) is passed in. This is what the equivalence harness validates.
-- `layers.py` wraps a kernel in the framework-idiomatic stateful container (`nn.Module`, `nnx.Module`, `keras.Layer`).
-- `models.py` composes layers into the two architectures from the paper (Fig. 4 → `MonoMLP`, Fig. 5 → `MonoFeatureBlock`).
+- `layers.py` holds all public layer classes: `MonoLinear`/`MonoDense`, `MonoResidual`, and `MonoInput`. There are no composed model classes — users stack layers with the framework's native `Sequential` (or equivalent).
 
-[mononet/core/reference.py](mononet/core/reference.py) holds the **NumPy reference implementation** — the arithmetic ground truth. Every backend kernel is asserted equivalent to it within fixed tolerance. Currently stubbed with `NotImplementedError`; signatures are locked.
+[mononet/core/reference.py](mononet/core/reference.py) holds the **NumPy reference implementation** — the arithmetic ground truth. Every backend kernel is asserted equivalent to it within fixed tolerance.
 
-[mononet/core/types.py](mononet/core/types.py) and [mononet/core/config.py](mononet/core/config.py) hold the **shared types** (`MonotonicityMask`, `ActivationSpec`, `InitSpec`, `MonoLinearConfig`). These are stdlib `dataclasses`, not Pydantic, with JSON round-trip for benchmark reproducibility. **Pydantic was deliberately rejected** to keep the wheel light and avoid Rust-binary conflicts with other ML libraries — do not reintroduce it.
+[mononet/core/types.py](mononet/core/types.py) and [mononet/core/config.py](mononet/core/config.py) hold the **shared types** (`MonotonicityMask`, `ActivationSpec`, `InitSpec`, `MonoConfig`, `MonoResidualConfig`). These are stdlib `dataclasses`, not Pydantic, with JSON round-trip for benchmark reproducibility. **Pydantic was deliberately rejected** to keep the wheel light and avoid Rust-binary conflicts with other ML libraries — do not reintroduce it.
 
 ### Naming
 
 - PyTorch and JAX: `MonoLinear` (mirrors their `Linear`).
 - Keras: `MonoDense` (mirrors its `Dense`).
-- Composed models share `MonoMLP` / `MonoFeatureBlock` across backends.
-- Pure-function NumPy reference uses `snake_case` (`monotonic_dense`, `monotonic_mlp`) to flag it as the reference, not a layer.
+- `MonoResidual` and `MonoInput` share one name across all three backends.
+- There are no composed model classes (`MonoMLP`/`MonoFeatureBlock` were dropped).
+- Pure-function NumPy reference uses `snake_case` (`monotonic_dense`, `monotonic_residual`) to flag it as the reference, not a layer.
 
 ### Lazy backend imports
 
@@ -69,7 +77,7 @@ mononet/<backend>/        # backend ∈ {torch, jax, keras}
 
 ### Cross-backend equivalence tests
 
-[tests/equivalence/](tests/equivalence/) parametrizes a battery of pre-generated `(shape, dtype, mask, activation, split, seed)` cases as committed JSON in `tests/equivalence/cases/`. The same vectors run every CI build — no flaky seeds.
+[tests/equivalence/](tests/equivalence/) parametrizes a battery of pre-generated `(shape, dtype, mode, convex_fraction, activation, seed)` cases as committed JSON in `tests/equivalence/cases/`. The same vectors run every CI build — no flaky seeds.
 
 CI selects the active backend with `MONONET_TEST_BACKEND={torch|jax|keras}` and uses `pytest.importorskip` to skip the others. Locally:
 
@@ -116,6 +124,12 @@ Full reference (including per-backend test invocations, security/static-analysis
 - Strict mypy throughout. Type hints on every function and method.
 - Stdlib `dataclasses` for simple value objects. Do not reintroduce Pydantic (see "Architecture" above).
 - Async-first where applicable (pytest-asyncio in `dev` group).
+
+## Commits
+
+- **Commit proactively.** Don't wait to be asked — commit at sensible checkpoints (a coherent change, tests passing) as you normally would. This overrides any default "commit only when the user asks" behavior.
+- **Never commit directly to `main`.** Branch first, then commit on the branch.
+- **All commits and tags must be signed.** This repo uses SSH commit signing backed by [Secretive](https://github.com/maxgoedjen/secretive) (key in the Secure Enclave). Git is configured globally: `gpg.format=ssh`, `commit.gpgsign=true`, `tag.gpgsign=true`, `user.signingkey=~/.ssh/id_secretive_signing.pub`, with `SSH_AUTH_SOCK` pointed at Secretive's agent socket. Signing may trigger a Secretive approval prompt on the host — that's expected.
 
 ## Pull requests
 

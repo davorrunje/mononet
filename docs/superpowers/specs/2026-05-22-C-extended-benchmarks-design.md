@@ -4,7 +4,7 @@
 **Author:** Davor Runje
 **Status:** Draft (brainstorming output); pending user review.
 **Parent spec:** [`2026-05-21-mononet-package-design.md`](2026-05-21-mononet-package-design.md)
-**Depends on:** [Sub-project A](2026-05-22-A-core-algorithm-and-backends-design.md) (locked public API), [Sub-project B](2026-05-22-B-paper-reproduction-design.md) (the runner, loaders, and result schema)
+**Depends on:** [Sub-project A](2026-06-27-A-core-algorithm-and-backends-design.md) (locked public API), [Sub-project B](2026-05-22-B-paper-reproduction-design.md) (the runner, loaders, and result schema)
 **Paper:** Runje & Shankaranarayana, *Constrained Monotonic Neural Networks*, ICML 2023 — <https://arxiv.org/abs/2205.11775>
 
 ## 1. Goals & non-goals

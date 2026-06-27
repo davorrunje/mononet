@@ -134,11 +134,8 @@ no_implicit_reexport = true
 [[tool.mypy.overrides]]
 module = [
     "mononet.torch.layers",
-    "mononet.torch.models",
     "mononet.jax.layers",
-    "mononet.jax.models",
     "mononet.keras.layers",
-    "mononet.keras.models",
 ]
 disallow_subclassing_any = false
 
@@ -235,3 +232,7 @@ extend-immutable-calls = [
 ]
 
 [tool.bandit]
+# B105 flags the gate-token string literals ("scaled_elu"/"shifted_elu") in the
+# _kernels modules as hardcoded passwords -- false positives in a library with
+# no secrets.
+skips = ["B105"]
