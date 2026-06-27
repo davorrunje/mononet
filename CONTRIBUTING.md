@@ -3,14 +3,13 @@
 Thank you for your interest in contributing to mononet! This guide
 covers the development workflow.
 
-## License & patent reminder
+## License of contributions
 
-`mononet` is distributed under the PolyForm Noncommercial License 1.0.0,
-and the underlying technique is covered by U.S. Patent 11,551,063. By
-contributing, you confirm that your contribution is your own work and
-that you license it under the same terms. See [`NOTICE.md`](NOTICE.md)
-for the full statement. For commercial use questions, contact
-**licensing@airt.ai**.
+`mononet` is licensed under the Apache License 2.0. Contributions are
+accepted inbound=outbound under section 5 of that license: unless you state
+otherwise, any contribution you intentionally submit for inclusion is
+licensed under Apache-2.0, with no additional terms. No CLA is required. See
+[`NOTICE.md`](NOTICE.md).
 
 ## Development environments
 
