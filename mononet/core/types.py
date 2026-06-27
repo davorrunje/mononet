@@ -12,19 +12,20 @@ from typing import Literal
 import numpy as np
 import numpy.typing as npt
 
-_KNOWN_ACTIVATIONS: frozenset[str] = frozenset({"relu", "tanh", "sigmoid", "elu"})
+_KNOWN_ACTIVATIONS: frozenset[str] = frozenset(
+    {"relu", "elu", "selu", "gelu", "softplus"}
+)
 
-ActivationName = Literal["relu", "tanh", "sigmoid", "elu"]
+ActivationName = Literal["relu", "elu", "selu", "gelu", "softplus"]
 
 
 @dataclass(frozen=True, slots=True)
 class MonotonicityMask:
     """Per-input-feature monotonicity specification.
 
-    Each entry in `values` is one of `{-1, 0, +1}`:
+    Each entry in `values` is one of `{-1, +1}`:
     - `+1`: output should be monotonically non-decreasing in this input.
     - `-1`: output should be monotonically non-increasing in this input.
-    -  `0`: no monotonicity constraint on this input.
     """
 
     values: npt.NDArray[np.int8]
@@ -34,9 +35,9 @@ class MonotonicityMask:
         arr = np.asarray(self.values, dtype=np.int8)
         if arr.ndim != 1:
             raise ValueError(f"MonotonicityMask must be 1-D; got shape {arr.shape}")
-        if not np.isin(arr, (-1, 0, 1)).all():
+        if not np.isin(arr, (-1, 1)).all():
             raise ValueError(
-                "MonotonicityMask values must be in {-1, 0, +1}; "
+                "MonotonicityMask values must be in {-1, +1}; "
                 f"got unique values {np.unique(arr).tolist()}"
             )
         # frozen dataclass — assign through object.__setattr__
@@ -76,5 +77,5 @@ class InitSpec:
     Backends resolve `scheme` to their own initializer.
     """
 
-    scheme: Literal["glorot_uniform", "he_normal", "lecun_normal"] = "glorot_uniform"
+    scheme: Literal["he_normal", "glorot_uniform", "lecun_normal"] = "he_normal"
     seed: int | None = None

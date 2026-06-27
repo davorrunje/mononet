@@ -12,7 +12,8 @@ from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
 
 
 def _mask(n: int) -> MonotonicityMask:
-    return MonotonicityMask(np.zeros(n, dtype=np.int8))
+    # All +1 is the simplest valid mask for {-1, +1}-only constraint.
+    return MonotonicityMask(np.ones(n, dtype=np.int8))
 
 
 class TestMonoLinearConfig:
@@ -62,9 +63,9 @@ class TestMonoLinearConfig:
             in_features=8,
             out_features=4,
             monotonicity=MonotonicityMask(
-                np.array([1, 1, 0, 0, -1, -1, 0, 0], dtype=np.int8)
+                np.array([1, 1, -1, -1, 1, -1, 1, -1], dtype=np.int8)
             ),
-            activation=ActivationSpec(name="tanh"),
+            activation=ActivationSpec(name="relu"),
             init=InitSpec(scheme="he_normal", seed=42),
         )
         payload = cfg.to_json()
@@ -73,7 +74,7 @@ class TestMonoLinearConfig:
         round_tripped = MonoLinearConfig.from_json(payload)
         assert round_tripped.in_features == cfg.in_features
         assert round_tripped.out_features == cfg.out_features
-        assert round_tripped.activation.name == "tanh"
+        assert round_tripped.activation.name == "relu"
         assert round_tripped.init.seed == 42
         np.testing.assert_array_equal(
             round_tripped.monotonicity.values, cfg.monotonicity.values

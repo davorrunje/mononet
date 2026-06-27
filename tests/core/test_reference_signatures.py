@@ -42,6 +42,6 @@ def test_monotonic_dense_raises_not_implemented() -> None:
             x,
             w,
             b,
-            MonotonicityMask(np.zeros(2, dtype=np.int8)),
+            MonotonicityMask(np.ones(2, dtype=np.int8)),
             ActivationSpec(name="relu"),
         )
