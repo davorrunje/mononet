@@ -1,35 +1,28 @@
 # NOTICE
 
-`mononet` is licensed under the PolyForm Noncommercial License 1.0.0
-(see `LICENSE`).
+mononet
+Copyright 2023-2026 AIRT Technologies Ltd.
+
+This product is licensed under the Apache License, Version 2.0 (see
+`LICENSE`).
 
 ## Patent
 
-This software implements technology covered by **U.S. Patent No.
-11,551,063** ("Implementing monotonic constrained neural networks",
-assignee: AIRT Technologies Ltd.). See
-<https://patents.justia.com/patent/11551063>.
+This software implements technology described in U.S. Patent No.
+11,551,063 ("Implementing monotonic constrained neural networks",
+assignee: AIRT Technologies Ltd.,
+<https://patents.justia.com/patent/11551063>).
 
-The PolyForm Noncommercial License covers your use of this *source code*
-for noncommercial purposes. It does **not** grant any rights under the
-patent, whether for commercial or noncommercial use. Practicing the
-patented method (by any means, in any framework) requires a separate
-patent license.
+The software is distributed under the Apache License 2.0. Section 3 of
+that license grants you the patent rights needed to use, make, and
+distribute this software and your derivative works of it.
 
 ## Reference paper
 
 Runje, D., Shankaranarayana, S. M. (2023). *Constrained Monotonic Neural
 Networks.* ICML 2023. <https://arxiv.org/abs/2205.11775>
 
-If you use `mononet` in academic work, please cite this paper. See
-[`docs/docs/about/citation.md`](docs/docs/about/citation.md) for the BibTeX
-entry.
-
-## Commercial licensing
-
-For commercial use of the code and/or a license to U.S. Patent
-11,551,063, contact: **licensing@airt.ai** *(placeholder — confirm the
-exact contact address before the first PyPI release)*.
+If you use `mononet` in academic work, please cite this paper.
 
 ## Trademarks
 

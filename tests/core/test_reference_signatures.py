@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests that pin the public signature of the NumPy reference."""
 
 from __future__ import annotations

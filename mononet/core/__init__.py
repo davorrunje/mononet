@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Framework-agnostic primitives shared by all backends."""
 
 from mononet.core.config import MonoConfig, MonoResidualConfig

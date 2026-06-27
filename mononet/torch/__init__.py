@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """PyTorch backend for mononet.
 
 Imports `torch` eagerly -- only loaded when the user explicitly

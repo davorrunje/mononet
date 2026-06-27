@@ -10,7 +10,7 @@ authors = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
 maintainers = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
 requires-python = ">=3.11,<3.14"
 readme = "README.md"
-license = "LicenseRef-PolyForm-Noncommercial-1.0.0"
+license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE.md"]
 keywords = ["monotonic", "neural-network", "pytorch", "jax", "keras", "deep-learning"]
 classifiers = [
@@ -34,7 +34,6 @@ Repository    = "https://github.com/davorrunje/mononet"
 Issues        = "https://github.com/davorrunje/mononet/issues"
 Changelog     = "https://github.com/davorrunje/mononet/blob/main/CHANGELOG.md"
 Paper         = "https://arxiv.org/abs/2205.11775"
-Patent        = "https://patents.justia.com/patent/11551063"
 
 [project.optional-dependencies]
 # CPU backends

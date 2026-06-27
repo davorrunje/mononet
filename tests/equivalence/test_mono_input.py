@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Cross-backend equivalence for the MonoInput sign-flip."""
 
 from __future__ import annotations

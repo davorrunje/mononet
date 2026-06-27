@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Schema and loader for committed cross-backend equivalence vectors."""
 
 from __future__ import annotations

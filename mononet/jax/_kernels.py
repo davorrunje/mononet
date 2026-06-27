@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Private JAX kernels for monotonic primitives (pure-functional)."""
 
 from __future__ import annotations

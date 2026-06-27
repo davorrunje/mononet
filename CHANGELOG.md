@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   releases.
 
 ### Changed
+- Relicensed from PolyForm Noncommercial License 1.0.0 to the **Apache
+  License 2.0**, following AIRT Technologies Ltd.'s decision to discontinue
+  patent-related activities. Apache-2.0's section 3 grants the patent
+  rights needed to use the code. Effective from the first PyPI release.
 - Switched LICENSE from proprietary (cookiecutter default) to
   **PolyForm Noncommercial License 1.0.0** (assignee: AIRT Technologies
   Ltd.).

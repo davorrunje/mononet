@@ -38,11 +38,13 @@ from mononet.jax import MonoMLP
 from mononet.keras import MonoMLP
 ```
 
-## License & patent
+## License
 
-Code: PolyForm Noncommercial 1.0.0. Patent: US 11,551,063 reserved
-(assignee: AIRT Technologies Ltd.). Commercial users contact
-**licensing@airt.ai**. See [`NOTICE.md`](NOTICE.md) for full details.
+Apache License 2.0 — see [`LICENSE`](LICENSE) and [`NOTICE.md`](NOTICE.md).
+Commercial use is permitted. The technique is described in U.S. Patent
+11,551,063 (assignee: AIRT Technologies Ltd.); the Apache-2.0 license
+grants the patent rights needed to use this code. For academic use, please
+cite the paper (see [`NOTICE.md`](NOTICE.md)).
 
 ## Formal proofs
 

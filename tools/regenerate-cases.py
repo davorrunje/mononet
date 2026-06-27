@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Regenerate committed equivalence vectors from the NumPy reference.
 
 Run: `uv run python tools/regenerate-cases.py`. Vectors are the source of

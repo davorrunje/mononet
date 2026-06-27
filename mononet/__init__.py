@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """mononet — Unconstrained monotonic neural networks.
 
 Multi-backend support for PyTorch, JAX (Flax NNX), and Keras 3.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Private Keras 3 kernels for monotonic primitives (keras.ops only)."""
 
 from __future__ import annotations
