@@ -59,7 +59,7 @@ mononet/<backend>/        # backend ∈ {torch, jax, keras}
 - `_kernels.py` is **stateless**. Everything (weights, masks, splits) is passed in. This is what the equivalence harness validates.
 - `layers.py` holds all public layer classes: `MonoLinear`/`MonoDense`, `MonoResidual`, and `MonoInput`. There are no composed model classes — users stack layers with the framework's native `Sequential` (or equivalent).
 
-[mononet/core/reference.py](mononet/core/reference.py) holds the **NumPy reference implementation** — the arithmetic ground truth. Every backend kernel is asserted equivalent to it within fixed tolerance. Currently stubbed with `NotImplementedError`; signatures are locked.
+[mononet/core/reference.py](mononet/core/reference.py) holds the **NumPy reference implementation** — the arithmetic ground truth. Every backend kernel is asserted equivalent to it within fixed tolerance.
 
 [mononet/core/types.py](mononet/core/types.py) and [mononet/core/config.py](mononet/core/config.py) hold the **shared types** (`MonotonicityMask`, `ActivationSpec`, `InitSpec`, `MonoConfig`, `MonoResidualConfig`). These are stdlib `dataclasses`, not Pydantic, with JSON round-trip for benchmark reproducibility. **Pydantic was deliberately rejected** to keep the wheel light and avoid Rust-binary conflicts with other ML libraries — do not reintroduce it.
 
@@ -77,7 +77,7 @@ mononet/<backend>/        # backend ∈ {torch, jax, keras}
 
 ### Cross-backend equivalence tests
 
-[tests/equivalence/](tests/equivalence/) parametrizes a battery of pre-generated `(shape, dtype, mask, activation, split, seed)` cases as committed JSON in `tests/equivalence/cases/`. The same vectors run every CI build — no flaky seeds.
+[tests/equivalence/](tests/equivalence/) parametrizes a battery of pre-generated `(shape, dtype, mode, convex_fraction, activation, seed)` cases as committed JSON in `tests/equivalence/cases/`. The same vectors run every CI build — no flaky seeds.
 
 CI selects the active backend with `MONONET_TEST_BACKEND={torch|jax|keras}` and uses `pytest.importorskip` to skip the others. Locally:
 
