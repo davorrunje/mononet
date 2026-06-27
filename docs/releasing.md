@@ -51,15 +51,16 @@ already a pre-release. From a stable version, bump a release component first
 2. Run **Bump Version** with the desired bump type; merge the resulting PR into
    `main`.
 3. *(Optional rehearsal)* Actions tab → **Publish** → Run workflow →
-   `target: testpypi`. Verify the project page on
+   `target: testpypi` (which is the default). Verify the project page on
    <https://test.pypi.org/project/mononet/> and a clean install:
    `pip install -i https://test.pypi.org/simple/ mononet==<version>`.
 4. Create a **GitHub Release**: tag `v<version>` (e.g. `v0.0.0a0`), target the
    merge commit on `main`, mark it **pre-release** for alphas/betas/rcs, and
    write release notes.
 5. Publishing the release fires the **Publish** workflow to real PyPI. It fails
-   fast if the tag does not match the `pyproject.toml` version. The **Docs**
-   workflow deploys the versioned docs.
+   fast if the tag does not match the `pyproject.toml` version. The `v*.*.*`
+   tag created by the release triggers the **Docs** workflow to deploy the
+   versioned docs.
 
 ## Notes
 
