@@ -1,23 +1,79 @@
 """NumPy reference implementations of the monotonic primitives.
 
-These are the **arithmetic ground truth**: every backend kernel is
-asserted equivalent to these functions within a fixed tolerance
-(see tests/equivalence/). Real implementations land in a follow-up plan;
-this module currently raises NotImplementedError but locks down the
-function signatures.
-
-Reference paper: https://arxiv.org/abs/2205.11775
+Arithmetic ground truth for the cross-backend equivalence harness. Papers:
+https://arxiv.org/abs/2205.11775 (absolute mode) and
+https://arxiv.org/abs/2505.02537 (switch mode).
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 if TYPE_CHECKING:
-    import numpy as np
     import numpy.typing as npt
 
-    from mononet.core.types import ActivationSpec, MonotonicityMask
+    from mononet.core.types import ActivationName, ActivationSpec, MonotonicityMask
+
+_SELU_ALPHA = 1.6732632423543772
+_SELU_SCALE = 1.0507009873554805
+_GELU_C = 0.7978845608028654  # sqrt(2/pi)
+_GATE_EPS = 1e-3
+
+
+def base_activation(
+    name: ActivationName, x: npt.NDArray[np.floating]
+) -> npt.NDArray[np.floating]:
+    """Apply base activation `rho_breve in A_breve` element-wise.
+
+    :param name: One of `relu`, `elu`, `selu`, `gelu`, `softplus`.
+    :param x: Input array.
+    :returns: `rho_breve(x)`.
+    :raises ValueError: If `name` is not a known activation.
+    """
+    if name == "relu":
+        return np.maximum(x, 0.0)  # type: ignore[no-any-return]
+    if name == "elu":
+        return np.where(x > 0.0, x, np.expm1(x))
+    if name == "selu":
+        return _SELU_SCALE * np.where(x > 0.0, x, _SELU_ALPHA * np.expm1(x))
+    if name == "gelu":  # tanh approximation (pinned across backends)
+        return 0.5 * x * (1.0 + np.tanh(_GELU_C * (x + 0.044715 * x**3)))
+    if name == "softplus":
+        return np.logaddexp(0.0, x)  # type: ignore[no-any-return]
+    raise ValueError(f"unknown activation {name!r}")
+
+
+def concave_reflection(
+    name: ActivationName, x: npt.NDArray[np.floating]
+) -> npt.NDArray[np.floating]:
+    """Compute the concave point reflection `rho_hat(x) = -rho_breve(-x)`.
+
+    :param name: Base activation name.
+    :param x: Input array.
+    :returns: `rho_hat(x)`.
+    """
+    return -base_activation(name, -x)
+
+
+def apply_gate(token: str, raw: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+    """Resolve a gate string token and apply it to a raw parameter.
+
+    :param token: `shifted_elu` (value 1, derivative 1 at 0) or `scaled_elu`
+        (value `ε`, derivative 1 at 0).
+    :param raw: Raw learnable gate parameter.
+    :returns: A strictly-positive gate value.
+    :raises ValueError: If the token is unknown.
+    """
+    if token == "shifted_elu":
+        return np.where(raw > 0.0, raw, np.expm1(raw)) + 1.0
+    if token == "scaled_elu":
+        # Clip the exponent to avoid float64 underflow for large negative raw.
+        return np.maximum(raw, 0.0) + _GATE_EPS * np.exp(  # type: ignore[no-any-return]
+            np.maximum(np.minimum(raw, 0.0) / _GATE_EPS, -700.0)
+        )
+    raise ValueError(f"unknown gate token {token!r}")
 
 
 def monotonic_dense(
