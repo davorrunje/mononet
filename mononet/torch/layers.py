@@ -82,9 +82,7 @@ class MonoLinear(nn.Module):
         bias: torch.Tensor = (
             self.bias
             if self.bias is not None
-            else torch.zeros(
-                self.weight.shape[1], dtype=x.dtype, device=x.device
-            )
+            else torch.zeros(self.weight.shape[1], dtype=x.dtype, device=x.device)
         )
         return _kernels.monotonic_dense(
             x, self.weight, bias, self.mode, self.activation_name, self.convex_fraction

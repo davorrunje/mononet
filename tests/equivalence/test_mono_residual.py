@@ -117,12 +117,21 @@ def _run_keras(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]
     def fwd(*vals: jnp.ndarray) -> jnp.ndarray:
         kw = dict(zip(names, vals, strict=True))
         sw = kw.pop("skip_weight", None)
-        return jnp.asarray(k.monotonic_residual(
-            x, kw["weights"], kw["bias"], kw["alpha"], kw["beta"],
-            mode=p["mode"], activation_name=p["activation"],
-            convex_fraction=p["convex_fraction"], alpha_gate=p["alpha_gate"],
-            beta_gate=p["beta_gate"], skip_weight=sw,
-        ))
+        return jnp.asarray(
+            k.monotonic_residual(
+                x,
+                kw["weights"],
+                kw["bias"],
+                kw["alpha"],
+                kw["beta"],
+                mode=p["mode"],
+                activation_name=p["activation"],
+                convex_fraction=p["convex_fraction"],
+                alpha_gate=p["alpha_gate"],
+                beta_gate=p["beta_gate"],
+                skip_weight=sw,
+            )
+        )
 
     y = fwd(*args.values())
     grads = jax.grad(lambda *v: fwd(*v).sum(), argnums=tuple(range(len(names))))(
