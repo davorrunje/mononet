@@ -88,6 +88,7 @@ bench = [
     "scikit-learn==1.8.0",
     "pandas==3.0.3",
     "matplotlib==3.10.9",
+    "xgboost==3.0.5",
 ]
 
 [tool.uv]
@@ -103,7 +104,7 @@ include = ["mononet"]
 include = ["mononet"]
 
 [tool.mypy]
-files = ["mononet", "tests"]
+files = ["mononet", "tests", "benchmarks"]
 strict = true
 strict_bytes = true
 local_partial_types = true
@@ -141,7 +142,7 @@ disallow_subclassing_any = false
 
 [tool.pytest.ini_options]
 addopts = '--cov=mononet --cov-append --cov-branch --cov-report=term-missing'
-testpaths = ["tests"]
+testpaths = ["tests", "tests/benchmarks"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function" # per-test event loops
 
@@ -155,6 +156,7 @@ include = [
     "tests/**/*.py",
     "docs/**/*.py",
     "tools/**/*.py",
+    "benchmarks/**/*.py",
     "pyproject.toml",
 ]
 exclude = ["docs/docs_src"]
@@ -214,8 +216,9 @@ ignore = [
     "D106",     # missing docstring in public nested class
     "D107",     # missing docstring in __init__
     "T20",      # flake8-print
-    "PLR2004", # magic-value-comparison
-    "S101",    # use assert
+    "PLR2004",  # magic-value-comparison
+    "S101",     # use assert
+    "N806",     # uppercase variable names (X, y matrix convention in ML tests)
 ]
 
 [tool.ruff.lint.isort]
