@@ -93,7 +93,13 @@ c = ceil(convex_fraction · units)
 point reflection (`∈ S⁺`). Sartor Prop. 3.9 shows that a convex activation
 and its reflection are sufficient for universal monotonic approximation, so
 the third **saturated class `ρ̃` of the 2023 paper is intentionally omitted**.
-`convex_fraction ∈ [0, 1]`; `0` ⇒ all-concave, `1` ⇒ all-convex.
+`convex_fraction ∈ [0, 1]`; `0` ⇒ all-concave, `1` ⇒ all-convex. The two
+endpoints are a deliberately useful modeling capability of `absolute` mode:
+**`convex_fraction=1` constructs a (monotone) convex function and
+`convex_fraction=0` a (monotone) concave one** — matching Corollary 3 of the
+2023 paper (`s=(m,0,0)` ⇒ convex, `s=(0,m,0)` ⇒ concave). `switch` mode does
+not expose this control: every neuron carries both a convex and a concave
+piece, so per-layer convexity/concavity is not separable.
 
 ### 2.3 The dual-gated monotone residual block (`MonoResidual`)
 
