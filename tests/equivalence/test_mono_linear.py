@@ -29,7 +29,29 @@ def _run_torch(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]
     return y.detach().numpy(), {"weights": w.grad.numpy(), "bias": b.grad.numpy()}
 
 
-_RUNNERS = {"torch": _run_torch}  # jax/keras runners added in their phases
+def _run_jax(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    jax = pytest.importorskip("jax")
+    jax.config.update("jax_enable_x64", True)
+    import jax.numpy as jnp
+
+    from mononet.jax import _kernels as k
+
+    p = case.params
+    x = jnp.asarray(case.array("x"))
+    w = jnp.asarray(case.array("weights"))
+    b = jnp.asarray(case.array("bias"))
+
+    def loss(w: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return k.monotonic_dense(
+            x, w, b, p["mode"], p["activation"], p["convex_fraction"]
+        ).sum()
+
+    y = k.monotonic_dense(x, w, b, p["mode"], p["activation"], p["convex_fraction"])
+    gw, gb = jax.grad(loss, argnums=(0, 1))(w, b)
+    return np.asarray(y), {"weights": np.asarray(gw), "bias": np.asarray(gb)}
+
+
+_RUNNERS = {"torch": _run_torch, "jax": _run_jax}
 
 
 @pytest.mark.parametrize("case", CASES, ids=IDS)

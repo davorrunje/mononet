@@ -59,7 +59,45 @@ def _run_torch(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]
     return y.detach().numpy(), grads
 
 
-_RUNNERS = {"torch": _run_torch}
+def _run_jax(case: EquivalenceCase) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    jax = pytest.importorskip("jax")
+    jax.config.update("jax_enable_x64", True)
+    import jax.numpy as jnp
+
+    from mononet.jax import _kernels as k
+
+    p = case.params
+    x = jnp.asarray(case.array("x"))
+    args = {n: jnp.asarray(case.array(n)) for n in ("weights", "bias", "alpha", "beta")}
+    if p["has_projection"]:
+        args["skip_weight"] = jnp.asarray(case.array("skip_weight"))
+    names = list(args)
+
+    def fwd(*vals: jnp.ndarray) -> jnp.ndarray:
+        kw = dict(zip(names, vals, strict=True))
+        sw = kw.pop("skip_weight", None)
+        return k.monotonic_residual(
+            x,
+            kw["weights"],
+            kw["bias"],
+            kw["alpha"],
+            kw["beta"],
+            mode=p["mode"],
+            activation_name=p["activation"],
+            convex_fraction=p["convex_fraction"],
+            alpha_gate=p["alpha_gate"],
+            beta_gate=p["beta_gate"],
+            skip_weight=sw,
+        )
+
+    y = fwd(*args.values())
+    grads = jax.grad(lambda *v: fwd(*v).sum(), argnums=tuple(range(len(names))))(
+        *args.values()
+    )
+    return np.asarray(y), {n: np.asarray(g) for n, g in zip(names, grads, strict=True)}
+
+
+_RUNNERS = {"torch": _run_torch, "jax": _run_jax}
 
 
 @pytest.mark.parametrize("case", CASES, ids=IDS)
