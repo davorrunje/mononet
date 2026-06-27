@@ -14,6 +14,15 @@ A multi-backend implementation of the Constrained Monotonic Neural Network const
 
 The published wheel ships **layers only** — no training loops, no dataset loaders, no benchmark code. Benchmarks live in the repo (under `benchmarks/`, planned in Sub-project B) but are not part of the package.
 
+## Key references
+
+Source papers live under [docs/references/](docs/references/). PDFs are accompanied by a curated Markdown digest (accurate equations, repo-relevant notes) — read the digest first; consult the PDF when precision matters.
+
+| Paper | Implements | Files |
+|---|---|---|
+| Runje & Shankaranarayana, *Constrained Monotonic Neural Networks*, ICML 2023 — arXiv:2205.11775 | The base CMFCL (`mode="absolute"`): `\|W\|_t` weight constraint. Paper uses a 3-class activation split `(s̆, ŝ, s̃)`; `mononet` uses a 2-class convex/concave split (see digest). | [PDF](docs/references/2205.11775v4.pdf) · [digest](docs/references/2205.11775-runje-2023-constrained-mnn.md) |
+| Sartor et al., *Advancing Constrained Monotonic Neural Networks*, ICML 2025 — arXiv:2505.02537 | The activation switch (`mode="switch"`): `f̂(x)=σ(W⁺x+b)−σ(W⁻x+b)`, no activation-split tuning. | [PDF](docs/references/2505.02537v2.pdf) · [digest](docs/references/2505.02537-sartor-2025-advancing-cmnn.md) |
+
 ## Workflow conventions
 
 ### Specs and plans live under `docs/superpowers/`
@@ -25,7 +34,7 @@ The high-level project decomposition lives in five sub-project specs dated 2026-
 
 | Spec | Topic |
 |---|---|
-| [A](docs/superpowers/specs/2026-05-22-A-core-algorithm-and-backends-design.md) | Core algorithm, three backends, cross-backend equivalence |
+| [A](docs/superpowers/specs/2026-06-27-A-core-algorithm-and-backends-design.md) | Core algorithm, three backends, cross-backend equivalence |
 | [B](docs/superpowers/specs/2026-05-22-B-paper-reproduction-design.md) | Reproduction of paper Tables 1 & 2 |
 | [C](docs/superpowers/specs/2026-05-22-C-extended-benchmarks-design.md) | Extended datasets, ablations, scaling |
 | [D](docs/superpowers/specs/2026-05-22-D-injective-monotonic-and-flows-design.md) | Strictly-monotonic primitives and normalizing flows |
@@ -116,6 +125,12 @@ Full reference (including per-backend test invocations, security/static-analysis
 - Strict mypy throughout. Type hints on every function and method.
 - Stdlib `dataclasses` for simple value objects. Do not reintroduce Pydantic (see "Architecture" above).
 - Async-first where applicable (pytest-asyncio in `dev` group).
+
+## Commits
+
+- **Commit proactively.** Don't wait to be asked — commit at sensible checkpoints (a coherent change, tests passing) as you normally would. This overrides any default "commit only when the user asks" behavior.
+- **Never commit directly to `main`.** Branch first, then commit on the branch.
+- **All commits and tags must be signed.** This repo uses SSH commit signing backed by [Secretive](https://github.com/maxgoedjen/secretive) (key in the Secure Enclave). Git is configured globally: `gpg.format=ssh`, `commit.gpgsign=true`, `tag.gpgsign=true`, `user.signingkey=~/.ssh/id_secretive_signing.pub`, with `SSH_AUTH_SOCK` pointed at Secretive's agent socket. Signing may trigger a Secretive approval prompt on the host — that's expected.
 
 ## Pull requests
 
