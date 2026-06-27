@@ -21,3 +21,7 @@ def test_monotonic_dense_signature() -> None:
 
 def test_monotonic_mlp_removed() -> None:
     assert not hasattr(reference, "monotonic_mlp")
+
+
+def test_monotonic_residual_exists() -> None:
+    assert callable(reference.monotonic_residual)

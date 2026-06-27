@@ -112,3 +112,42 @@ def monotonic_dense(
         out[:, c:] = concave_reflection(name, h[:, c:])
         return out
     raise ValueError(f"mode must be 'switch' or 'absolute'; got {mode!r}")
+
+
+def monotonic_residual(
+    x: npt.NDArray[np.floating],
+    weights: npt.NDArray[np.floating],
+    bias: npt.NDArray[np.floating],
+    alpha: npt.NDArray[np.floating],
+    beta: npt.NDArray[np.floating],
+    *,
+    mode: str = "switch",
+    activation: ActivationSpec,
+    convex_fraction: float = 0.5,
+    alpha_gate: str = "shifted_elu",
+    beta_gate: str = "scaled_elu",
+    skip_weight: npt.NDArray[np.floating] | None = None,
+) -> npt.NDArray[np.floating]:
+    """Dual-gated monotone residual block (NumPy reference).
+
+    `y = g_alpha(alpha)*skip(x) + g_beta(beta)*F(x)`, with `F` a
+    `monotonic_dense` and `skip` the identity (or `exp(skip_weight)`
+    projection).
+
+    :param x: Input `(batch, in_features)`.
+    :param weights: `F` weights `(in_features, units)`.
+    :param bias: `F` bias `(units,)`.
+    :param alpha: Scalar raw skip-gate parameter.
+    :param beta: Scalar raw residual-gate parameter.
+    :param mode: `F` mode.
+    :param activation: `F` base activation.
+    :param convex_fraction: `F` convex fraction (absolute mode).
+    :param alpha_gate: Skip-gate token.
+    :param beta_gate: Residual-gate token.
+    :param skip_weight: Projection weights `(in_features, units)`, or `None`
+        for an identity skip (requires `in_features == units`).
+    :returns: Output `(batch, units)`.
+    """
+    f = monotonic_dense(x, weights, bias, mode, activation, convex_fraction)
+    skip = x if skip_weight is None else x @ np.exp(skip_weight)
+    return apply_gate(alpha_gate, alpha) * skip + apply_gate(beta_gate, beta) * f
