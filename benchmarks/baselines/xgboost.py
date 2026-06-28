@@ -29,7 +29,7 @@ def run_xgboost(bundle: DatasetBundle, *, seed: int = 0) -> dict[str, float]:
 
         # Compute metrics
         mse = float(((bundle.y_test - y_pred) ** 2).mean())
-        rmse = float(mse ** 0.5)
+        rmse = float(mse**0.5)
 
         return {"mse": mse, "rmse": rmse}
 

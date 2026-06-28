@@ -1,3 +1,5 @@
+from typing import Literal, cast
+
 import numpy as np
 import pytest
 
@@ -6,7 +8,7 @@ pytest.importorskip("jax")
 import jax
 import jax.numpy as jnp
 
-jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
 
 from benchmarks._common.bundle import DatasetBundle  # noqa: E402
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec  # noqa: E402
@@ -35,7 +37,7 @@ def _cfg(mode: str, residual: bool) -> BenchmarkConfig:
     return BenchmarkConfig(
         dataset="syn",
         backend="jax",
-        mode=mode,
+        mode=cast("Literal['switch', 'absolute']", mode),
         residual=residual,
         depth=2,
         width=8,

@@ -88,7 +88,9 @@ def download_all(dest: Path | None = None, *, force: bool = False) -> list[Path]
             out.append(target)
             continue
         url = ZENODO_URL.format(name=name)
-        urllib.request.urlretrieve(url, target)
+        urllib.request.urlretrieve(  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
+            url, target
+        )
         if want and not verify(target, want):
             raise RuntimeError(f"checksum mismatch for {name} after download")
         out.append(target)

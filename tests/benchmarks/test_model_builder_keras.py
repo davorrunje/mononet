@@ -1,3 +1,5 @@
+from typing import Literal, cast
+
 import numpy as np
 import pytest
 
@@ -32,7 +34,7 @@ def _cfg(mode: str, residual: bool) -> BenchmarkConfig:
     return BenchmarkConfig(
         dataset="syn",
         backend="keras",
-        mode=mode,
+        mode=cast("Literal['switch', 'absolute']", mode),
         residual=residual,
         depth=2,
         width=8,

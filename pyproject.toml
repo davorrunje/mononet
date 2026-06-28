@@ -137,11 +137,12 @@ module = [
     "mononet.torch.layers",
     "mononet.jax.layers",
     "mononet.keras.layers",
+    "benchmarks._common.model_builder",
 ]
 disallow_subclassing_any = false
 
 [tool.pytest.ini_options]
-addopts = '--cov=mononet --cov-append --cov-branch --cov-report=term-missing'
+addopts = '--cov=mononet --cov=benchmarks --cov-append --cov-branch --cov-report=term-missing'
 testpaths = ["tests", "tests/benchmarks"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function" # per-test event loops

@@ -1,6 +1,9 @@
 """Tests for XGBoost baseline."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip("xgboost")
 
 from benchmarks._common.bundle import DatasetBundle
 from benchmarks.baselines.xgboost import run_xgboost

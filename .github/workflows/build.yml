@@ -89,7 +89,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v7
       - name: Install dependencies
-        run: uv pip install --system -e ".[${{ matrix.backend }}]" --group=dev
+        run: uv pip install --system -e ".[${{ matrix.backend }}]" --group=dev --group=bench
       - name: Run tests
         env:
           MONONET_TEST_BACKEND: ${{ matrix.backend }}

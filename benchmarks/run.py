@@ -67,9 +67,7 @@ def _build_config(args: argparse.Namespace, task: str) -> BenchmarkConfig:
     mode: Literal["switch", "absolute"] = args.mode
 
     metrics: tuple[Literal["accuracy", "rmse", "mse"], ...] = (
-        ("accuracy",)
-        if task == "binary_classification"
-        else ("mse", "rmse")
+        ("accuracy",) if task == "binary_classification" else ("mse", "rmse")
     )
 
     return BenchmarkConfig(

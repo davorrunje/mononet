@@ -127,9 +127,7 @@ def _build_torch(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
             super().__init__()
             self.mono_cols = torch.tensor(mono_cols, dtype=torch.long)
             self.free_cols = torch.tensor(free_cols, dtype=torch.long)
-            self.mono_input = (
-                MonoInput(MonotonicityMask(signs)) if mono_cols else None
-            )
+            self.mono_input = MonoInput(MonotonicityMask(signs)) if mono_cols else None
             self.free_mlp = nn.Sequential(*free_layers) if free_layers else None
             self.mono_stack = mono_stack
             self.head = MonoLinear(stack_out, 1, mode=cfg.mode)
@@ -143,15 +141,11 @@ def _build_torch(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
             parts: list[torch.Tensor] = []
             if self.mono_input is not None:
                 parts.append(
-                    self.mono_input(
-                        x.index_select(1, self.mono_cols.to(x.device))
-                    )
+                    self.mono_input(x.index_select(1, self.mono_cols.to(x.device)))
                 )
             if self.free_mlp is not None:
                 parts.append(
-                    self.free_mlp(
-                        x.index_select(1, self.free_cols.to(x.device))
-                    )
+                    self.free_mlp(x.index_select(1, self.free_cols.to(x.device)))
                 )
             z = torch.cat(parts, dim=1) if len(parts) > 1 else parts[0]
             y = self.head(self.mono_stack(z))
@@ -306,9 +300,7 @@ def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle, *, seed: int = 0) ->
             if len(self.embed_seq) > 0:
                 emb = x[:, _free_cols]
                 for i, layer in enumerate(self.embed_seq):
-                    emb = (
-                        jax.nn.elu(layer(emb)) if _embed_is_linear[i] else layer(emb)
-                    )
+                    emb = jax.nn.elu(layer(emb)) if _embed_is_linear[i] else layer(emb)
                 parts.append(emb)
             z = jnp.concatenate(parts, axis=1) if len(parts) > 1 else parts[0]
             for layer in self.mono_seq:
@@ -339,25 +331,23 @@ def _build_keras(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
     n_features = len(bundle.feature_names)
     # JAX does not support float64 by default (requires JAX_ENABLE_X64);
     # use float32 when the JAX backend is active to avoid truncation warnings.
-    _keras_dtype = (
-        "float32" if keras.backend.backend() == "jax" else "float64"
-    )
+    _keras_dtype = "float32" if keras.backend.backend() == "jax" else "float64"
     inputs = keras.Input(shape=(n_features,), dtype=_keras_dtype)
 
     # column selection via Lambda
     parts: list[Any] = []
 
     if mono_cols:
-        mono_x = keras.layers.Lambda(
-            lambda x: keras.ops.take(x, mono_cols, axis=1)
-        )(inputs)
+        mono_x = keras.layers.Lambda(lambda x: keras.ops.take(x, mono_cols, axis=1))(
+            inputs
+        )
         mono_x = MonoInput(MonotonicityMask(signs))(mono_x)
         parts.append(mono_x)
 
     if free_cols:
-        emb = keras.layers.Lambda(
-            lambda x: keras.ops.take(x, free_cols, axis=1)
-        )(inputs)
+        emb = keras.layers.Lambda(lambda x: keras.ops.take(x, free_cols, axis=1))(
+            inputs
+        )
         for h in cfg.embed_hidden:
             emb = keras.layers.Dense(h, activation="elu")(emb)
             if cfg.dropout:
