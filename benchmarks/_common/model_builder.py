@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+
 from benchmarks._common.bundle import (
     DatasetBundle,
     free_columns,
@@ -153,21 +155,230 @@ def _build_torch(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
     return Model().double()
 
 
-def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:  # Task 6
-    """JAX model builder stub (implemented in Task 6).
+def _build_jax_embed(
+    cfg: BenchmarkConfig,
+    free_cols: list[int],
+    rngs: Any,
+) -> tuple[list[Any], list[bool], int]:
+    """Build the unconstrained embedding layers for the jax backend.
+
+    :param cfg: Benchmark configuration.
+    :param free_cols: List of non-monotone column indices.
+    :param rngs: Flax NNX RNG container.
+    :returns: Tuple of (layer list, is_linear flags, embed_out width).
+    """
+    from flax import nnx
+
+    raw_embed: list[Any] = []
+    embed_is_linear: list[bool] = []
+    embed_out = 0
+    if free_cols:
+        in_f = len(free_cols)
+        for h in cfg.embed_hidden:
+            raw_embed.append(nnx.Linear(in_f, h, rngs=rngs))
+            embed_is_linear.append(True)
+            if cfg.dropout:
+                raw_embed.append(nnx.Dropout(cfg.dropout, rngs=rngs))
+                embed_is_linear.append(False)
+            in_f = h
+        embed_out = in_f
+    return raw_embed, embed_is_linear, embed_out
+
+
+def _build_jax_stack(
+    cfg: BenchmarkConfig,
+    stack_in: int,
+    rngs: Any,
+) -> tuple[list[Any], int]:
+    """Build the monotone layer stack for the jax backend.
+
+    :param cfg: Benchmark configuration.
+    :param stack_in: Number of input features to the stack.
+    :param rngs: Flax NNX RNG container.
+    :returns: Tuple of (layer list, output width).
+    """
+    from mononet.jax import MonoLinear, MonoResidual
+
+    raw_mono: list[Any] = []
+    prev = stack_in
+    if cfg.residual:
+        raw_mono.append(
+            MonoLinear(
+                prev,
+                cfg.width,
+                mode=cfg.mode,
+                activation=cfg.activation,
+                convex_fraction=cfg.convex_fraction,
+                rngs=rngs,
+            )
+        )
+        prev = cfg.width
+        for _ in range(cfg.depth):
+            raw_mono.append(
+                MonoResidual(
+                    prev,
+                    cfg.width,
+                    mode=cfg.mode,
+                    activation=cfg.activation,
+                    rngs=rngs,
+                )
+            )
+            prev = cfg.width
+    else:
+        for _ in range(cfg.depth):
+            raw_mono.append(
+                MonoLinear(
+                    prev,
+                    cfg.width,
+                    mode=cfg.mode,
+                    activation=cfg.activation,
+                    convex_fraction=cfg.convex_fraction,
+                    rngs=rngs,
+                )
+            )
+            prev = cfg.width
+    return raw_mono, prev
+
+
+def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
+    """Build a JAX (Flax NNX) embedding-composition monotonic model.
 
     :param cfg: Benchmark configuration.
     :param bundle: Dataset bundle.
-    :raises NotImplementedError: Always — JAX builder added in Task 6.
+    :returns: Flax NNX ``Module`` callable returning ``(N, 1)`` output.
     """
-    raise NotImplementedError("jax builder added in Task 6")
+    import jax
+    import jax.numpy as jnp
+    from flax import nnx
+
+    from mononet.core.types import MonotonicityMask
+    from mononet.jax import MonoInput, MonoLinear
+
+    mono_cols = list(mono_columns(bundle))
+    free_cols = list(free_columns(bundle))
+    signs = mono_signs(bundle)
+    binary = bundle.task == "binary_classification"
+
+    mono_cols_arr = np.array(mono_cols, dtype=np.int32)
+    free_cols_arr = np.array(free_cols, dtype=np.int32)
+
+    rngs = nnx.Rngs(0)
+    raw_embed, embed_is_linear, embed_out = _build_jax_embed(cfg, free_cols, rngs)
+    stack_in = len(mono_cols) + embed_out
+    raw_mono, prev = _build_jax_stack(cfg, stack_in, rngs)
+
+    head = MonoLinear(prev, 1, mode=cfg.mode, rngs=rngs)
+    mono_input_layer = MonoInput(MonotonicityMask(signs)) if mono_cols else None
+
+    # Capture in locals for closure (not stored on module to avoid pytree issues)
+    _mono_cols = mono_cols_arr
+    _free_cols = free_cols_arr
+    _binary = binary
+    _embed_is_linear = embed_is_linear
+
+    class JaxModel(nnx.Module):
+        """Embedding-composition monotonic model (Flax NNX)."""
+
+        def __init__(self) -> None:
+            """Initialise model components."""
+            self.mono_input = mono_input_layer
+            # Use nnx.List so Flax tracks contained modules as data
+            self.embed_seq: Any = nnx.List(raw_embed)  # type: ignore[attr-defined]
+            self.mono_seq: Any = nnx.List(raw_mono)  # type: ignore[attr-defined]
+            self.head = head
+
+        def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+            """Apply embedding-composition forward pass.
+
+            :param x: Input array of shape ``(batch, features)``.
+            :returns: Output array of shape ``(batch, 1)``.
+            """
+            parts: list[jnp.ndarray] = []
+            if self.mono_input is not None:
+                parts.append(self.mono_input(x[:, _mono_cols]))
+            if len(self.embed_seq) > 0:
+                emb = x[:, _free_cols]
+                for i, layer in enumerate(self.embed_seq):
+                    emb = (
+                        jax.nn.elu(layer(emb)) if _embed_is_linear[i] else layer(emb)
+                    )
+                parts.append(emb)
+            z = jnp.concatenate(parts, axis=1) if len(parts) > 1 else parts[0]
+            for layer in self.mono_seq:
+                z = layer(z)
+            y = self.head(z)
+            return jax.nn.sigmoid(y) if _binary else y
+
+    return JaxModel()
 
 
-def _build_keras(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:  # Task 6
-    """Keras model builder stub (implemented in Task 6).
+def _build_keras(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
+    """Build a Keras embedding-composition monotonic model.
 
     :param cfg: Benchmark configuration.
     :param bundle: Dataset bundle.
-    :raises NotImplementedError: Always — Keras builder added in Task 6.
+    :returns: ``keras.Model`` callable returning ``(N, 1)`` output.
     """
-    raise NotImplementedError("keras builder added in Task 6")
+    import keras
+
+    from mononet.core.types import MonotonicityMask
+    from mononet.keras import MonoDense, MonoInput, MonoResidual
+
+    mono_cols = list(mono_columns(bundle))
+    free_cols = list(free_columns(bundle))
+    signs = mono_signs(bundle)
+    binary = bundle.task == "binary_classification"
+
+    n_features = len(bundle.feature_names)
+    inputs = keras.Input(shape=(n_features,), dtype="float64")
+
+    # column selection via Lambda
+    parts: list[Any] = []
+
+    if mono_cols:
+        mono_x = keras.layers.Lambda(
+            lambda x: keras.ops.take(x, mono_cols, axis=1)
+        )(inputs)
+        mono_x = MonoInput(MonotonicityMask(signs))(mono_x)
+        parts.append(mono_x)
+
+    if free_cols:
+        emb = keras.layers.Lambda(
+            lambda x: keras.ops.take(x, free_cols, axis=1)
+        )(inputs)
+        for h in cfg.embed_hidden:
+            emb = keras.layers.Dense(h, activation="elu")(emb)
+            if cfg.dropout:
+                emb = keras.layers.Dropout(cfg.dropout)(emb)
+        parts.append(emb)
+
+    z = keras.layers.Concatenate()(parts) if len(parts) > 1 else parts[0]
+
+    # monotone stack
+    if cfg.residual:
+        z = MonoDense(
+            cfg.width,
+            mode=cfg.mode,
+            activation=cfg.activation,
+            convex_fraction=cfg.convex_fraction,
+        )(z)
+        for _ in range(cfg.depth):
+            z = MonoResidual(
+                cfg.width,
+                mode=cfg.mode,
+                activation=cfg.activation,
+            )(z)
+    else:
+        for _ in range(cfg.depth):
+            z = MonoDense(
+                cfg.width,
+                mode=cfg.mode,
+                activation=cfg.activation,
+                convex_fraction=cfg.convex_fraction,
+            )(z)
+
+    y = MonoDense(1, mode=cfg.mode)(z)
+    if binary:
+        y = keras.layers.Activation("sigmoid")(y)
+
+    return keras.Model(inputs=inputs, outputs=y)
