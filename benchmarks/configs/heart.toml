@@ -1,0 +1,19 @@
+# Source: airtai/monotonic-nn nbs/experiments/Heart.ipynb
+[dataset]
+name = "heart"
+[model]
+depth = 2
+width = 22
+activation = "elu"
+convex_fraction = 0.5
+embed_hidden = [22]
+[train]
+optimizer = "adam"
+lr = 0.001
+weight_decay = 0.113929
+dropout = 0.397874
+lr_decay = 0.894921
+batch_size = 16
+epochs = 50
+seeds = [0,1,2,3,4,5,6,7,8,9]
+metrics = ["accuracy"]

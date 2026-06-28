@@ -1,0 +1,19 @@
+# Source: airtai/monotonic-nn nbs/experiments/AutoMPG.ipynb
+[dataset]
+name = "auto"
+[model]
+depth = 2
+width = 21
+activation = "elu"
+convex_fraction = 0.5
+embed_hidden = [21]
+[train]
+optimizer = "adam"
+lr = 0.073407
+weight_decay = 0.058583
+dropout = 0.157718
+lr_decay = 0.887923
+batch_size = 16
+epochs = 50
+seeds = [0,1,2,3,4,5,6,7,8,9]
+metrics = ["mse"]
