@@ -1,6 +1,6 @@
 # Benchmarks
 
-Reproducing the paper. These notebooks reproduce experiments from
+These notebooks reproduce experiments from
 [Runje & Shankaranarayana (2023)](https://arxiv.org/abs/2205.11775) using
 `mononet`. They are committed with their outputs and re-executed manually
 before each release — see
@@ -10,14 +10,16 @@ Each notebook also benchmarks against `airtai/monotonic-nn`
 (the paper's original PyTorch reference) installed at notebook-execution
 time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 
-## Notebooks
+## Sections
 
-- [Overview](00-overview.ipynb) — placeholder; full set of benchmarks
-  lands in the follow-up algorithm plan.
+- [Overview](00-overview.ipynb) — high-level summary.
+- [Reproducing the paper](paper-reproduction/index.md) — per-dataset notebooks and
+  summary tables for all five benchmark datasets from the ICML 2023 paper.
 
 ```{toctree}
 :hidden:
-:maxdepth: 1
+:maxdepth: 2
 
 00-overview
+paper-reproduction/index
 ```

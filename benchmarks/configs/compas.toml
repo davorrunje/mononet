@@ -1,0 +1,19 @@
+# Source: airtai/monotonic-nn nbs/experiments/COMPAS.ipynb
+[dataset]
+name = "compas"
+[model]
+depth = 2
+width = 27
+activation = "elu"
+convex_fraction = 0.5
+embed_hidden = [27]
+[train]
+optimizer = "adam"
+lr = 0.084685
+weight_decay = 0.137518
+dropout = 0.175917
+lr_decay = 0.899399
+batch_size = 8
+epochs = 50
+seeds = [0,1,2,3,4,5,6,7,8,9]
+metrics = ["accuracy"]
