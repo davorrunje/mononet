@@ -35,7 +35,7 @@ def run(cfg: BenchmarkConfig, bundle: DatasetBundle) -> list[ResultRow]:
         if cfg.backend == "torch":
             epochs_run = _train_torch(model, cfg, bundle)
         elif cfg.backend == "jax":
-            model, epochs_run = _train_jax(model, cfg, bundle)
+            model, epochs_run = _train_jax(model, cfg, bundle, seed)
         elif cfg.backend == "keras":
             epochs_run = _train_keras(model, cfg, bundle)
         else:
@@ -118,13 +118,14 @@ def _train_torch(model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle) -> int
 
 
 def _train_jax(
-    model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle
+    model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle, seed: int = 0
 ) -> tuple[Any, int]:
     """Train a Flax NNX model and return (updated model, epochs completed).
 
     :param model: Flax NNX module returned by :func:`build_model`.
     :param cfg: Benchmark configuration.
     :param bundle: Dataset bundle providing training data.
+    :param seed: Per-run random seed used for minibatch shuffling.
     :returns: Tuple of (trained model, epochs run).
     """
     import jax.numpy as jnp
@@ -137,13 +138,13 @@ def _train_jax(
     # (nnx.Optimizer since Flax 0.11.0 no longer exposes .model — use ModelAndOptimizer.)
     mopt: Any = nnx.ModelAndOptimizer(model, optax.adam(cfg.optimizer.lr))
 
-    x_train = jnp.array(bundle.X_train, dtype=jnp.float64)
-    y_train = jnp.array(bundle.y_train, dtype=jnp.float64).reshape(-1, 1)
+    x_train = jnp.array(bundle.X_train, dtype=jnp.float32)
+    y_train = jnp.array(bundle.y_train, dtype=jnp.float32).reshape(-1, 1)
 
     n = x_train.shape[0]
     batch_size = min(cfg.batch_size, n)
 
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(seed)
 
     def loss_fn(m: Any, xb: Any, yb: Any) -> Any:
         pred = m(xb)
@@ -278,7 +279,7 @@ def _predict(model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle) -> np.ndar
     if cfg.backend == "jax":
         import jax.numpy as jnp
 
-        x_j = jnp.array(bundle.X_test, dtype=jnp.float64)
+        x_j = jnp.array(bundle.X_test, dtype=jnp.float32)
         out_np = np.array(model(x_j)).ravel()
         return out_np.astype(np.float64)
 

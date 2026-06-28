@@ -42,13 +42,15 @@ _DEFAULT_EPOCHS = 50
 _DEFAULT_SEEDS = (0, 1, 2, 3, 4)
 
 
-def _build_config(args: argparse.Namespace) -> BenchmarkConfig:
+def _build_config(args: argparse.Namespace, task: str) -> BenchmarkConfig:
     """Construct a :class:`~benchmarks._common.config.BenchmarkConfig` from CLI args.
 
     Task 8 will introduce ``config_io`` to load per-dataset TOML defaults.
     Until then, sensible defaults are hardcoded here with CLI overrides applied.
 
     :param args: Parsed CLI namespace.
+    :param task: Dataset task string (e.g. ``"regression"`` or
+        ``"binary_classification"``), used to select appropriate metrics.
     :returns: Fully specified benchmark configuration.
     """
     # --- seam: try to load dataset-specific TOML defaults (Task 8) ---
@@ -63,6 +65,12 @@ def _build_config(args: argparse.Namespace) -> BenchmarkConfig:
     epochs: int = args.epochs if args.epochs is not None else _DEFAULT_EPOCHS
     backend: Literal["torch", "jax", "keras"] = args.backend
     mode: Literal["switch", "absolute"] = args.mode
+
+    metrics: tuple[Literal["accuracy", "rmse", "mse"], ...] = (
+        ("accuracy",)
+        if task == "binary_classification"
+        else ("mse", "rmse")
+    )
 
     return BenchmarkConfig(
         dataset=args.dataset,
@@ -81,7 +89,7 @@ def _build_config(args: argparse.Namespace) -> BenchmarkConfig:
         epochs=epochs,
         early_stopping=None,
         seeds=seeds,
-        metrics=("mse", "rmse"),
+        metrics=metrics,
     )
 
 
@@ -155,7 +163,7 @@ def main() -> None:
 
     data_dir: Path = args.data_dir or default_dest()
     bundle = load(args.dataset, data_dir=data_dir)
-    cfg = _build_config(args)
+    cfg = _build_config(args, bundle.task)
 
     rows = run(cfg, bundle)
 
