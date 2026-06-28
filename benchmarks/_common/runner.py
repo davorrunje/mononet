@@ -31,7 +31,7 @@ def run(cfg: BenchmarkConfig, bundle: DatasetBundle) -> list[ResultRow]:
     rows: list[ResultRow] = []
     for seed in cfg.seeds:
         seed_everything(cfg.backend, seed)
-        model = build_model(cfg, bundle)
+        model = build_model(cfg, bundle, seed=seed)
         if cfg.backend == "torch":
             epochs_run = _train_torch(model, cfg, bundle)
         elif cfg.backend == "jax":

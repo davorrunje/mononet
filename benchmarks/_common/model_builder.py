@@ -17,18 +17,21 @@ if TYPE_CHECKING:
     from benchmarks._common.config import BenchmarkConfig
 
 
-def build_model(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
+def build_model(cfg: BenchmarkConfig, bundle: DatasetBundle, *, seed: int = 0) -> Any:
     """Dispatch to the backend-specific model builder.
 
     :param cfg: Benchmark configuration.
     :param bundle: Dataset bundle with monotonicity declarations.
+    :param seed: Per-run seed forwarded to backends that require explicit RNG
+        (JAX/Flax NNX).  torch and keras are seeded globally by the caller
+        before invoking this function, so they ignore this argument.
     :returns: Backend-native callable model.
     :raises ValueError: If ``cfg.backend`` is not recognised.
     """
     if cfg.backend == "torch":
         return _build_torch(cfg, bundle)
     if cfg.backend == "jax":
-        return _build_jax(cfg, bundle)
+        return _build_jax(cfg, bundle, seed=seed)
     if cfg.backend == "keras":
         return _build_keras(cfg, bundle)
     raise ValueError(cfg.backend)
@@ -57,6 +60,7 @@ def _build_torch_stack(
                 cfg.width,
                 mode=cfg.mode,
                 activation=cfg.activation,
+                convex_fraction=cfg.convex_fraction,
             )
         )
         prev = cfg.width
@@ -78,6 +82,7 @@ def _build_torch_stack(
                     cfg.width,
                     mode=cfg.mode,
                     activation=cfg.activation,
+                    convex_fraction=cfg.convex_fraction,
                 )
             )
             prev = cfg.width
@@ -240,11 +245,13 @@ def _build_jax_stack(
     return raw_mono, prev
 
 
-def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
+def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle, *, seed: int = 0) -> Any:
     """Build a JAX (Flax NNX) embedding-composition monotonic model.
 
     :param cfg: Benchmark configuration.
     :param bundle: Dataset bundle.
+    :param seed: Seed passed to ``nnx.Rngs`` so each run gets distinct weight
+        initialisation.
     :returns: Flax NNX ``Module`` callable returning ``(N, 1)`` output.
     """
     import jax
@@ -262,7 +269,7 @@ def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
     mono_cols_arr = np.array(mono_cols, dtype=np.int32)
     free_cols_arr = np.array(free_cols, dtype=np.int32)
 
-    rngs = nnx.Rngs(0)
+    rngs = nnx.Rngs(seed)
     raw_embed, embed_is_linear, embed_out = _build_jax_embed(cfg, free_cols, rngs)
     stack_in = len(mono_cols) + embed_out
     raw_mono, prev = _build_jax_stack(cfg, stack_in, rngs)
