@@ -15,6 +15,8 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 - [Overview](00-overview.ipynb) — high-level summary.
 - [Reproducing the paper](paper-reproduction/index.md) — per-dataset notebooks and
   summary tables for all five benchmark datasets from the ICML 2023 paper.
+- [Flavor comparison](flavor-comparison.ipynb) — Phase 2a Optuna HP-search results
+  comparing `absolute`, `exp`, and `switch` weight-constraint flavors.
 
 ```{toctree}
 :hidden:
@@ -22,4 +24,5 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 
 00-overview
 paper-reproduction/index
+flavor-comparison
 ```
