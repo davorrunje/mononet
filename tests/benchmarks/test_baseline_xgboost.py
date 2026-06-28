@@ -3,7 +3,13 @@
 import numpy as np
 import pytest
 
-pytest.importorskip("xgboost")
+# xgboost can fail to import for reasons other than absence -- notably on macOS
+# its wheel needs libomp.dylib, which raises XGBoostError (not ImportError) when
+# missing. importorskip only catches ImportError, so skip on any import failure.
+try:
+    import xgboost  # noqa: F401
+except Exception as exc:  # pragma: no cover - environment-dependent
+    pytest.skip(f"xgboost unavailable: {exc}", allow_module_level=True)
 
 from benchmarks._common.bundle import DatasetBundle
 from benchmarks.baselines.xgboost import run_xgboost

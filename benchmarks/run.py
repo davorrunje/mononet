@@ -53,14 +53,8 @@ def _build_config(args: argparse.Namespace, task: str) -> BenchmarkConfig:
         ``"binary_classification"``), used to select appropriate metrics.
     :returns: Fully specified benchmark configuration.
     """
-    # --- seam: try to load dataset-specific TOML defaults (Task 8) ---
-    # try:
-    #     from benchmarks._common.config_io import load_dataset_config
-    #     base = load_dataset_config(args.dataset)
-    # except ImportError:
-    #     base = {}
-    # ---------------------------------------------------------------
-
+    # Seam: per-dataset TOML defaults (benchmarks._common.config_io) can be
+    # layered in here; for now the CLI builds the config from flags + defaults.
     seeds: tuple[int, ...] = tuple(args.seeds) if args.seeds else _DEFAULT_SEEDS
     epochs: int = args.epochs if args.epochs is not None else _DEFAULT_EPOCHS
     backend: Literal["torch", "jax", "keras"] = args.backend

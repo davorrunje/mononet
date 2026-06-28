@@ -154,7 +154,7 @@ def _train_jax(
             )
         return jnp.mean((pred - yb) ** 2)
 
-    @nnx.jit  # type: ignore[misc]
+    @nnx.jit  # type: ignore[misc, untyped-decorator]
     def train_step(mo: Any, xb: Any, yb: Any) -> Any:
         loss, grads = nnx.value_and_grad(loss_fn)(mo.model, xb, yb)
         mo.update(grads)

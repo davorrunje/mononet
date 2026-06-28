@@ -1,3 +1,6 @@
-"""Baseline models for benchmarking."""
+"""Baseline models for benchmarking.
 
-__all__ = ["run_xgboost"]
+Import baselines from their submodule (e.g.
+``from benchmarks.baselines.xgboost import run_xgboost``) so heavy optional
+dependencies like xgboost stay lazily imported.
+"""

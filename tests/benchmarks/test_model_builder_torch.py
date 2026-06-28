@@ -1,4 +1,4 @@
-from typing import Literal, cast
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -28,11 +28,11 @@ def _bundle(n: int = 64, d: int = 7) -> DatasetBundle:
     )
 
 
-def _cfg(mode: str, residual: bool) -> BenchmarkConfig:
+def _cfg(mode: Literal["switch", "absolute"], residual: bool) -> BenchmarkConfig:
     return BenchmarkConfig(
         dataset="syn",
         backend="torch",
-        mode=cast("Literal['switch', 'absolute']", mode),
+        mode=mode,
         residual=residual,
         depth=2,
         width=8,
@@ -52,7 +52,9 @@ def _cfg(mode: str, residual: bool) -> BenchmarkConfig:
 
 @pytest.mark.parametrize("mode", ["switch", "absolute"])
 @pytest.mark.parametrize("residual", [False, True])
-def test_builds_and_output_shape(mode: str, residual: bool) -> None:
+def test_builds_and_output_shape(
+    mode: Literal["switch", "absolute"], residual: bool
+) -> None:
     b = _bundle()
     model = build_model(_cfg(mode, residual), b)
     x = torch.tensor(b.X_train)
@@ -61,7 +63,7 @@ def test_builds_and_output_shape(mode: str, residual: bool) -> None:
 
 
 @pytest.mark.parametrize("mode", ["switch", "absolute"])
-def test_monotone_in_decreasing_feature(mode: str) -> None:
+def test_monotone_in_decreasing_feature(mode: Literal["switch", "absolute"]) -> None:
     # Output must be non-increasing in column 4 (declared decreasing).
     b = _bundle()
     model = build_model(_cfg(mode, residual=False), b).eval()
