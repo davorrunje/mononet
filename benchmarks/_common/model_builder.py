@@ -330,7 +330,12 @@ def _build_keras(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
     binary = bundle.task == "binary_classification"
 
     n_features = len(bundle.feature_names)
-    inputs = keras.Input(shape=(n_features,), dtype="float64")
+    # JAX does not support float64 by default (requires JAX_ENABLE_X64);
+    # use float32 when the JAX backend is active to avoid truncation warnings.
+    _keras_dtype = (
+        "float32" if keras.backend.backend() == "jax" else "float64"
+    )
+    inputs = keras.Input(shape=(n_features,), dtype=_keras_dtype)
 
     # column selection via Lambda
     parts: list[Any] = []

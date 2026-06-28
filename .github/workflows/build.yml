@@ -94,7 +94,7 @@ jobs:
         env:
           MONONET_TEST_BACKEND: ${{ matrix.backend }}
           KERAS_BACKEND: jax
-        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/test_top_level_imports.py -v
+        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/test_top_level_imports.py -v
 
   check:
     if: always()
