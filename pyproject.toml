@@ -78,9 +78,9 @@ lint = [
     "mypy==2.1.0",
     "types-pyyaml==6.0.12.20260518",
     "types-setuptools==82.0.0.20260518",
-    "ruff==0.15.15",
+    "ruff==0.15.19",
     "bandit==1.9.4",
-    "semgrep==1.164.0",
+    "semgrep==1.168.0",
     "codespell==2.4.2",
     "detect-secrets==1.5.0",
 ]
