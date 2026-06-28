@@ -1,0 +1,20 @@
+# Source: airtai/monotonic-nn nbs/experiments/Blog.ipynb
+# PROVISIONAL — maintainer: confirm against Blog.ipynb before the headline run
+[dataset]
+name = "blog"
+[model]
+depth = 2
+width = 21
+activation = "elu"
+convex_fraction = 0.5
+embed_hidden = [21]
+[train]
+optimizer = "adam"
+lr = 0.001
+weight_decay = 0.0
+dropout = 0.0
+lr_decay = 1.0
+batch_size = 128
+epochs = 50
+seeds = [0,1,2,3,4,5,6,7,8,9]
+metrics = ["rmse"]
