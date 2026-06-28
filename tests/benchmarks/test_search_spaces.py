@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Literal
+
 import pytest
 
 optuna = pytest.importorskip("optuna")
 
 from benchmarks._common.search_spaces import suggest_config  # noqa: E402
 
+if TYPE_CHECKING:
+    from benchmarks._common.config import BenchmarkConfig
 
-def _cfg(mode: str, residual: bool):
+
+def _cfg(mode: Literal["switch", "absolute"], residual: bool) -> BenchmarkConfig:
     study = optuna.create_study()
     trial = study.ask()
     return suggest_config(
