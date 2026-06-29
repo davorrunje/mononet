@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Wrapper for the repo-only Phase-2a search CLI (not a packaged console script).
+exec uv run python -m benchmarks.search "$@"
