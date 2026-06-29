@@ -37,3 +37,8 @@ def test_dry_run_reports_plan_without_running() -> None:
     assert "auto" in res.output
     assert "heart" in res.output
     assert "would run" in res.output.lower()
+
+
+def test_invalid_flavors_exits_nonzero() -> None:
+    res = runner.invoke(app, ["--flavors", "foo", "--dry-run"])
+    assert res.exit_code != 0

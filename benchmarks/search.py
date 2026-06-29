@@ -34,9 +34,13 @@ def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool], ...]:
     """
     if not spec:
         return _ALL_FLAVORS
+    valid_modes = {"switch", "absolute"}
+    valid_kinds = {"plain", "residual"}
     out: list[tuple[str, bool]] = []
     for name in spec.split(","):
         mode, _, kind = name.partition("-")
+        if mode not in valid_modes or kind not in valid_kinds:
+            raise typer.BadParameter(f"bad flavor: {name}")
         out.append((mode, kind == "residual"))
     return tuple(out)
 
