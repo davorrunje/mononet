@@ -45,6 +45,7 @@ def run_dataset(
     ),
     n_trials: int = 50,
     epochs: int = 50,
+    n_jobs: int = 1,
     final_seeds: Iterable[int] = range(10),
     final_top_k: int = 5,
     data_dir: Path | None = None,
@@ -72,10 +73,18 @@ python -m benchmarks.search \
   [--datasets auto,heart,compas,loan,blog] \   # default: all five
   [--flavors switch-plain,switch-residual,absolute-plain,absolute-residual] \  # default: all
   [--backend torch] \
-  [--n-trials N] [--epochs E] [--final-seeds K] [--final-top-k T] \
+  [--n-trials N] [--epochs E] [--n-jobs J] [--final-seeds K] [--final-top-k T] \
   [--out-dir DIR] [--storage-dir DIR] \
   [--smoke]
 ```
+
+`--n-jobs` (default 1) is threaded through `run_dataset` to `search()`, which passes it to
+Optuna `study.optimize(..., n_jobs=n_jobs)` for in-study threaded trial parallelism. This
+requires adding an additive `n_jobs: int = 1` parameter to the merged `search()` (default
+preserves current behaviour). Note: torch CPU training is CPU-bound, so threaded `n_jobs`
+gives partial speedup (torch releases the GIL during ops); **process-level parallelism —
+launching one CLI invocation per dataset — is the higher-throughput lever on a many-core
+box** and is documented in the runbook.
 
 - Maps flags → `run_dataset(...)` per requested dataset.
 - `--smoke` is a preset: `--datasets auto,heart --n-trials 5 --epochs 5 --final-seeds 2
@@ -130,7 +139,17 @@ A "Running the Phase-2a search" section:
    docs/benchmarks/flavor-comparison.ipynb`.
 5. **Commit:** the `results/phase2/<dataset>-<flavor>.json` files and the re-rendered
    `flavor-comparison.ipynb` (with outputs). Do **not** commit `*.db`/`*.jsonl`.
-6. Rough runtime guidance: auto/heart/compas small (minutes/flavor on GPU); loan/blog larger
+6. **Parallelism (many-core hosts, e.g. 32-core ThreadRipper).** Two levers:
+   - *Process-level (preferred for CPU-bound training):* run one CLI invocation per dataset
+     concurrently — each writes its own JSON, no contention:
+     ```bash
+     for d in auto heart compas loan blog; do tools/mononet-benchmark-search --datasets "$d" & done; wait
+     ```
+   - *In-study:* `--n-jobs J` parallelizes trials within a study (threaded; partial speedup).
+   These compose (e.g. 5 dataset processes × a few `--n-jobs` each), but keep the total under
+   the core count. GPUs add little for these tiny nets; a `jax`/`keras` cross-backend run on a
+   CUDA host auto-uses the GPU if desired.
+7. Rough runtime guidance: auto/heart/compas small (minutes/flavor); loan/blog larger
    (reduced budget) — document approximate wall-clock after the first real run.
 
 ## 7. The smoke run (agent, now, CPU)
