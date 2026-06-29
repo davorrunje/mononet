@@ -113,8 +113,15 @@ study metric (accuracy / mse; note rmse for Blog if the maintainer reports it).
 ## 6. Runbook (`benchmarks/README.md`)
 
 A "Running the Phase-2a search" section:
-1. Open the **`gpu-torch`** devcontainer (the headline backend; `--backend jax/keras` is the
-   cross-backend option, not the headline).
+1. **Compute.** The headline backend is `torch`. The models are tiny (≈2×21 MLPs on small
+   tabular data), so the runner trains on **CPU** (no device handling; MPS/CUDA not used) —
+   and CPU is the right device at this scale (MPS overhead doesn't pay off for tiny models).
+   - **Apple Silicon (e.g. M-series MacBook):** run natively / in the `default` devcontainer
+     on CPU. The full 20-study search is feasible on a modern Apple-Silicon CPU (`loan`/`blog`
+     are the slow legs, at reduced budget). CUDA is unavailable on macOS — the `gpu-torch`
+     devcontainer cannot run there.
+   - **CUDA host:** use the `gpu-torch` devcontainer for faster `loan`/`blog`.
+   - `--backend jax/keras` is the cross-backend option, not the headline.
 2. `python -m benchmarks.datasets.download` to fetch the Zenodo CSVs.
 3. `tools/mononet-benchmark-search` (full budget) — writes `results/phase2/*.json` and
    git-ignored `*.db` study files. Resumable: re-running with the same `--storage-dir`
