@@ -1,0 +1,19 @@
+{
+  "dataset": "auto",
+  "flavor": "switch-plain",
+  "best_params": {
+    "width": 21,
+    "depth": 2,
+    "lr": 0.026116932108161527,
+    "weight_decay": 0.08580975845809014,
+    "dropout": 0.01901982136464167,
+    "lr_decay": 0.9571674611577461,
+    "batch_size": 8
+  },
+  "val_best": 6.135130432566941,
+  "test_metric": "mse",
+  "test_mean": 9.73616876969361,
+  "test_std": 0.16622904719564366,
+  "n_seeds": 10,
+  "n_selected": 5
+}
