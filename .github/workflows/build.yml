@@ -26,7 +26,10 @@ jobs:
           python-version: "3.13"
       - uses: astral-sh/setup-uv@v7
       - name: Install dependencies
-        run: uv pip install --system -e ".[all]" --group=dev --group=lint
+        # bench group included: mypy type-checks benchmarks/, which imports
+        # typer/optuna/etc.; without them the Typer decorator resolves to Any
+        # and disallow_untyped_decorators fails.
+        run: uv pip install --system -e ".[all]" --group=dev --group=lint --group=bench
       - name: Run static analysis
         run: ./tools/static-analysis.sh
 
