@@ -18,11 +18,22 @@ def suggest_config(
     mode: Literal["switch", "absolute"],
     residual: bool,
     epochs: int,
+    metric: Literal["accuracy", "rmse", "mse"],
 ) -> BenchmarkConfig:
     """Sample a BenchmarkConfig for one (dataset, flavor) trial.
 
     `convex_fraction` is searched only for absolute mode; switch keeps 0.5.
     `activation` is fixed to "elu" in Phase 2a.
+
+    :param trial: Optuna trial used to suggest hyperparameter values.
+    :param dataset: Dataset name (used to name the config; no taxonomy logic here).
+    :param backend: ML backend to target.
+    :param mode: Monotonicity mode (`"absolute"` or `"switch"`).
+    :param residual: Whether to use residual connections.
+    :param epochs: Number of training epochs per trial.
+    :param metric: Primary metric; propagated into `cfg.metrics` so the
+        objective's metric and the training config always agree.
+    :returns: A fully populated `BenchmarkConfig` ready for `run()`.
     """
     width = trial.suggest_categorical("width", [8, 16, 21, 32, 64])
     depth = trial.suggest_int("depth", 1, 4)
@@ -34,20 +45,22 @@ def suggest_config(
     convex_fraction = (
         trial.suggest_float("convex_fraction", 0.0, 1.0) if mode == "absolute" else 0.5
     )
-    task_metric: Literal["accuracy", "rmse", "mse"] = (
-        "accuracy" if dataset in _BINARY else "mse"
-    )
     return BenchmarkConfig(
-        dataset=dataset, backend=backend, mode=mode, residual=residual,
-        depth=depth, width=int(width), activation="elu",
-        convex_fraction=convex_fraction, embed_hidden=(int(width),),
+        dataset=dataset,
+        backend=backend,
+        mode=mode,
+        residual=residual,
+        depth=depth,
+        width=int(width),
+        activation="elu",
+        convex_fraction=convex_fraction,
+        embed_hidden=(int(width),),
         dropout=dropout,
         optimizer=OptimizerSpec("adam", lr, weight_decay),
-        lr_decay=lr_decay, batch_size=int(batch_size), epochs=epochs,
-        early_stopping=None, seeds=(0,),
-        metrics=(task_metric,),
+        lr_decay=lr_decay,
+        batch_size=int(batch_size),
+        epochs=epochs,
+        early_stopping=None,
+        seeds=(0,),
+        metrics=(metric,),
     )
-
-
-# datasets whose primary metric is accuracy (binary classification)
-_BINARY = {"compas", "heart", "loan"}

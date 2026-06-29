@@ -72,10 +72,17 @@ def search(
 
     def objective(trial: optuna.Trial) -> float:
         cfg: BenchmarkConfig = suggest_config(
-            trial, dataset=bundle.name, backend=backend,  # type: ignore[arg-type]
-            mode=mode, residual=residual, epochs=epochs,  # type: ignore[arg-type]
+            trial,
+            dataset=bundle.name,
+            backend=backend,  # type: ignore[arg-type]
+            mode=mode,  # type: ignore[arg-type]
+            residual=residual,
+            epochs=epochs,  # type: ignore[arg-type]
+            metric=metric,  # type: ignore[arg-type]
         )
         rows = run(cfg, vb)
+        if not rows:
+            raise RuntimeError("run() returned no rows for trial")
         return float(rows[0].scores[metric])  # type: ignore[index]
 
     study = optuna.create_study(
@@ -86,8 +93,10 @@ def search(
     )
     study.optimize(objective, n_trials=n_trials)
     return StudyResult(
-        dataset=bundle.name, flavor=flavor_name(mode, residual),
-        best_params=dict(study.best_params), best_value=float(study.best_value),
+        dataset=bundle.name,
+        flavor=flavor_name(mode, residual),
+        best_params=dict(study.best_params),
+        best_value=float(study.best_value),
         n_trials=len(study.trials),
     )
 
@@ -108,16 +117,24 @@ def final_eval(
     metric = metric or _primary_metric(bundle)
     width = int(best_params["width"])
     cfg = BenchmarkConfig(
-        dataset=bundle.name, backend=backend,  # type: ignore[arg-type]
-        mode=mode, residual=residual,  # type: ignore[arg-type]
-        depth=int(best_params["depth"]), width=width, activation="elu",
+        dataset=bundle.name,
+        backend=backend,  # type: ignore[arg-type]
+        mode=mode,  # type: ignore[arg-type]
+        residual=residual,  # type: ignore[arg-type]
+        depth=int(best_params["depth"]),
+        width=width,
+        activation="elu",
         convex_fraction=float(best_params.get("convex_fraction", 0.5)),
-        embed_hidden=(width,), dropout=float(best_params["dropout"]),
+        embed_hidden=(width,),
+        dropout=float(best_params["dropout"]),
         optimizer=OptimizerSpec(
             "adam", float(best_params["lr"]), float(best_params["weight_decay"])
         ),
-        lr_decay=float(best_params["lr_decay"]), batch_size=int(best_params["batch_size"]),
-        epochs=epochs, early_stopping=None, seeds=tuple(seeds),
+        lr_decay=float(best_params["lr_decay"]),
+        batch_size=int(best_params["batch_size"]),
+        epochs=epochs,
+        early_stopping=None,
+        seeds=tuple(seeds),
         metrics=(metric,),  # type: ignore[arg-type]
     )
     rows = run(cfg, bundle)

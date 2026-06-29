@@ -30,7 +30,10 @@ def train_val_split(
         stratify = bundle.task == "binary_classification"
     strat = bundle.y_train if stratify else None
     x_tr, x_val, y_tr, y_val = train_test_split(
-        bundle.X_train, bundle.y_train,
-        test_size=frac, random_state=seed, stratify=strat,
+        bundle.X_train,
+        bundle.y_train,
+        test_size=frac,
+        random_state=seed,
+        stratify=strat,
     )
     return x_tr, y_tr, x_val, y_val

@@ -16,7 +16,7 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 - [Reproducing the paper](paper-reproduction/index.md) — per-dataset notebooks and
   summary tables for all five benchmark datasets from the ICML 2023 paper.
 - [Flavor comparison](flavor-comparison.ipynb) — Phase 2a Optuna HP-search results
-  comparing `absolute`, `exp`, and `switch` weight-constraint flavors.
+  comparing the four `mode × residual` flavors (`absolute`/`switch` × `plain`/`residual`).
 
 ```{toctree}
 :hidden:

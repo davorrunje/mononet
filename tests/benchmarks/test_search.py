@@ -13,10 +13,16 @@ def _bundle() -> DatasetBundle:
     X = rng.normal(size=(120, 5))
     y = (X[:, 0] + 0.1 * rng.normal(size=120)).astype(np.float64)
     return DatasetBundle(
-        name="syn", task="regression",
-        X_train=X, y_train=y, X_test=X[:30], y_test=y[:30],
-        mono_increasing=(0,), mono_decreasing=(),
-        feature_names=tuple(f"f{i}" for i in range(5)), metadata={},
+        name="syn",
+        task="regression",
+        X_train=X,
+        y_train=y,
+        X_test=X[:30],
+        y_test=y[:30],
+        mono_increasing=(0,),
+        mono_decreasing=(),
+        feature_names=tuple(f"f{i}" for i in range(5)),
+        metadata={},
     )
 
 
@@ -27,8 +33,13 @@ def test_flavor_name() -> None:
 
 def test_search_two_trials_returns_finite_best() -> None:
     res = search(
-        _bundle(), mode="switch", residual=False, backend="torch",
-        n_trials=2, seed=0, epochs=1,
+        _bundle(),
+        mode="switch",
+        residual=False,
+        backend="torch",
+        n_trials=2,
+        seed=0,
+        epochs=1,
     )
     assert isinstance(res, StudyResult)
     assert res.n_trials == 2
@@ -40,10 +51,18 @@ def test_search_two_trials_returns_finite_best() -> None:
 
 def test_final_eval_returns_aggregate_on_test() -> None:
     b = _bundle()
-    res = search(b, mode="switch", residual=False, backend="torch", n_trials=2, epochs=1)
+    res = search(
+        b, mode="switch", residual=False, backend="torch", n_trials=2, epochs=1
+    )
     agg = final_eval(
-        b, res.best_params, mode="switch", residual=False, backend="torch",
-        seeds=range(2), epochs=1, top_k=2,
+        b,
+        res.best_params,
+        mode="switch",
+        residual=False,
+        backend="torch",
+        seeds=range(2),
+        epochs=1,
+        top_k=2,
     )
     assert np.isfinite(agg.mean)
     assert agg.n_selected == 2

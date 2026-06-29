@@ -14,10 +14,16 @@ def _bundle(task: str, n: int = 200, d: int = 5) -> DatasetBundle:
     Xt = rng.normal(size=(10, d))
     yt = np.zeros(10)
     return DatasetBundle(
-        name="syn", task=task,  # type: ignore[arg-type]
-        X_train=X, y_train=y, X_test=Xt, y_test=yt,
-        mono_increasing=(0,), mono_decreasing=(),
-        feature_names=tuple(f"f{i}" for i in range(d)), metadata={},
+        name="syn",
+        task=task,  # type: ignore[arg-type]
+        X_train=X,
+        y_train=y,
+        X_test=Xt,
+        y_test=yt,
+        mono_increasing=(0,),
+        mono_decreasing=(),
+        feature_names=tuple(f"f{i}" for i in range(d)),
+        metadata={},
     )
 
 
