@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 pytest.importorskip("typer")
@@ -9,10 +11,16 @@ from benchmarks.search import _SMOKE, app
 
 runner = CliRunner()
 
+# Typer's Rich help renderer colorizes each option name with ANSI spans
+# (e.g. "-\x1b[..m-datasets") whenever the runner reports a color terminal,
+# which splits the literal flag. Strip ANSI before substring assertions.
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
 
 def test_help_lists_flags() -> None:
     res = runner.invoke(app, ["--help"])
     assert res.exit_code == 0
+    output = _ANSI.sub("", res.output)
     for flag in (
         "--datasets",
         "--flavors",
@@ -22,7 +30,7 @@ def test_help_lists_flags() -> None:
         "--smoke",
         "--dry-run",
     ):
-        assert flag in res.output
+        assert flag in output
 
 
 def test_smoke_preset_values() -> None:
