@@ -88,7 +88,7 @@ bench = [
     "scikit-learn==1.9.0",
     "pandas==3.0.3",
     "matplotlib==3.11.0",
-    "xgboost==3.0.5",
+    "xgboost==3.2.0",
 ]
 
 [tool.uv]
