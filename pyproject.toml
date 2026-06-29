@@ -90,6 +90,7 @@ bench = [
     "matplotlib==3.11.0",
     "xgboost==3.0.5",
     "optuna==4.6.0",
+    "typer==0.20.0",
 ]
 
 [tool.uv]
