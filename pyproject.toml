@@ -50,11 +50,11 @@ keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.4.30"]
 
 [dependency-groups]
 dev = [
-    "ipython==9.13.0",
-    "ipykernel==7.2.0",
+    "ipython==9.14.1",
+    "ipykernel==7.3.0",
     "mypy==2.1.0",
-    "pytest==9.0.3",
-    "pytest-asyncio==1.3.0",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "nest-asyncio==1.6.0",
     "hypothesis>=6.115",
@@ -79,7 +79,7 @@ lint = [
     "mypy==2.1.0",
     "types-pyyaml==6.0.12.20260518",
     "types-setuptools==82.0.0.20260518",
-    "ruff==0.15.19",
+    "ruff==0.15.20",
     "bandit==1.9.4",
     "semgrep==1.168.0",
     "codespell==2.4.2",
@@ -89,8 +89,8 @@ bench = [
     "scikit-learn==1.9.0",
     "pandas==3.0.3",
     "matplotlib==3.11.0",
-    "xgboost==3.0.5",
-    "optuna==4.6.0",
+    "xgboost==3.2.0",
+    "optuna==4.9.0",
     "typer==0.20.0",
 ]
 
