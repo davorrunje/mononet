@@ -18,16 +18,18 @@ uv sync --group bench
 echo ">>> installing airtai/monotonic-nn (no-deps) for paper-baseline comparison"
 uv pip install --no-deps "git+https://github.com/airtai/monotonic-nn"
 
-echo ">>> executing notebooks under docs/docs/benchmarks/"
+echo ">>> executing rendered benchmark notebooks under docs/benchmarks/"
+# NOTE: the Phase-2a SEARCH notebooks (benchmarks/notebooks/) are NOT executed here —
+# run them via the CLI: tools/mononet-benchmark-search (see benchmarks/README.md).
 uv run jupyter nbconvert \
   --to notebook \
   --execute \
   --inplace \
   --ExecutePreprocessor.timeout=14400 \
-  docs/docs/benchmarks/*.ipynb
+  docs/benchmarks/*.ipynb docs/benchmarks/paper-reproduction/*.ipynb
 
 echo
 echo ">>> done. Review diffs:"
-echo "    git diff docs/docs/benchmarks/"
+echo "    git diff docs/benchmarks/"
 echo
 echo ">>> then commit and tag a release."
