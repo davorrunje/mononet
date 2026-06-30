@@ -168,13 +168,15 @@ _ALL_FLAVORS: tuple[tuple[str, bool], ...] = (
     ("absolute", False),
     ("absolute", True),
 )
-# (n_trials, final_seeds, final_top_k) per dataset
+# (n_trials, final_seeds, n_splits) per dataset.
+# n_splits: 5-fold CV for small/medium datasets; 1 (single holdout) for the large
+# ones (loan/blog), where a single split is already low-variance and 5x cheaper.
 _BUDGET: dict[str, tuple[int, range, int]] = {
     "auto": (50, range(10), 5),
     "heart": (50, range(10), 5),
     "compas": (50, range(10), 5),
-    "loan": (25, range(5), 3),
-    "blog": (25, range(5), 3),
+    "loan": (25, range(5), 1),
+    "blog": (25, range(5), 1),
 }
 
 
@@ -187,7 +189,7 @@ def run_dataset(
     epochs: int = 50,
     n_jobs: int = 1,
     final_seeds: Iterable[int] | None = None,
-    final_top_k: int | None = None,
+    n_splits: int | None = None,
     data_dir: Path | None = None,
     out_dir: Path | None = None,
     storage_dir: Path | None = None,
@@ -200,10 +202,10 @@ def run_dataset(
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
 
-    b_trials, b_seeds, b_topk = _BUDGET.get(dataset, (50, range(10), 5))
+    b_trials, b_seeds, b_splits = _BUDGET.get(dataset, (50, range(10), 5))
     n_trials = b_trials if n_trials is None else n_trials
     final_seeds = b_seeds if final_seeds is None else final_seeds
-    final_top_k = b_topk if final_top_k is None else final_top_k
+    n_splits = b_splits if n_splits is None else n_splits
     data_dir = data_dir or default_dest()
     out_dir = out_dir or (Path(__file__).resolve().parents[1] / "results" / "phase2")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -223,6 +225,7 @@ def run_dataset(
             n_trials=n_trials,
             epochs=epochs,
             n_jobs=n_jobs,
+            n_splits=n_splits,
             storage=storage,
         )
         agg = final_eval(
@@ -238,12 +241,11 @@ def run_dataset(
             "dataset": dataset,
             "flavor": study.flavor,
             "best_params": study.best_params,
-            "val_best": study.best_value,
+            "cv_best": study.best_value,
             "test_metric": agg.metric,
             "test_mean": agg.mean,
             "test_std": agg.std,
             "n_seeds": agg.n_seeds,
-            "n_selected": agg.n_selected,
         }
         path = out_dir / f"{dataset}-{fname}.json"
         path.write_text(json.dumps(rec, indent=2) + "\n")
