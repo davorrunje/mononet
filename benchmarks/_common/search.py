@@ -8,13 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import optuna
 
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
 from benchmarks._common.results import Aggregate, aggregate
 from benchmarks._common.runner import run
 from benchmarks._common.search_spaces import suggest_config
-from benchmarks._common.splits import train_val_split
+from benchmarks._common.splits import cv_splits
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -43,16 +44,27 @@ class StudyResult:
     n_trials: int
 
 
-def _val_bundle(bundle: DatasetBundle, seed: int) -> DatasetBundle:
-    """Throwaway bundle with the held-out validation set in the test slot.
+def _fold_bundles(
+    bundle: DatasetBundle, *, n_splits: int, seed: int
+) -> list[DatasetBundle]:
+    """Throwaway per-fold bundles with each fold's validation rows in the test slot.
 
-    Lets the search reuse run() (which evaluates on X_test) to score on
-    validation without ever touching the real test set.
+    Lets the search reuse run() (which evaluates on X_test) to score on every CV
+    fold without ever touching the real test set.
     """
-    x_tr, y_tr, x_val, y_val = train_val_split(bundle, seed=seed)
-    return dataclasses.replace(
-        bundle, X_train=x_tr, y_train=y_tr, X_test=x_val, y_test=y_val
-    )
+    folds = cv_splits(bundle, n_splits=n_splits, seed=seed)
+    out: list[DatasetBundle] = []
+    for tr, val in folds:
+        out.append(
+            dataclasses.replace(
+                bundle,
+                X_train=bundle.X_train[tr],
+                y_train=bundle.y_train[tr],
+                X_test=bundle.X_train[val],
+                y_test=bundle.y_train[val],
+            )
+        )
+    return out
 
 
 def search(
@@ -65,13 +77,14 @@ def search(
     seed: int = 0,
     epochs: int = 50,
     n_jobs: int = 1,
+    n_splits: int = 5,
     metric: str | None = None,
     storage: str | None = None,
 ) -> StudyResult:
-    """Tune (dataset, flavor) HPs on a validation split via Optuna TPE."""
+    """Tune (dataset, flavor) HPs by mean k-fold CV metric via Optuna TPE."""
     metric = metric or _primary_metric(bundle)
     direction = "minimize" if _lower_is_better(metric) else "maximize"
-    vb = _val_bundle(bundle, seed)
+    folds = _fold_bundles(bundle, n_splits=n_splits, seed=seed)
 
     def objective(trial: optuna.Trial) -> float:
         cfg: BenchmarkConfig = suggest_config(
@@ -83,10 +96,13 @@ def search(
             epochs=epochs,  # type: ignore[arg-type]
             metric=metric,  # type: ignore[arg-type]
         )
-        rows = run(cfg, vb)
-        if not rows:
-            raise RuntimeError("run() returned no rows for trial")
-        return float(rows[0].scores[metric])  # type: ignore[index]
+        scores: list[float] = []
+        for fb in folds:
+            rows = run(cfg, fb)
+            if not rows:
+                raise RuntimeError("run() returned no rows for trial")
+            scores.append(float(rows[0].scores[metric]))  # type: ignore[index]
+        return float(np.mean(scores))
 
     study = optuna.create_study(
         study_name=f"{bundle.name}-{flavor_name(mode, residual)}",

@@ -31,7 +31,7 @@ def test_flavor_name() -> None:
     assert flavor_name("absolute", True) == "absolute-residual"
 
 
-def test_search_two_trials_returns_finite_best() -> None:
+def test_search_two_trials_two_folds_returns_finite_best() -> None:
     res = search(
         _bundle(),
         mode="switch",
@@ -40,6 +40,7 @@ def test_search_two_trials_returns_finite_best() -> None:
         n_trials=2,
         seed=0,
         epochs=1,
+        n_splits=2,
     )
     assert isinstance(res, StudyResult)
     assert res.n_trials == 2
@@ -47,6 +48,23 @@ def test_search_two_trials_returns_finite_best() -> None:
     assert np.isfinite(res.best_value)
     assert "lr" in res.best_params
     assert "width" in res.best_params
+
+
+def test_search_objective_is_fold_mean() -> None:
+    # n_splits=1 (single holdout) and n_splits=3 must both yield a finite CV metric;
+    # this exercises the averaging path without asserting an exact value.
+    for n_splits in (1, 3):
+        res = search(
+            _bundle(),
+            mode="switch",
+            residual=False,
+            backend="torch",
+            n_trials=2,
+            seed=0,
+            epochs=1,
+            n_splits=n_splits,
+        )
+        assert np.isfinite(res.best_value)
 
 
 def test_final_eval_returns_aggregate_on_test() -> None:
