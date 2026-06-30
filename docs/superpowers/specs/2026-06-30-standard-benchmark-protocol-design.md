@@ -81,8 +81,10 @@ Keep `train_val_split` (the `n_splits == 1` path delegates to it).
 - `final_eval(...)`: report **all seeds** — drop `top_k` selection (report mean ± std over
   the full `seeds`). The `Aggregate` keeps `mean`/`std`/`n_seeds`; `n_selected == n_seeds`.
 - `run_dataset(...)`: drop `final_top_k`; thread `n_splits` (param, default from `_BUDGET`).
-  The `_BUDGET` table carries per-dataset `(n_trials, seeds, n_splits)` — default `n_splits`
-  5 for auto/heart/compas; the large datasets (loan/blog) may be set to 3 or 1.
+  The `_BUDGET` table carries per-dataset `(n_trials, seeds, n_splits)` — `n_splits` is
+  **5 for auto/heart/compas** (tiny/medium: ~62/48/987-row holdout, CV cuts real variance)
+  and **1 for loan/blog** (large: ~84k/9.5k-row holdout is already low-variance, so a single
+  holdout avoids a pointless 5× search cost). All overridable via `--cv-folds`.
 
 `benchmarks/search.py` (CLI): drop `--final-top-k`; add `--cv-folds` (default: per-dataset
 `_BUDGET`, overridable). `--smoke` preset uses `--cv-folds 2` for speed. Seeds stay the
@@ -138,8 +140,6 @@ body to "Adopt standard benchmark protocol + honest AutoMPG numbers (+ search-wr
 
 ## 9. Open items
 
-- **Per-dataset `n_splits` defaults for the large datasets.** `n_splits` is now a parameter
-  (default 5, `1` = single holdout); the only thing left is choosing loan/blog's `_BUDGET`
-  default (5 / 3 / 1) before the maintainer's full run, trading CV robustness against ~5×
-  search cost. Auto, the immediate target, uses 5.
 - **Seed count.** Parameterised, default 10 (standard 10–15); bump later if std is noisy.
+
+Resolved: per-dataset `n_splits` defaults are auto/heart/compas = 5, loan/blog = 1 (see §3).
