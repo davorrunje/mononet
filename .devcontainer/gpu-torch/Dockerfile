@@ -1,4 +1,8 @@
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+# Modern CUDA base, kept consistent across the GPU flavors. Note: torch
+# brings its own CUDA via its pip wheels (torch 2.12 ships CUDA 13), so the
+# base CUDA version does not gate Blackwell (sm_120) support — a recent
+# torch does. Driver on the host must support the GPU.
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1

@@ -1,4 +1,8 @@
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+# Modern CUDA base, kept consistent across the GPU flavors. Note: the
+# Keras JAX backend brings its own CUDA via the jax[cuda12] pip wheels
+# (CUDA 12.9), so the base CUDA version does not gate Blackwell (sm_120)
+# support — a recent jaxlib does. Driver on the host must support the GPU.
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
