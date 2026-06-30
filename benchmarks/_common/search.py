@@ -232,6 +232,6 @@ def run_dataset(
             "n_selected": agg.n_selected,
         }
         path = out_dir / f"{dataset}-{fname}.json"
-        path.write_text(json.dumps(rec, indent=2))
+        path.write_text(json.dumps(rec, indent=2) + "\n")
         written.append(path)
     return written
