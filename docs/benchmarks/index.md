@@ -12,6 +12,8 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 
 ## Sections
 
+- [Protocol](protocol.md) — how we train, select, and report; and why our numbers
+  differ from the original papers.
 - [Overview](00-overview.ipynb) — high-level summary.
 - [Reproducing the paper](paper-reproduction/index.md) — per-dataset notebooks and
   summary tables for all five benchmark datasets from the ICML 2023 paper.
@@ -22,6 +24,7 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 :hidden:
 :maxdepth: 2
 
+protocol
 00-overview
 paper-reproduction/index
 flavor-comparison
