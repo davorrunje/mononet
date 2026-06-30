@@ -26,8 +26,8 @@ else
   curl -LsSf https://astral.sh/uv/install.sh | sh
   # Add ~/.local/bin (the default uv install location) to interactive shells
   # launched after the install. Only on first install to avoid duplicates.
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.bashrc
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.zshrc 2>/dev/null || true
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc" 2>/dev/null || true
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
