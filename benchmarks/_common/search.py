@@ -131,9 +131,8 @@ def final_eval(
     metric: str | None = None,
     seeds: Iterable[int] = range(10),
     epochs: int = 50,
-    top_k: int = 5,
 ) -> Aggregate:
-    """Refit best HPs on the full train split; report TEST best-k-of-n."""
+    """Refit best HPs on the full train split; report TEST mean±std over all seeds."""
     metric = metric or _primary_metric(bundle)
     width = int(best_params["width"])
     cfg = BenchmarkConfig(
@@ -159,7 +158,7 @@ def final_eval(
     )
     rows = run(cfg, bundle)
     return aggregate(
-        rows, metric=metric, lower_is_better=_lower_is_better(metric), top_k=top_k
+        rows, metric=metric, lower_is_better=_lower_is_better(metric), top_k=len(rows)
     )
 
 
@@ -234,7 +233,6 @@ def run_dataset(
             backend=backend,
             seeds=final_seeds,
             epochs=epochs,
-            top_k=final_top_k,
         )
         rec = {
             "dataset": dataset,

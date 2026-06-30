@@ -67,20 +67,28 @@ def test_search_objective_is_fold_mean() -> None:
         assert np.isfinite(res.best_value)
 
 
-def test_final_eval_returns_aggregate_on_test() -> None:
+def test_final_eval_reports_all_seeds() -> None:
     b = _bundle()
     res = search(
-        b, mode="switch", residual=False, backend="torch", n_trials=2, epochs=1
+        b,
+        mode="switch",
+        residual=False,
+        backend="torch",
+        n_trials=2,
+        epochs=1,
+        n_splits=2,
     )
+    # 6 seeds > the old top_k=5 default, so all-seeds reporting is observable:
+    # the old best-5-of-6 would give n_selected == 5; the new behaviour gives 6.
     agg = final_eval(
         b,
         res.best_params,
         mode="switch",
         residual=False,
         backend="torch",
-        seeds=range(2),
+        seeds=range(6),
         epochs=1,
-        top_k=2,
     )
     assert np.isfinite(agg.mean)
-    assert agg.n_selected == 2
+    assert agg.n_seeds == 6
+    assert agg.n_selected == 6  # all seeds reported, no best-k selection
