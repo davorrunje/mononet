@@ -40,14 +40,18 @@ Demšar 2006 (cross-model statistics, deferred):
 
 1. **Fixed splits.** Keep the published `train_<ds>.csv` / `test_<ds>.csv`. Test is touched
    exactly once, for the final report — never for any decision.
-2. **Model selection on CV only.** Every choice (HPs, epochs) is made on a **5-fold CV of
-   the train split**. Stratified `KFold` for `binary_classification`, plain `KFold` for
-   `regression`; deterministic given a seed.
-3. **Per-trial objective = mean CV metric.** Each Optuna trial trains on 4 folds, evaluates
-   on the held-out fold, and the objective is the **mean metric across the 5 folds**.
-4. **Final eval.** Refit the single selected config on the **full train** split; run **10
-   seeds**; evaluate each on the **fixed test set**; report **mean ± std over all 10 seeds**.
-   No best-k selection.
+2. **Model selection on CV only.** Every choice (HPs, epochs) is made on a CV of the train
+   split, controlled by a parameter **`n_splits` (default 5)**. `n_splits ≥ 2` ⇒ (stratified
+   for `binary_classification`, plain for `regression`) `KFold`; **`n_splits = 1` ⇒ a single
+   80/20 holdout** (for large datasets where CV cost isn't worth it). Deterministic given a
+   seed. `n_splits` is overridable globally (CLI `--cv-folds`) and has a **per-dataset
+   default** so we can pick e.g. 5 for small datasets and 3 or 1 for the large ones.
+3. **Per-trial objective = mean CV metric.** Each Optuna trial trains on the fold's train
+   indices, evaluates on its val indices, and the objective is the **mean metric across the
+   `n_splits` folds** (a single value when `n_splits = 1`).
+4. **Final eval.** Refit the single selected config on the **full train** split; run a
+   parameterised number of **seeds (default 10)**; evaluate each on the **fixed test set**;
+   report **mean ± std over all seeds**. No best-k selection.
 
 This keeps what our pipeline already does right (HPs never see test) and removes the only
 non-standard piece (best-5-of-10), while making HP selection robust on small datasets via
@@ -57,29 +61,32 @@ CV instead of a single noisy ~60-row holdout.
 
 `benchmarks/_common/splits.py` — add:
 ```python
-def kfold_indices(
+def cv_splits(
     bundle: DatasetBundle, *, n_splits: int = 5, seed: int, stratify: bool | None = None,
 ) -> list[tuple[np.ndarray, np.ndarray]]:
-    """Return (train_idx, val_idx) per fold over bundle.X_train/y_train.
+    """Return [(train_idx, val_idx), ...] over bundle.X_train/y_train.
 
-    Stratified for binary_classification by default; deterministic given seed.
-    Never touches X_test/y_test.
+    n_splits >= 2 -> (stratified for binary_classification) KFold, one entry per fold.
+    n_splits == 1 -> a single 80/20 holdout, returned as a one-element list (reuses
+    train_val_split's logic). Deterministic given seed; never touches X_test/y_test.
     """
 ```
-Keep `train_val_split` (still used elsewhere / for quick checks).
+Keep `train_val_split` (the `n_splits == 1` path delegates to it).
 
 `benchmarks/_common/search.py`:
 - `search(...)` gains `n_splits: int = 5`. The per-trial objective averages the metric over
-  the `kfold_indices` folds (each fold reuses the existing `run()` via the val-bundle trick:
-  put the fold's val rows into the bundle's `X_test/y_test` slot with `dataclasses.replace`).
+  the `cv_splits` folds (each fold reuses the existing `run()` via the val-bundle trick: put
+  the fold's val rows into the bundle's `X_test/y_test` slot with `dataclasses.replace`).
   `StudyResult.best_value` becomes the **mean CV metric** of the best trial.
 - `final_eval(...)`: report **all seeds** — drop `top_k` selection (report mean ± std over
   the full `seeds`). The `Aggregate` keeps `mean`/`std`/`n_seeds`; `n_selected == n_seeds`.
-- `run_dataset(...)`: drop `final_top_k`; thread `n_splits`. Update the `_BUDGET` table —
-  keep per-dataset `n_trials`/`seeds`, remove the top-k column.
+- `run_dataset(...)`: drop `final_top_k`; thread `n_splits` (param, default from `_BUDGET`).
+  The `_BUDGET` table carries per-dataset `(n_trials, seeds, n_splits)` — default `n_splits`
+  5 for auto/heart/compas; the large datasets (loan/blog) may be set to 3 or 1.
 
-`benchmarks/search.py` (CLI): drop `--final-top-k`; add `--cv-folds` (default 5). `--smoke`
-preset uses `--cv-folds 2` for speed.
+`benchmarks/search.py` (CLI): drop `--final-top-k`; add `--cv-folds` (default: per-dataset
+`_BUDGET`, overridable). `--smoke` preset uses `--cv-folds 2` for speed. Seeds stay the
+existing `--final-seeds` parameter (default 10).
 
 ## 4. Results JSON
 
@@ -105,9 +112,10 @@ Existing four `auto-*.json` are regenerated under the new protocol.
 
 ## 6. Testing / CI
 
-- `test_splits.py`: `kfold_indices` returns `n_splits` folds, val indices partition the train
-  rows exactly once, stratification preserves class balance for binary tasks, determinism for
-  a fixed seed, test set never referenced.
+- `test_splits.py`: `cv_splits` returns `n_splits` folds whose val indices partition the
+  train rows exactly once (for `n_splits ≥ 2`); `n_splits == 1` returns a single ~80/20
+  holdout; stratification preserves class balance for binary tasks; determinism for a fixed
+  seed; test set never referenced.
 - `test_search.py`: a 2-trial, 2-fold synthetic `search()` returns a finite `cv_best`; the
   per-trial objective is the fold-mean.
 - `test_run_dataset` / CLI tests: updated for the dropped `top_k` and added `--cv-folds`;
@@ -130,8 +138,8 @@ body to "Adopt standard benchmark protocol + honest AutoMPG numbers (+ search-wr
 
 ## 9. Open items
 
-- **CV cost on large datasets.** 5-fold multiplies search training ~5×. Trivial for
-  auto/heart/compas; for loan/blog (already at reduced trial budget) it may be slow even on
-  the CUDA box. Option to drop to 3-fold or single-holdout for the two large datasets —
-  decide before the maintainer's full run (auto, the immediate target, is unaffected).
-- **Seed count.** 10 seeds retained for parity; standard is 10–15. Revisit if std is noisy.
+- **Per-dataset `n_splits` defaults for the large datasets.** `n_splits` is now a parameter
+  (default 5, `1` = single holdout); the only thing left is choosing loan/blog's `_BUDGET`
+  default (5 / 3 / 1) before the maintainer's full run, trading CV robustness against ~5×
+  search cost. Auto, the immediate target, uses 5.
+- **Seed count.** Parameterised, default 10 (standard 10–15); bump later if std is noisy.
