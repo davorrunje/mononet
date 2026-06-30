@@ -1,4 +1,4 @@
-"""Optuna search engine over the Phase-1 run() harness (validation-driven)."""
+"""Optuna search engine over the Phase-1 run() harness (cross-validation-driven)."""
 
 from __future__ import annotations
 
