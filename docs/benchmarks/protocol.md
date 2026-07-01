@@ -34,3 +34,24 @@ held-out results sit somewhat **higher (worse)** than the published figures. The
 difference is expected and is **not** a regression in `mononet`; the two sets of
 numbers are simply **not directly comparable**. We keep the published figures in the
 comparison tables for reference, labelled `[prior protocol]`.
+
+## Interpreting the numbers
+
+Two things to keep in mind when reading the tables, both illustrated by a diagnostic
+run on Auto MPG (the smallest dataset, 314 train / 78 test):
+
+**The CV-selection score is not a test estimate.** The CV metric that drives
+hyperparameter selection is systematically *optimistic* relative to held-out test
+error — it is the minimum over many trials, so it partly selects luck. On Auto MPG,
+nested cross-validation (which re-runs the whole search inside each outer fold) puts
+the honest pipeline estimate roughly **midway** between the CV-selection score and the
+published-split test score: of the ~2 MSE gap, about half is this selection optimism
+and about half is the published 78-row test split being genuinely harder than
+train-distribution holdouts. Report and compare the **test** column, never the CV one.
+
+**Small datasets are noisy — don't over-read single-dataset margins.** On Auto MPG the
+per-fold spread in nested CV is large (±1–4.5 MSE, with occasional divergent folds),
+so flavor differences smaller than ~1 MSE are within the noise. Treat per-dataset
+flavor rankings as suggestive; a robust "which flavor wins" conclusion needs the
+larger datasets (COMPAS ≈ 5k, Blog ≈ 47k, Loan ≈ 419k rows), where these estimates
+tighten considerably.
