@@ -21,7 +21,7 @@ _SMOKE: dict[str, Any] = {
     "n_trials": 5,
     "epochs": 5,
     "final_seeds": 2,
-    "final_top_k": 2,
+    "cv_folds": 2,
 }
 
 
@@ -56,7 +56,7 @@ def main(
     epochs: int = typer.Option(50, "--epochs"),
     n_jobs: int = typer.Option(1, "--n-jobs"),
     final_seeds: int | None = typer.Option(None, "--final-seeds"),
-    final_top_k: int | None = typer.Option(None, "--final-top-k"),
+    cv_folds: int | None = typer.Option(None, "--cv-folds"),
     out_dir: Path | None = typer.Option(None, "--out-dir"),  # noqa: B008
     storage_dir: Path | None = typer.Option(None, "--storage-dir"),  # noqa: B008
     smoke: bool = typer.Option(False, "--smoke", help="tiny preset for validation"),
@@ -71,14 +71,14 @@ def main(
     nt: int | None = _SMOKE["n_trials"] if smoke else n_trials
     ep: int = _SMOKE["epochs"] if smoke else epochs
     fseeds: int | None = _SMOKE["final_seeds"] if smoke else final_seeds
-    ftopk: int | None = _SMOKE["final_top_k"] if smoke else final_top_k
+    cvf: int | None = _SMOKE["cv_folds"] if smoke else cv_folds
     flavs = _parse_flavors(flavors)
     flav_names = [flavor_name(m, r) for m, r in flavs]
 
     if dry_run:
         typer.echo(
             f"would run datasets={ds} flavors={flav_names} backend={backend} "
-            f"n_trials={nt} epochs={ep} n_jobs={n_jobs}"
+            f"n_trials={nt} epochs={ep} n_jobs={n_jobs} cv_folds={cvf}"
         )
         raise typer.Exit(0)
 
@@ -91,7 +91,7 @@ def main(
             epochs=ep,
             n_jobs=n_jobs,
             final_seeds=range(fseeds) if fseeds is not None else None,
-            final_top_k=ftopk,
+            n_splits=cvf,
             out_dir=out_dir,
             storage_dir=storage_dir,
         )

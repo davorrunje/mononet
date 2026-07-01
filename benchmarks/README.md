@@ -2,6 +2,19 @@
 
 Repo-only harness for reproducing paper experiments. **Not shipped** in the `mononet` wheel or sdist.
 
+## Benchmark protocol
+
+Standard held-out protocol: fixed published train/test split; HP selection by
+k-fold CV on **train** (5 folds for auto/heart/compas, single 80/20 holdout for
+loan/blog); refit the selected config on full train; report **mean ± std over all
+seeds** on the held-out test set (no best-k). The test set never influences model
+selection.
+
+Our numbers therefore sit somewhat higher than the originally published figures,
+which used a test-selected protocol (validation-on-test, early stopping on test,
+best-epoch, best-5-of-10) and are **not directly comparable**. Full explanation:
+[docs/benchmarks/protocol.md](../docs/benchmarks/protocol.md).
+
 ## Phase 2a: Hyperparameter Search
 
 The five search notebooks run Optuna TPE over a configurable hyperparameter space on validation splits, then refit best parameters on the full training set for final test evaluation.

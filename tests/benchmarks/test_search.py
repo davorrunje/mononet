@@ -31,7 +31,7 @@ def test_flavor_name() -> None:
     assert flavor_name("absolute", True) == "absolute-residual"
 
 
-def test_search_two_trials_returns_finite_best() -> None:
+def test_search_two_trials_two_folds_returns_finite_best() -> None:
     res = search(
         _bundle(),
         mode="switch",
@@ -40,6 +40,7 @@ def test_search_two_trials_returns_finite_best() -> None:
         n_trials=2,
         seed=0,
         epochs=1,
+        n_splits=2,
     )
     assert isinstance(res, StudyResult)
     assert res.n_trials == 2
@@ -49,20 +50,45 @@ def test_search_two_trials_returns_finite_best() -> None:
     assert "width" in res.best_params
 
 
-def test_final_eval_returns_aggregate_on_test() -> None:
+def test_search_objective_is_fold_mean() -> None:
+    # n_splits=1 (single holdout) and n_splits=3 must both yield a finite CV metric;
+    # this exercises the averaging path without asserting an exact value.
+    for n_splits in (1, 3):
+        res = search(
+            _bundle(),
+            mode="switch",
+            residual=False,
+            backend="torch",
+            n_trials=2,
+            seed=0,
+            epochs=1,
+            n_splits=n_splits,
+        )
+        assert np.isfinite(res.best_value)
+
+
+def test_final_eval_reports_all_seeds() -> None:
     b = _bundle()
     res = search(
-        b, mode="switch", residual=False, backend="torch", n_trials=2, epochs=1
+        b,
+        mode="switch",
+        residual=False,
+        backend="torch",
+        n_trials=2,
+        epochs=1,
+        n_splits=2,
     )
+    # 6 seeds > the old top_k=5 default, so all-seeds reporting is observable:
+    # the old best-5-of-6 would give n_selected == 5; the new behaviour gives 6.
     agg = final_eval(
         b,
         res.best_params,
         mode="switch",
         residual=False,
         backend="torch",
-        seeds=range(2),
+        seeds=range(6),
         epochs=1,
-        top_k=2,
     )
     assert np.isfinite(agg.mean)
-    assert agg.n_selected == 2
+    assert agg.n_seeds == 6
+    assert agg.n_selected == 6  # all seeds reported, no best-k selection

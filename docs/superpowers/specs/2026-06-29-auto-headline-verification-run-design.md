@@ -1,8 +1,14 @@
 # AutoMPG Full-Budget Verification Run — Design
 
 **Date:** 2026-06-29
-**Status:** Approved
+**Status:** Superseded (reporting protocol)
 **Builds on:** [Phase 2a search execution](2026-06-29-phase2a-search-execution-design.md) (PR #57, merged) — `run_dataset()`, the `python -m benchmarks.search` CLI, `flavor-comparison.ipynb`.
+
+> **Superseded by [Standard Benchmark Protocol](2026-06-30-standard-benchmark-protocol-design.md).**
+> This doc's reporting protocol (single holdout, "10 final seeds (best-5)", `val_best`)
+> reflects the original inherited scheme; the AutoMPG numbers are now produced under the
+> standard held-out protocol (k-fold CV for HP selection, mean±std over **all** seeds,
+> `cv_best`). The goals/health-check rationale below still stand.
 
 > Execution/validation task, not new modelling. Uses the merged Phase-2a tooling
 > as-is. No `mononet` package change; no new benchmark code.
