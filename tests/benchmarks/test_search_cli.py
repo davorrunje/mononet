@@ -27,6 +27,7 @@ def test_help_lists_flags() -> None:
         "--backend",
         "--n-trials",
         "--n-jobs",
+        "--cv-folds",
         "--smoke",
         "--dry-run",
     ):
@@ -37,6 +38,8 @@ def test_smoke_preset_values() -> None:
     assert _SMOKE["datasets"] == ["auto", "heart"]
     assert _SMOKE["n_trials"] == 5
     assert _SMOKE["epochs"] == 5
+    assert _SMOKE["cv_folds"] == 2
+    assert "final_top_k" not in _SMOKE
 
 
 def test_dry_run_reports_plan_without_running() -> None:

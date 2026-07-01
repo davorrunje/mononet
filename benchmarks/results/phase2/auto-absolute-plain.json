@@ -2,19 +2,18 @@
   "dataset": "auto",
   "flavor": "absolute-plain",
   "best_params": {
-    "width": 64,
+    "width": 21,
     "depth": 2,
-    "lr": 0.0367269668675182,
-    "weight_decay": 0.14269661345702456,
-    "dropout": 0.10831494891856375,
-    "lr_decay": 0.92242668666675,
-    "batch_size": 32,
-    "convex_fraction": 0.02643709502263225
+    "lr": 0.06046480735883004,
+    "weight_decay": 0.1791930220711307,
+    "dropout": 0.12835647079773935,
+    "lr_decay": 0.9220097554552398,
+    "batch_size": 8,
+    "convex_fraction": 0.38992958492791635
   },
-  "val_best": 6.369777947693086,
+  "cv_best": 7.44608322761334,
   "test_metric": "mse",
-  "test_mean": 10.03384782822036,
-  "test_std": 0.6456829621871822,
-  "n_seeds": 10,
-  "n_selected": 5
+  "test_mean": 9.519132365230883,
+  "test_std": 0.260089350801179,
+  "n_seeds": 10
 }

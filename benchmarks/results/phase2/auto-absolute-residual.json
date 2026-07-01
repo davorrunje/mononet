@@ -2,19 +2,18 @@
   "dataset": "auto",
   "flavor": "absolute-residual",
   "best_params": {
-    "width": 21,
-    "depth": 1,
-    "lr": 0.015462304488260945,
-    "weight_decay": 0.18683644026608004,
-    "dropout": 0.0016359038541393783,
-    "lr_decay": 0.9806966732361818,
+    "width": 64,
+    "depth": 2,
+    "lr": 0.064183634046716,
+    "weight_decay": 0.05651127070750453,
+    "dropout": 0.006227543624120854,
+    "lr_decay": 0.8833863592586929,
     "batch_size": 8,
-    "convex_fraction": 0.07629848114743415
+    "convex_fraction": 0.17639248004598662
   },
-  "val_best": 5.975406011401667,
+  "cv_best": 6.850173888707855,
   "test_metric": "mse",
-  "test_mean": 9.947994978232426,
-  "test_std": 0.0829930861259306,
-  "n_seeds": 10,
-  "n_selected": 5
+  "test_mean": 9.942844838521545,
+  "test_std": 0.18405086870741139,
+  "n_seeds": 10
 }

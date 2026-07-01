@@ -1,4 +1,4 @@
-"""Optuna search engine over the Phase-1 run() harness (validation-driven)."""
+"""Optuna search engine over the Phase-1 run() harness (cross-validation-driven)."""
 
 from __future__ import annotations
 
@@ -8,13 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import optuna
 
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
 from benchmarks._common.results import Aggregate, aggregate
 from benchmarks._common.runner import run
 from benchmarks._common.search_spaces import suggest_config
-from benchmarks._common.splits import train_val_split
+from benchmarks._common.splits import cv_splits
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -43,16 +44,27 @@ class StudyResult:
     n_trials: int
 
 
-def _val_bundle(bundle: DatasetBundle, seed: int) -> DatasetBundle:
-    """Throwaway bundle with the held-out validation set in the test slot.
+def _fold_bundles(
+    bundle: DatasetBundle, *, n_splits: int, seed: int
+) -> list[DatasetBundle]:
+    """Throwaway per-fold bundles with each fold's validation rows in the test slot.
 
-    Lets the search reuse run() (which evaluates on X_test) to score on
-    validation without ever touching the real test set.
+    Lets the search reuse run() (which evaluates on X_test) to score on every CV
+    fold without ever touching the real test set.
     """
-    x_tr, y_tr, x_val, y_val = train_val_split(bundle, seed=seed)
-    return dataclasses.replace(
-        bundle, X_train=x_tr, y_train=y_tr, X_test=x_val, y_test=y_val
-    )
+    folds = cv_splits(bundle, n_splits=n_splits, seed=seed)
+    out: list[DatasetBundle] = []
+    for tr, val in folds:
+        out.append(
+            dataclasses.replace(
+                bundle,
+                X_train=bundle.X_train[tr],
+                y_train=bundle.y_train[tr],
+                X_test=bundle.X_train[val],
+                y_test=bundle.y_train[val],
+            )
+        )
+    return out
 
 
 def search(
@@ -65,13 +77,14 @@ def search(
     seed: int = 0,
     epochs: int = 50,
     n_jobs: int = 1,
+    n_splits: int = 5,
     metric: str | None = None,
     storage: str | None = None,
 ) -> StudyResult:
-    """Tune (dataset, flavor) HPs on a validation split via Optuna TPE."""
+    """Tune (dataset, flavor) HPs by mean k-fold CV metric via Optuna TPE."""
     metric = metric or _primary_metric(bundle)
     direction = "minimize" if _lower_is_better(metric) else "maximize"
-    vb = _val_bundle(bundle, seed)
+    folds = _fold_bundles(bundle, n_splits=n_splits, seed=seed)
 
     def objective(trial: optuna.Trial) -> float:
         cfg: BenchmarkConfig = suggest_config(
@@ -83,10 +96,13 @@ def search(
             epochs=epochs,  # type: ignore[arg-type]
             metric=metric,  # type: ignore[arg-type]
         )
-        rows = run(cfg, vb)
-        if not rows:
-            raise RuntimeError("run() returned no rows for trial")
-        return float(rows[0].scores[metric])  # type: ignore[index]
+        scores: list[float] = []
+        for fb in folds:
+            rows = run(cfg, fb)
+            if not rows:
+                raise RuntimeError("run() returned no rows for trial")
+            scores.append(float(rows[0].scores[metric]))  # type: ignore[index]
+        return float(np.mean(scores))
 
     study = optuna.create_study(
         study_name=f"{bundle.name}-{flavor_name(mode, residual)}",
@@ -115,9 +131,8 @@ def final_eval(
     metric: str | None = None,
     seeds: Iterable[int] = range(10),
     epochs: int = 50,
-    top_k: int = 5,
 ) -> Aggregate:
-    """Refit best HPs on the full train split; report TEST best-k-of-n."""
+    """Refit best HPs on the full train split; report TEST mean±std over all seeds."""
     metric = metric or _primary_metric(bundle)
     width = int(best_params["width"])
     cfg = BenchmarkConfig(
@@ -143,7 +158,7 @@ def final_eval(
     )
     rows = run(cfg, bundle)
     return aggregate(
-        rows, metric=metric, lower_is_better=_lower_is_better(metric), top_k=top_k
+        rows, metric=metric, lower_is_better=_lower_is_better(metric), top_k=len(rows)
     )
 
 
@@ -153,13 +168,15 @@ _ALL_FLAVORS: tuple[tuple[str, bool], ...] = (
     ("absolute", False),
     ("absolute", True),
 )
-# (n_trials, final_seeds, final_top_k) per dataset
+# (n_trials, final_seeds, n_splits) per dataset.
+# n_splits: 5-fold CV for small/medium datasets; 1 (single holdout) for the large
+# ones (loan/blog), where a single split is already low-variance and 5x cheaper.
 _BUDGET: dict[str, tuple[int, range, int]] = {
     "auto": (50, range(10), 5),
     "heart": (50, range(10), 5),
     "compas": (50, range(10), 5),
-    "loan": (25, range(5), 3),
-    "blog": (25, range(5), 3),
+    "loan": (25, range(5), 1),
+    "blog": (25, range(5), 1),
 }
 
 
@@ -172,7 +189,7 @@ def run_dataset(
     epochs: int = 50,
     n_jobs: int = 1,
     final_seeds: Iterable[int] | None = None,
-    final_top_k: int | None = None,
+    n_splits: int | None = None,
     data_dir: Path | None = None,
     out_dir: Path | None = None,
     storage_dir: Path | None = None,
@@ -185,10 +202,10 @@ def run_dataset(
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
 
-    b_trials, b_seeds, b_topk = _BUDGET.get(dataset, (50, range(10), 5))
+    b_trials, b_seeds, b_splits = _BUDGET.get(dataset, (50, range(10), 5))
     n_trials = b_trials if n_trials is None else n_trials
     final_seeds = b_seeds if final_seeds is None else final_seeds
-    final_top_k = b_topk if final_top_k is None else final_top_k
+    n_splits = b_splits if n_splits is None else n_splits
     data_dir = data_dir or default_dest()
     out_dir = out_dir or (Path(__file__).resolve().parents[1] / "results" / "phase2")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -208,6 +225,7 @@ def run_dataset(
             n_trials=n_trials,
             epochs=epochs,
             n_jobs=n_jobs,
+            n_splits=n_splits,
             storage=storage,
         )
         agg = final_eval(
@@ -218,18 +236,16 @@ def run_dataset(
             backend=backend,
             seeds=final_seeds,
             epochs=epochs,
-            top_k=final_top_k,
         )
         rec = {
             "dataset": dataset,
             "flavor": study.flavor,
             "best_params": study.best_params,
-            "val_best": study.best_value,
+            "cv_best": study.best_value,
             "test_metric": agg.metric,
             "test_mean": agg.mean,
             "test_std": agg.std,
             "n_seeds": agg.n_seeds,
-            "n_selected": agg.n_selected,
         }
         path = out_dir / f"{dataset}-{fname}.json"
         path.write_text(json.dumps(rec, indent=2) + "\n")

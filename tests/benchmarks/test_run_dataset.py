@@ -19,7 +19,7 @@ def test_run_dataset_writes_one_json_per_flavor(tmp_path: Path) -> None:
         n_trials=2,
         epochs=1,
         final_seeds=range(2),
-        final_top_k=2,
+        n_splits=2,
         data_dir=FIXTURES,
         out_dir=tmp_path,
     )
@@ -33,20 +33,22 @@ def test_run_dataset_writes_one_json_per_flavor(tmp_path: Path) -> None:
     assert {
         "flavor",
         "best_params",
-        "val_best",
+        "cv_best",
         "test_metric",
         "test_mean",
         "test_std",
         "n_seeds",
-        "n_selected",
     } <= set(rec)
+    assert "n_selected" not in rec
+    assert "val_best" not in rec
 
 
 def test_run_dataset_default_budget_from_table() -> None:
     from benchmarks._common.search import _BUDGET
 
-    assert _BUDGET["auto"][0] == 50
-    assert _BUDGET["loan"][0] == 25
+    assert _BUDGET["auto"] == (50, range(10), 5)
+    assert _BUDGET["loan"] == (25, range(5), 1)
+    assert _BUDGET["blog"][2] == 1  # large datasets use single holdout
 
 
 def test_storage_uses_deterministic_study_name_so_it_resumes(tmp_path: Path) -> None:
@@ -67,6 +69,7 @@ def test_storage_uses_deterministic_study_name_so_it_resumes(tmp_path: Path) -> 
         backend="torch",
         n_trials=2,
         epochs=1,
+        n_splits=2,
         storage=storage,
     )
     search(
@@ -76,6 +79,7 @@ def test_storage_uses_deterministic_study_name_so_it_resumes(tmp_path: Path) -> 
         backend="torch",
         n_trials=2,
         epochs=1,
+        n_splits=2,
         storage=storage,
     )
     study = optuna.load_study(

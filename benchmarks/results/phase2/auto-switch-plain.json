@@ -3,17 +3,16 @@
   "flavor": "switch-plain",
   "best_params": {
     "width": 21,
-    "depth": 2,
-    "lr": 0.026116932108161527,
-    "weight_decay": 0.08580975845809014,
-    "dropout": 0.01901982136464167,
-    "lr_decay": 0.9571674611577461,
-    "batch_size": 8
+    "depth": 1,
+    "lr": 0.058503437995769875,
+    "weight_decay": 0.04876273664586736,
+    "dropout": 0.14692709357016362,
+    "lr_decay": 0.9527207596163255,
+    "batch_size": 16
   },
-  "val_best": 6.135130432566941,
+  "cv_best": 7.141734438500718,
   "test_metric": "mse",
-  "test_mean": 9.73616876969361,
-  "test_std": 0.16622904719564366,
-  "n_seeds": 10,
-  "n_selected": 5
+  "test_mean": 9.558117116361545,
+  "test_std": 0.2511704378508216,
+  "n_seeds": 10
 }
