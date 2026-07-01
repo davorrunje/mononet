@@ -1,0 +1,20 @@
+{
+  "dataset": "auto",
+  "flavor": "absolute-residual",
+  "best_params": {
+    "width": 21,
+    "depth": 1,
+    "lr": 0.015462304488260945,
+    "weight_decay": 0.18683644026608004,
+    "dropout": 0.0016359038541393783,
+    "lr_decay": 0.9806966732361818,
+    "batch_size": 8,
+    "convex_fraction": 0.07629848114743415
+  },
+  "val_best": 5.975406011401667,
+  "test_metric": "mse",
+  "test_mean": 9.947994978232426,
+  "test_std": 0.0829930861259306,
+  "n_seeds": 10,
+  "n_selected": 5
+}

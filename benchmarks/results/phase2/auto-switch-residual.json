@@ -1,0 +1,19 @@
+{
+  "dataset": "auto",
+  "flavor": "switch-residual",
+  "best_params": {
+    "width": 21,
+    "depth": 1,
+    "lr": 0.0935032118439734,
+    "weight_decay": 0.12894560407386363,
+    "dropout": 0.17755827608966,
+    "lr_decay": 0.9630602867795157,
+    "batch_size": 32
+  },
+  "val_best": 5.908439701561153,
+  "test_metric": "mse",
+  "test_mean": 9.530137737435188,
+  "test_std": 0.10540364648924842,
+  "n_seeds": 10,
+  "n_selected": 5
+}

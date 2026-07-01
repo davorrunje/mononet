@@ -1,3 +1,25 @@
 #!/usr/bin/env bash
 # Wrapper for the repo-only Phase-2a search CLI (not a packaged console script).
-exec uv run python -m benchmarks.search "$@"
+#
+# `uv run` provisions its own venv from [tool.uv] default-groups (dev/docs/lint)
+# and no extras, so neither the backend framework (an optional extra: torch/jax/
+# keras) nor the bench group (typer/optuna/…) would be present. Provision both
+# here: the `bench` group always, and the extra matching the requested backend
+# (default torch — the headline backend). Backend is read from the CLI's
+# --backend option in either "--backend torch" or "--backend=torch" form.
+set -euo pipefail
+
+backend=torch
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+  case "${args[i]}" in
+    --backend)
+      backend="${args[i + 1]:-$backend}"
+      ;;
+    --backend=*)
+      backend="${args[i]#--backend=}"
+      ;;
+  esac
+done
+
+exec uv run --extra "$backend" --group bench python -m benchmarks.search "$@"
