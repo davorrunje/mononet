@@ -8,11 +8,11 @@
     "workspaceFolder": "/workspaces/mononet",
     "remoteEnv": {},
     "containerEnv": {
-        "CLAUDE_CONFIG_DIR": "/root/.claude",
-        "PATH": "/root/.elan/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+        "PATH": "/home/vscode/.elan/bin:/home/vscode/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     },
     "postCreateCommand": "bash .devcontainer/shared/post-create.sh",
-    "remoteUser": "root",
+    "remoteUser": "vscode",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
             "installZsh": true,
@@ -31,7 +31,7 @@
     "updateContentCommand": "bash .devcontainer/proofs/setup.sh",
     "initializeCommand": "bash .devcontainer/shared/host-init.sh",
     "mounts": [
-        "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
         "source=${localEnv:HOME}/.config/mononet-devcontainer,target=/var/run/devcontainer-host-secrets,type=bind,readonly"
     ],
     "customizations": {
@@ -45,7 +45,7 @@
                 },
                 "editor.unicodeHighlight.allowedLocales": { "_os": true, "_vscode": true },
                 "lean4.serverEnv": {
-                    "PATH": "/root/.elan/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                    "PATH": "/home/vscode/.elan/bin:/home/vscode/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
                 }
             },
             "extensions": [
