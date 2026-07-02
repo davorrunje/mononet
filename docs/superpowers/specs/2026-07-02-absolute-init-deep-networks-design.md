@@ -71,24 +71,41 @@ and we stop. (Given §1 we expect confirmation; this rule guards against rationa
 
 ## 4. The fix — static `absolute` init (all backends)
 
-**Method (data-free, closed-form).**
-1. **Weight scale.** Derive the init std `g/√(fan_in)` such that the *second moment* of a
-   layer's output is preserved through the `|W|` + convex/concave-`act` transform — the
-   Kaiming-analogue gain `g` for this construction. `g` is obtained analytically for the
-   default (`elu`, `convex_fraction=0.5`) and **calibrated/validated numerically via the D
-   sweep** (choose `g` so the measured per-layer variance ratio ≈ 1 across depth). The method
-   is fixed; `g` is its output — not a placeholder.
-2. **Mean-centering.** Bias initialised to `0`; the 50/50 convex/concave split centres a
-   layer's output when its pre-activation is centred, which keeps subsequent inputs centred
-   and prevents the depth-compounding drift. If D shows residual drift at depth, add a static
-   per-unit bias offset that cancels the expected `E[x@|W|]` under standardized input
-   (still data-free) — a documented refinement, decided by D evidence.
+A single backend-agnostic helper derives the init from the **activation's moments under a
+standard-normal pre-activation**, parameterised by `(activation, convex_fraction)`:
 
-**Wiring.** A backend-agnostic gain/formula lives in `mononet/core` (single source of truth,
-so torch/JAX/Keras share the identical constant). Each backend's layer init applies it as the
-**default when `mode="absolute"`** (an internal `InitSpec` scheme, e.g. `"absolute_variance"`,
-selected automatically); an explicit `InitSpec`/scheme argument still overrides. `switch`
-default init is unchanged.
+`mononet/core/init.py` — `absolute_init_params(activation, convex_fraction) -> (gain, convex_bias, concave_bias)`:
+
+- **Per-unit mean-centering.** For `H ~ N(0,1)`, a convex unit emits `act(H)` (mean `μ_a > 0`),
+  a concave unit `−act(−H)` (mean `−μ_a`). Choose `δ*` with `E[act(H + δ*)] = 0`; convex units
+  init bias `+δ*`, concave units `−δ*`. Every unit is then individually zero-mean, so a
+  layer's output is zero-mean for **any** `convex_fraction` (including `0.0`/`1.0`) — killing
+  the depth-compounding drift. `convex_fraction` enters **only** via the split point
+  `c = ceil(convex_fraction · units)` (which units get `+δ*` vs `−δ*`); the bias values and
+  the gain do not otherwise depend on `f`.
+- **Weight scale (gain).** After centering, convex and concave units carry equal variance, so
+  the gain is `f`-independent. `gain` is set so the output second moment is preserved through
+  the `|W|` + centered-activation map (the Kaiming-analogue for this construction).
+- **Per activation.** `(gain, δ*)` are derived from the activation's moments — analytically
+  where clean, else via a fixed standard-normal **quadrature** (data-free, deterministic, so
+  the init stays static and seed-reproducible). Built-ins (`elu`, `relu`, `selu`, `softplus`)
+  use cached constants; the quadrature is the general fallback.
+
+**Wiring.** Each backend's layer init (torch `_init_weight`/`MonoLinear`, JAX `nnx`, Keras
+initializer) calls the shared helper and, **as the default when `mode="absolute"`**, samples
+`W ~ 𝒩(0, gain²/fan_in)` and initialises the bias vector per-unit (`+δ*` for the first `c`
+units, `−δ*` for the rest). The single shared helper makes the three backends init `absolute`
+identically in expectation. An explicit `InitSpec`/scheme argument still overrides the whole
+derivation; `switch` default init is unchanged.
+
+**Custom / new activations.** Because `(gain, δ*)` derive from the activation's moments, a new
+activation obtains a correct init automatically once its moments are computable (registered
+callable → quadrature). For full manual control, the `InitSpec` override path bypasses the
+derivation entirely.
+
+The derived `(gain, δ*)` per built-in activation are **validated by the D sweep** (post-fix,
+measured per-layer mean ≈ 0 and variance ratio ≈ 1 across depth); the method is fixed, the
+constants are its output — not placeholders.
 
 ## 5. Fast regression test (CI)
 
@@ -115,8 +132,8 @@ don't keep the broken init around); the diagnostic notebook carries that compari
 ## 7. Repo layout
 
 ```
-mononet/core/…                      # backend-agnostic absolute-init gain (single source)
-mononet/{torch,jax,keras}/layers.py # apply the gain as default for mode="absolute"
+mononet/core/init.py                # absolute_init_params(activation, convex_fraction) (shared)
+mononet/{torch,jax,keras}/layers.py # apply gain + per-unit bias as default for mode="absolute"
 benchmarks/_common/init_diagnostics.py   # synthetic_monotone, grad_flow, trainability
 benchmarks/results/deep-init/*.json      # committed deep-net + sweep results (maintainer run)
 docs/benchmarks/deep-init.ipynb          # rendered diagnostic + showcase
@@ -144,8 +161,10 @@ tests/{torch,jax,keras}/test_deep_init.py  # fast gradient-band test (importorsk
 
 ## 10. Open items
 
-- Exact gain constant `g` and whether a static bias offset is needed — outputs of the D
-  calibration in §4, resolved during implementation.
-- Whether `relu` (paper's activation) needs a different gain than `elu` (our default) — the D
-  activation sweep answers this; if so, the gain is a small function of activation.
+- For each built-in activation, whether `(gain, δ*)` is derived closed-form or by cached
+  quadrature — an implementation choice; either way validated against the D sweep (per-layer
+  mean ≈ 0, variance ratio ≈ 1 across depth). Per-activation differences are handled by the
+  moment-based derivation itself (§4), not left open.
+- Whether the quadrature grid / sample count for the general fallback needs tuning for
+  accuracy vs speed — set to a fixed, documented value; validated by D.
 - Deep-benchmark budget (depth, epochs, seeds) — set from the D runtime once known.
