@@ -3,12 +3,14 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, cast
 
 import keras
 import numpy as np
 from keras import ops
 
+from mononet.core.init import absolute_init_params
 from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
 from mononet.keras import _kernels
 
@@ -66,6 +68,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         self.activation_name = _act_name(activation)
         self.convex_fraction = convex_fraction
         self.init_name = _init_name(init)
+        self._absolute_default = mode == "absolute" and init is None
         self.use_bias = bias
 
     def build(self, input_shape: Any) -> None:
@@ -73,18 +76,22 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
 
         :param input_shape: Shape tuple; ``input_shape[-1]`` is ``in_features``.
         """
+        in_f = int(input_shape[-1])
+        if self._absolute_default:
+            gain, bias_fill = absolute_init_params(
+                self.activation_name, self.convex_fraction
+            )
+            w_init = keras.initializers.RandomNormal(stddev=gain / math.sqrt(in_f))
+            b_init = keras.initializers.Constant(bias_fill)
+        else:
+            w_init = self.init_name
+            b_init = "zeros"
         self.w = self.add_weight(
-            shape=(int(input_shape[-1]), self.units),
-            initializer=self.init_name,
-            trainable=True,
-            name="weight",
+            shape=(in_f, self.units), initializer=w_init, trainable=True, name="weight"
         )
         self.b = (
             self.add_weight(
-                shape=(self.units,),
-                initializer="zeros",
-                trainable=True,
-                name="bias",
+                shape=(self.units,), initializer=b_init, trainable=True, name="bias"
             )
             if self.use_bias
             else None
