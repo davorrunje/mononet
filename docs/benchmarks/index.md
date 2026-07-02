@@ -19,6 +19,8 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
   summary tables for all five benchmark datasets from the ICML 2023 paper.
 - [Flavor comparison](flavor-comparison.ipynb) — Phase 2a Optuna HP-search results
   comparing the four `mode × residual` flavors (`absolute`/`switch` × `plain`/`residual`).
+- [Deep-network init](deep-init.ipynb) — the static `absolute` init that fixes moderate-depth
+  trainability, and the deep-depth limitation it does not solve.
 
 ```{toctree}
 :hidden:
@@ -28,4 +30,5 @@ protocol
 00-overview
 paper-reproduction/index
 flavor-comparison
+deep-init
 ```

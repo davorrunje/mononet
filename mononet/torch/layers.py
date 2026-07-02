@@ -3,11 +3,13 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import torch
 from torch import nn
 
+from mononet.core.init import absolute_init_params
 from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
 from mononet.torch import _kernels
 
@@ -72,8 +74,16 @@ class MonoLinear(nn.Module):
         self.activation_name = _act_name(activation)
         self.convex_fraction = convex_fraction
         self.weight = nn.Parameter(torch.empty(in_features, units))
-        _init_weight(self.weight, init)
-        self.bias = nn.Parameter(torch.zeros(units)) if bias else None
+        bias_fill = 0.0
+        if mode == "absolute" and init is None:
+            gain, bias_fill = absolute_init_params(
+                self.activation_name, convex_fraction
+            )
+            with torch.no_grad():
+                self.weight.normal_(0.0, gain / math.sqrt(in_features))
+        else:
+            _init_weight(self.weight, init)
+        self.bias = nn.Parameter(torch.full((units,), bias_fill)) if bias else None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the monotonic dense transformation."""
