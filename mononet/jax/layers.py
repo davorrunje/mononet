@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import jax.nn.initializers as jinit
@@ -10,6 +11,7 @@ import jax.numpy as jnp
 import numpy as np
 from flax import nnx
 
+from mononet.core.init import absolute_init_params
 from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
 from mononet.jax import _kernels
 
@@ -80,9 +82,19 @@ class MonoLinear(nnx.Module):
         self.mode = mode
         self.activation_name = _act_name(activation)
         self.convex_fraction = convex_fraction
-        self.weight = nnx.Param(_init_array((in_features, units), init, rngs))
+        bias_fill = 0.0
+        if mode == "absolute" and init is None:
+            gain, bias_fill = absolute_init_params(
+                self.activation_name, convex_fraction
+            )
+            w = jinit.normal(stddev=gain / math.sqrt(in_features))(
+                rngs.params(), (in_features, units)
+            )
+            self.weight = nnx.Param(w)
+        else:
+            self.weight = nnx.Param(_init_array((in_features, units), init, rngs))
         self.bias: nnx.Param[jnp.ndarray] | None = (
-            nnx.Param(jnp.zeros((units,))) if bias else None
+            nnx.Param(jnp.full((units,), bias_fill)) if bias else None
         )
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
