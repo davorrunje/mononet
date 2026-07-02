@@ -27,25 +27,39 @@ init trains — as the Sartor paper reports. This is an **optimization/trainabil
 (gradient conditioning through depth), not merely forward variance; it is measured by
 training deep stacks and by gradient-flow at init, not by a single forward pass.
 
+> **Scope revision (2026-07-02, post-implementation evidence).** During execution the
+> diagnostic showed that a static per-layer init — while it *does* fix trainability at
+> **moderate depth** — cannot make a *genuinely deep* (≥8) plain stack forward-stable:
+> `|W|`'s all-positive weights make outputs strongly correlated (≈0.8), so variance
+> compounds with depth for **both** `absolute` and `switch` (neither is forward-stable in a
+> plain unnormalized deep stack). Verified trainability (300-epoch Adam, synthetic): depth 2
+> `absolute` new-init 0.117 vs old `he_normal` 1.73; depth 4 0.80 vs 1.94 — a clear win; but
+> depth 8 stalls and depth 16 diverges (as does `switch`). So this spec is **scoped to A: the
+> correct static init as a moderate-depth trainability fix**. Genuinely deep training (skip
+> connections every ~K layers via the near-identity `MonoResidual` warm start, and/or
+> normalization) is **Follow-up B**, its own spec.
+
 ## 2. Goals & non-goals
 
-### Goals
+### Goals (A)
 - A **static, closed-form init** for `absolute` (a Kaiming-analogue for the `|W|`+convex/
-  concave transform) that keeps deep stacks conditioned, made the **default** for
-  `mode="absolute"` across **torch, JAX, Keras**. Explicit `InitSpec` still overrides.
-- A **committed diagnostic** (the "D" characterization) comparing `switch` vs `absolute`
-  trainability and gradient-flow across depth, on a synthetic monotone target.
-- A **fast, deterministic CI test** proving deep `absolute` is well-conditioned at init.
-- A **deep-network synthetic benchmark** (train a genuinely deep `absolute` net) with results
-  **exported to a rendered docs notebook**.
+  concave transform), made the **default** for `mode="absolute"` across **torch, JAX, Keras**.
+  Explicit `InitSpec` still overrides.
+- A **committed diagnostic** comparing `switch` vs `absolute` trainability and gradient-flow
+  across depth, on a synthetic monotone target.
+- A **fast, deterministic CI test** proving the init **fixes moderate-depth trainability** —
+  a depth-4 `absolute` net trains (low train MSE) under the new default init and clearly beats
+  the old `he_normal` init. (NOT a deep-forward-conditioning band — the evidence shows that is
+  the wrong bar; even `switch` fails it.)
+- A **synthetic benchmark + rendered docs notebook** documenting the moderate-depth win *and*
+  honestly showing the deep-depth limitation that motivates Follow-up B.
 
-### Non-goals
-- No normalization layer (BN/LayerNorm) — the paper's alternative remedy is explicitly
-  rejected here; this is a pure-init fix.
-- No architecture/kernel change; `switch` behaviour unchanged; the stateless kernels and the
-  cross-backend equivalence harness are untouched (init lives in the layer wrappers).
+### Non-goals (this spec / A)
+- Genuinely deep (≥8) trainability — **Follow-up B** (residual skips / normalization).
+- No normalization layer here (deferred to B, where it is back on the table).
+- No architecture/kernel change; `switch` behaviour unchanged; kernels and the cross-backend
+  equivalence harness are untouched (init lives in the layer wrappers).
 - No data-dependent init (LSUV) — the init stays data-free and seed-reproducible.
-- The residual depth/skip-granularity ablation (separate deferred note) stays separate.
 
 ## 3. The diagnostic (D) — committed
 
@@ -117,27 +131,35 @@ The derived `(gain, b)` per built-in activation are **validated by the D sweep**
 per-layer mean ≈ 0 and variance ratio ≈ 1 across depth, `absolute` tracking `switch`); the
 method is fixed, the constants are its output — not placeholders.
 
-## 5. Fast regression test (CI)
+## 5. Fast regression test (CI) — trainability, not a forward band
 
-Deterministic, cheap, per active backend (`pytest.importorskip`):
-- Build a **deep** `absolute` stack (depth ~8, default init), one backward pass from a fixed
-  synthetic batch; assert the **input-gradient norm sits within a bounded band** (e.g. within
-  a fixed factor of 1.0 — no vanish/explode). This is the training-free primary signal.
-- Optionally: a tiny deep `absolute` net drives synthetic MSE below a threshold within a few
-  dozen steps (sanity that it *trains*), kept small enough for CI.
-Bands/thresholds are fixed constants (from the post-fix D run), so the test is non-flaky.
-A companion assertion that the **pre-fix** init would fail the band is *not* committed (we
-don't keep the broken init around); the diagnostic notebook carries that comparison instead.
+The acceptance signal is **trainability at moderate depth**, not forward conditioning (the
+evidence shows a deep-forward-conditioning band is the wrong bar — even `switch` fails it).
 
-## 6. Deep benchmark + docs export
+`tests/torch/test_deep_init.py` (torch; `pytest.importorskip`), deterministic and CI-cheap:
+- Build a **depth-4** `absolute` `MonoLinear` stack under the **new default init** and train it
+  a fixed small budget (e.g. ~150 Adam steps, lr 1e-2) on a fixed `synthetic_monotone` batch;
+  assert final train MSE **< 0.5** (it learns; `y` is unit-variance so ~1.0 = not learning).
+- Build the same stack with `init="he_normal"` (the old default) and assert its final MSE is
+  **clearly worse** (e.g. > 1.0), so the test pins the *improvement*, not just "trains".
 
-- A `benchmarks/` run (maintainer-run, like the flavor study) trains a genuinely **deep**
-  `absolute` net (depth ~16–32) on `synthetic_monotone` and records train/val curves +
-  final metric; committed under `benchmarks/results/deep-init/` (JSON; no heavy logs).
-- `docs/benchmarks/deep-init.ipynb` (rendered, wired into the benchmarks toctree): renders the
-  D sweep (grad-flow + train-loss vs depth, `absolute` vs `switch`, pre-fix vs post-fix) and
-  the deep-net training result — the showcase that deep `absolute` now trains. Reads committed
-  results; builds under strict docs (execution off).
+Thresholds are fixed constants with margin (from the verified sweep), so the test is non-flaky
+and fast. Per-backend **init correctness** (weight scale + bias pattern) is already covered by
+`tests/{torch,jax,keras}/test_absolute_init.py` (Tasks 2–4); this test guards the behavioural
+trainability property on torch (the init math is identical across backends).
+
+## 6. Benchmark + docs export
+
+- A `benchmarks/` run (maintainer/controller) records, across depth `{2,4,8,16}` on
+  `synthetic_monotone`: trainability (final train MSE) for `absolute` **new vs old (`he_normal`)
+  init** and `switch`, plus init-time grad-flow / per-layer forward variance. Committed under
+  `benchmarks/results/deep-init/` (JSON; no heavy logs).
+- `docs/benchmarks/deep-init.ipynb` (rendered, wired into the benchmarks toctree): shows the
+  **moderate-depth win** (new init learns at depth 2–4 where `he_normal` does not) **and
+  honestly documents the deep-depth limitation** (variance/loss blow-up at depth ≥8 for both
+  modes) that motivates **Follow-up B** (residual skips / normalization). Reads committed
+  results; builds under strict docs (execution off); missing-results guard keeps the build
+  green before the run.
 
 ## 7. Repo layout
 
@@ -147,27 +169,30 @@ mononet/{torch,jax,keras}/layers.py # apply gain + layer-mean bias as default fo
 benchmarks/_common/init_diagnostics.py   # synthetic_monotone, grad_flow, trainability
 benchmarks/results/deep-init/*.json      # committed deep-net + sweep results (maintainer run)
 docs/benchmarks/deep-init.ipynb          # rendered diagnostic + showcase
-tests/{torch,jax,keras}/test_deep_init.py  # fast gradient-band test (importorskip)
+tests/torch/test_deep_init.py             # fast moderate-depth trainability test (importorskip)
 ```
 
 ## 8. Testing / CI
 
-- CI runs the fast per-backend gradient-band test (synthetic, deterministic, no network).
-- The D sweep and the deep-net benchmark are **manual maintainer runs** committed with
+- CI runs the fast torch trainability test (synthetic, deterministic, no network). Per-backend
+  init correctness is covered by `test_absolute_init.py` (Tasks 2–4).
+- The depth sweep and the benchmark are **manual maintainer/controller runs** committed with
   results (like the flavor study); CI never runs them.
 - `uv run --group bench mypy` clean; ruff; `pre-commit --all-files`; strict docs build green.
-- Cross-backend: the fast test runs on the active backend; the shared gain constant guarantees
-  the three backends init `absolute` identically in expectation.
+- Cross-backend: the shared gain/bias helper guarantees the three backends init `absolute`
+  identically in expectation.
 
-## 9. Acceptance
+## 9. Acceptance (A)
 
-- New default init for `mode="absolute"` in torch/JAX/Keras from a shared gain; `InitSpec`
+- New default init for `mode="absolute"` in torch/JAX/Keras from a shared helper; `InitSpec`
   override intact; `switch` unchanged; kernels/equivalence untouched.
-- Committed diagnostic reproduces the `absolute`-vs-`switch` depth comparison and, **post-fix**,
-  shows `absolute` tracking `switch` in gradient-flow and trainability to depth 32.
-- Fast CI test passes (deep `absolute` gradient-norm band) on the active backend.
-- Deep synthetic `absolute` net trains; result rendered in `deep-init.ipynb`.
+- Committed diagnostic reproduces the `absolute`-vs-`switch` depth comparison.
+- Fast torch CI test passes: depth-4 `absolute` **trains** under the new default init (MSE
+  < 0.5) and clearly beats the old `he_normal` init (> 1.0).
+- `deep-init.ipynb` renders the moderate-depth win and documents the deep-depth limitation
+  (motivating Follow-up B).
 - All gates green; no wheel/package-contract regressions.
+- **Out of scope (→ B):** genuinely deep (≥8) trainability.
 
 ## 10. Open items
 
