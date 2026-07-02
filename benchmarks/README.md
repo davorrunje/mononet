@@ -113,3 +113,18 @@ wait
 ### Matrix
 
 20 studies total: 5 datasets × 4 flavors. All `.json` results are committed.
+
+## Deep-network init
+
+`mode="absolute"` uses a derived static init (`mononet.core.init.absolute_init_params`, the
+default) that fixes moderate-depth trainability. To reproduce the depth sweep + rendered
+figure:
+
+```bash
+uv run --extra torch --group bench python -m benchmarks.deep_init_run   # writes results/deep-init/trainability.json
+uv run --group bench --group docs --extra torch jupyter nbconvert --to notebook \
+  --execute --inplace docs/benchmarks/deep-init.ipynb
+```
+
+Genuinely deep (>= 8) training is a separate effort (residual skips / normalization); see
+`docs/benchmarks/deep-init.ipynb`.
