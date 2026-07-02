@@ -8,10 +8,10 @@
     "workspaceFolder": "/workspaces/mononet",
     "remoteEnv": {},
     "containerEnv": {
-        "CLAUDE_CONFIG_DIR": "/root/.claude"
+        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
     },
     "postCreateCommand": "bash .devcontainer/shared/post-create.sh",
-    "remoteUser": "root",
+    "remoteUser": "vscode",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
             "installZsh": true,
@@ -36,7 +36,7 @@
     "updateContentCommand": "bash .devcontainer/default/setup.sh",
     "initializeCommand": "bash .devcontainer/shared/host-init.sh",
     "mounts": [
-        "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
         "source=${localEnv:HOME}/.config/mononet-devcontainer,target=/var/run/devcontainer-host-secrets,type=bind,readonly"
     ],
     "customizations": {

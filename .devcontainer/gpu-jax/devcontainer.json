@@ -6,12 +6,12 @@
     "workspaceFolder": "/workspaces/mononet",
     "remoteEnv": {},
     "containerEnv": {
-        "CLAUDE_CONFIG_DIR": "/root/.claude",
-        "PATH": "/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+        "PATH": "/home/vscode/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     },
     "runArgs": ["--gpus=all"],
     "postCreateCommand": "bash .devcontainer/shared/post-create.sh",
-    "remoteUser": "root",
+    "remoteUser": "vscode",
     "features": {
         "ghcr.io/devcontainers/features/git:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
@@ -19,7 +19,7 @@
     "updateContentCommand": "bash .devcontainer/gpu-jax/setup.sh",
     "initializeCommand": "bash .devcontainer/shared/host-init.sh",
     "mounts": [
-        "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
         "source=${localEnv:HOME}/.config/mononet-devcontainer,target=/var/run/devcontainer-host-secrets,type=bind,readonly"
     ],
     "customizations": {

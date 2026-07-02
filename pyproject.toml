@@ -42,9 +42,10 @@ jax         = ["jax>=0.4.30", "flax>=0.10"]
 keras       = ["keras>=3.5", "jax>=0.4.30"]
 all         = ["mononet[torch,jax,keras]"]
 
-# GPU backends — devcontainer-level scripts configure the framework's
-# CUDA wheel index when needed.
-torch-gpu   = ["torch>=2.4"]
+# GPU backends — modern torch/jax wheels bundle their own CUDA toolkit
+# (torch 2.12 -> CUDA 13, jax[cuda12] -> CUDA 12.9), including Blackwell
+# (sm_120) kernels; no extra wheel index needed.
+torch-gpu   = ["torch>=2.12"]  # 2.12 PyPI wheels ship CUDA 13 + Blackwell/sm_120
 jax-gpu     = ["jax[cuda12]>=0.4.30", "flax>=0.10"]
 keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.4.30"]
 
