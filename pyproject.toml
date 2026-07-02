@@ -50,7 +50,7 @@ keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.4.30"]
 
 [dependency-groups]
 dev = [
-    "ipython==9.14.1",
+    "ipython==9.15.0",
     "ipykernel==7.3.0",
     "mypy==2.1.0",
     "pytest==9.1.1",
