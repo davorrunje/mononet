@@ -27,8 +27,8 @@ else
 
   # Add ~/.elan/bin to interactive shells. Only on first install to
   # avoid duplicates in the rc files.
-  echo 'export PATH="$HOME/.elan/bin:$PATH"' >> /root/.bashrc
-  echo 'export PATH="$HOME/.elan/bin:$PATH"' >> /root/.zshrc 2>/dev/null || true
+  echo 'export PATH="$HOME/.elan/bin:$PATH"' >> "$HOME/.bashrc"
+  echo 'export PATH="$HOME/.elan/bin:$PATH"' >> "$HOME/.zshrc" 2>/dev/null || true
 fi
 echo "elan: $(elan --version)"
 
