@@ -1,5 +1,14 @@
 # Correct Static Init for `absolute` (Deep-Net Trainability) — Implementation Plan
 
+> **SUPERSEDED IN PART (scope A, 2026-07-02).** During execution the evidence showed a static
+> per-layer init fixes *moderate*-depth trainability but cannot make a genuinely deep (≥8)
+> plain stack forward-stable (see the spec's scope-revision note). Consequently: **Task 6 was
+> replaced** — the "gradient-band" metric was abandoned (even `switch` fails it) in favour of a
+> **trainability** test (`tests/torch/test_deep_init.py` only; the `tests/jax`/`tests/keras`
+> deep-init files described below were NOT created). **Task 7** framing changed to "moderate-depth
+> win + honest deep limitation → Follow-up B". The **spec** (`2026-07-02-absolute-init-deep-networks-design.md`)
+> is authoritative where it differs from Tasks 6–8 here.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give `mode="absolute"` a static, data-free, per-activation initialization (variance-preserving `gain` + layer-mean-centering `bias`) so deep `absolute` stacks train, across torch/JAX/Keras — with a committed diagnostic, a fast regression test, and a deep synthetic benchmark exported to docs.
