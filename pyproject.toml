@@ -72,7 +72,7 @@ docs = [
     "sphinx-polyversion==2.0.0",
     "linkify-it-py==2.1.0",
     "cairosvg==2.9.0",
-    "nbconvert==7.16.6",
+    "nbconvert==7.17.1",
 ]
 lint = [
     "pre-commit==4.6.0",
@@ -91,7 +91,7 @@ bench = [
     "matplotlib==3.11.0",
     "xgboost==3.2.0",
     "optuna==4.9.0",
-    "typer==0.20.0",
+    "typer==0.26.8",
 ]
 
 [tool.uv]
