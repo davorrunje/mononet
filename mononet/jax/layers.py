@@ -205,4 +205,4 @@ class MonoInput(nnx.Module):
         :param x: Input tensor of shape ``(batch, features)``.
         :returns: Sign-flipped tensor of the same shape.
         """
-        return x * self.directions[...].astype(x.dtype)
+        return x * self.directions[...].astype(x.dtype)  # type: ignore[no-any-return]
