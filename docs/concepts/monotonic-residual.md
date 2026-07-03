@@ -55,7 +55,7 @@ blow-up). The `scaled_elu` form gives `g_β = ε = 1e-3` at `β=0`: tiny but **n
 nonzero part is deliberate — a plain `ReLU(β)` would give exactly `0` at init *and zero
 gradient* for `β≤0`, a **dead gate**: `F` could never learn to turn on. The `ε·exp(β/ε)` tail
 keeps `g_β` strictly positive with a small but nonzero gradient near the near-zero init, so `β`
-can escape `0` and `F` can come online. For `β>0` the gate is exactly linear (`= β`, unbounded,
+can escape `0` and `F` can come online. For `β>0` the gate is exactly linear (`= β + ε`, unbounded,
 gradient 1), letting `F` grow as strong as needed without exponential instability. `ε` sets both
 the init value and the width of the smooth soft-zero region.
 
