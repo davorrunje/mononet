@@ -130,13 +130,19 @@ expressiveness**, matching the sweep.
 Extend the existing `MonoResidual` layer (no new composed model class — respects the repo's
 "package ships layers, users stack with native `Sequential`" posture):
 
-- New keyword **`sub_depth: int = 1`** (default preserves current single-`MonoLinear` behaviour).
-  When the default `F` is used (`F is None`) and `sub_depth > 1`, `F` is built as a stack of
-  `sub_depth` monotone layers: `MonoLinear(in_features, units) → MonoLinear(units, units) × (sub_depth-1)`
-  (torch/JAX) / the `MonoDense` equivalent (Keras), all sharing `mode`/`activation`/`init`.
-- `sub_depth` and an explicit `F` are mutually exclusive → raise `ValueError` if both are given
-  (custom `F` owns its structure).
-- `sub_depth < 1` → `ValueError`.
+- New keyword **`sub_depth: int | None = None`**, resolving to a **default of 2** — a skip every
+  two layers, the §2 sweet spot. The sentinel `None` distinguishes "caller didn't set it"
+  (→ 2) from an explicit value, which matters for the `F` rule below. **This changes the default
+  `MonoResidual` block** (its default `F` is now a 2-layer stack, not a single `MonoLinear`);
+  acceptable pre-1.0, and it makes the good deep default the *out-of-the-box* behaviour.
+- When `F is None`, let `k = 2 if sub_depth is None else sub_depth`. For `k == 1`, `F` is a
+  single `MonoLinear(in_features, units)` (byte-equivalent to the *legacy* default `F`); for
+  `k > 1`, `F = MonoLinear(in_features, units) → MonoLinear(units, units) × (k-1)` via the
+  framework `Sequential` (`MonoDense` for Keras), all sharing `mode`/`activation`/`init`.
+- **`F` + an explicitly-set `sub_depth`** (`F is not None and sub_depth is not None`) →
+  `ValueError` (a custom `F` owns its structure). Passing `F` **alone** is fine — `F` is used and
+  the `sub_depth` default is ignored (the sentinel is what avoids a false conflict here).
+- `sub_depth is not None and sub_depth < 1` → `ValueError`.
 - Everything else unchanged: dual gates, near-identity warm start, identity skip when
   `in==out`, `exp`-projection skip when `in≠out`.
 
@@ -149,8 +155,10 @@ Sequential(
     MonoLinear(W, 1, mode=..., activation=...),           # plain output projection
 )
 ```
-Uniform `W` ⇒ every block is `in==out` ⇒ pure identity skips (strongest warm start); depth ≈
-`2 + n_blocks·sub_depth`. **Recommended `sub_depth=2`** for deep stacks (from §2).
+(`sub_depth=2` shown for clarity, but it is now the **default**, so `MonoResidual(W, W, mode=…,
+activation=…)` suffices.) Uniform `W` ⇒ every block is `in==out` ⇒ pure identity skips
+(strongest warm start); depth ≈ `2 + n_blocks·sub_depth`. The default `sub_depth=2` is the §2
+sweet spot; K ≤ 4 works, K ≥ 8 fails.
 
 ## 5. Components / repo layout
 
@@ -212,10 +220,17 @@ paper's architecture section and accept more experiments later:
 - No change to `MonoLinear`/`MonoInput`/kernels or the `switch`/`absolute` math.
 - Not the full 5-dataset accuracy study — Stage 2 samples 1–2 datasets; broader runs are paper
   follow-on.
+- Not re-running Phase-2a: the new `sub_depth=2` default flows into the benchmark harness's
+  "residual" flavor (now 2-deep), so the committed `flavor-comparison` residual numbers become
+  stale — re-running them is a tracked follow-up outside this sub-project (decision to accept
+  this, rather than pin `sub_depth=1` in `model_builder`, was explicit).
 
 ## 10. Open items
 
-- `sub_depth` default stays **1** (backward-compatible); `2` is a *documented recommendation*
-  for deep stacks, not the layer default. Confirm this is the desired ergonomics.
+- `sub_depth` default is **2** (sentinel `None` → 2), the §2 sweet spot — chosen so the good
+  deep behaviour is out-of-the-box. This **changes the default `MonoResidual`** (default `F` is
+  now a 2-layer stack); `sub_depth=1` recovers the legacy single-`MonoLinear` block. Existing
+  MonoResidual tests must still pass (warm start is depth-independent); update any that assume a
+  single-layer default `F`.
 - Cross-backend parity test tolerance for the composed block (float32/64) — set from a first run.
 - Stage-2 dataset choice (e.g. `auto` + one larger) and depth — decided when Stage 1 lands.

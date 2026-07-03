@@ -14,7 +14,7 @@
 - Commit **UNSIGNED** during subagent execution (`git -c commit.gpgsign=false commit`); controller re-signs the whole branch before push.
 - Per-task gates: `uv run ruff check`, `uv run ruff format --check`, `uv run --group bench mypy`, the task's pytest (with matching `MONONET_TEST_BACKEND` for backend tasks). Final: `uv run pre-commit run --all-files --hook-stage manual` + `./tools/build-docs.sh`.
 - No Pydantic; stdlib dataclasses; MyST field-list docstrings (`:param:`/`:returns:`/`:raises:`, no `:type:`); ruff line-88; strict mypy; preserve lazy backend imports; `benchmarks/` never in the wheel; result JSON with a trailing newline; never commit `*.db`/`*.jsonl`.
-- **Design invariants:** `sub_depth` default = **1** (backward-compatible; `sub_depth=1` uses the exact current single-`MonoLinear`/`MonoDense` default `F`, not wrapped in `Sequential`). `sub_depth=K` (K>1) builds the default `F` as `MonoLinear(in,units)` then `(K-1)× MonoLinear(units,units)` sharing `mode`/`activation`/`init` (`MonoDense` for Keras), via the framework's `Sequential`. Passing **both** an explicit `F` and `sub_depth>1` → `ValueError`. `sub_depth<1` → `ValueError`. No change to `MonoLinear`/`MonoInput`/kernels or the `switch`/`absolute` math; the stateless-kernel equivalence harness is untouched. Near-identity warm start (`alpha=beta=0`) unchanged. Recommended deep default `sub_depth=2` (docs guidance, not the layer default).
+- **Design invariants:** `sub_depth: int | None = None` resolves to a **default of 2** (a skip every 2 layers). The sentinel `None` = "caller didn't set it". Let `k = 2 if sub_depth is None else sub_depth`. For `k == 1`, the default `F` is a single `MonoLinear`/`MonoDense` (byte-equivalent to the *legacy* default `F`, NOT wrapped in `Sequential`). For `k > 1`, the default `F` is `MonoLinear(in,units)` then `(k-1)× MonoLinear(units,units)` sharing `mode`/`activation`/`init` (`MonoDense` for Keras) via the framework's `Sequential`. **This changes the default `MonoResidual`** — its default `F` is now a 2-layer stack. Validation: `F is not None and sub_depth is not None` → `ValueError` (F alone is fine — F used, default ignored); `sub_depth is not None and sub_depth < 1` → `ValueError`. No change to `MonoLinear`/`MonoInput`/kernels or the `switch`/`absolute` math; the stateless-kernel equivalence harness is untouched. Near-identity warm start (`alpha=beta=0`) unchanged (warm start is depth-independent, so existing MonoResidual tests still pass).
 
 ---
 
@@ -25,7 +25,7 @@
 - Test: `tests/torch/test_mono_residual_subdepth.py`
 
 **Interfaces:**
-- Produces: `MonoResidual(in_features, units, *, F=None, mode=..., activation=..., alpha_gate=..., beta_gate=..., init=None, sub_depth=1)`. `sub_depth=1` → `self.F` is a `MonoLinear`; `sub_depth=K>1` → `self.F` is `nn.Sequential` of `K` `MonoLinear`; `F`+`sub_depth>1` or `sub_depth<1` raise `ValueError`.
+- Produces: `MonoResidual(in_features, units, *, F=None, mode=..., activation=..., alpha_gate=..., beta_gate=..., init=None, sub_depth=None)`. Default (`sub_depth is None` → k=2) → `self.F` is `nn.Sequential` of 2 `MonoLinear`; `sub_depth=1` → single `MonoLinear`; `sub_depth=K>1` → `nn.Sequential` of K; `F`+explicit `sub_depth` or `sub_depth<1` raise `ValueError`; `F` alone → uses `F`.
 
 - [ ] **Step 1: Write the failing tests** — `tests/torch/test_mono_residual_subdepth.py`:
 
@@ -35,6 +35,12 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from mononet.torch import MonoLinear, MonoResidual
+
+
+def test_default_builds_two_monolinears() -> None:
+    layer = MonoResidual(8, 8, mode="absolute", activation="elu")  # default sub_depth -> 2
+    assert isinstance(layer.F, torch.nn.Sequential)
+    assert sum(isinstance(m, MonoLinear) for m in layer.F) == 2
 
 
 def test_subdepth_builds_k_monolinears() -> None:
@@ -48,7 +54,13 @@ def test_subdepth1_is_single_monolinear() -> None:
     assert isinstance(layer.F, MonoLinear)
 
 
-def test_F_and_subdepth_conflict_raises() -> None:
+def test_F_alone_is_used() -> None:  # F without sub_depth must NOT raise
+    f = MonoLinear(8, 8, mode="absolute")
+    layer = MonoResidual(8, 8, F=f)
+    assert layer.F is f
+
+
+def test_F_and_explicit_subdepth_raises() -> None:
     with pytest.raises(ValueError, match="sub_depth"):
         MonoResidual(8, 8, F=MonoLinear(8, 8, mode="absolute"), sub_depth=2)
 
@@ -86,7 +98,7 @@ def test_monotone_projection_skip() -> None:
 Run: `MONONET_TEST_BACKEND=torch uv run pytest tests/torch/test_mono_residual_subdepth.py -q`
 Expected: FAIL — `MonoResidual` has no `sub_depth` keyword (`TypeError`).
 
-- [ ] **Step 3: Implement** — in `mononet/torch/layers.py`, add `sub_depth: int = 1,` to `MonoResidual.__init__` (after `init`), a `:param sub_depth:` docstring line, and replace the `F`-construction block:
+- [ ] **Step 3: Implement** — in `mononet/torch/layers.py`, add `sub_depth: int | None = None,` to `MonoResidual.__init__` (after `init`), a `:param sub_depth:` docstring line (default 2; `1` = legacy single layer), and replace the `F`-construction block:
 
 ```python
         if F is None:
@@ -102,12 +114,13 @@ Expected: FAIL — `MonoResidual` has no `sub_depth` keyword (`TypeError`).
 with:
 
 ```python
-        if sub_depth < 1:
+        if sub_depth is not None and sub_depth < 1:
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
-        if F is not None and sub_depth != 1:
-            raise ValueError("pass either F or sub_depth > 1, not both")
+        if F is not None and sub_depth is not None:
+            raise ValueError("pass either F or sub_depth, not both")
         if F is None:
-            if sub_depth == 1:
+            k = 2 if sub_depth is None else sub_depth
+            if k == 1:
                 self.F: nn.Module = MonoLinear(
                     in_features, units, mode=mode, activation=activation, init=init
                 )
@@ -119,7 +132,7 @@ with:
                 ]
                 sub += [
                     MonoLinear(units, units, mode=mode, activation=activation, init=init)
-                    for _ in range(sub_depth - 1)
+                    for _ in range(k - 1)
                 ]
                 self.F = nn.Sequential(*sub)
         elif callable(F) and not isinstance(F, nn.Module):
@@ -154,7 +167,7 @@ git -c commit.gpgsign=false commit -m "feat(torch): MonoResidual sub_depth (skip
 - Test: `tests/jax/test_mono_residual_subdepth.py`
 
 **Interfaces:**
-- Produces: JAX `MonoResidual(in_features, units, *, F=None, ..., init=None, sub_depth=1, rngs)`; `sub_depth=K>1` → `self.F` is `nnx.Sequential` of `K` `MonoLinear`; same validation as torch.
+- Produces: JAX `MonoResidual(in_features, units, *, F=None, ..., init=None, sub_depth=None, rngs)`; default (`None`→k=2) → `self.F` is `nnx.Sequential` of 2 `MonoLinear`; `sub_depth=1` → single; `sub_depth=K>1` → `nnx.Sequential` of K; same validation as torch (F+explicit raises; F alone OK; sub_depth<1 raises).
 
 - [ ] **Step 1: Write the failing tests** — `tests/jax/test_mono_residual_subdepth.py`:
 
@@ -170,6 +183,12 @@ from flax import nnx
 from mononet.jax import MonoLinear, MonoResidual
 
 
+def test_default_builds_two_monolinears() -> None:
+    layer = MonoResidual(8, 8, mode="absolute", activation="elu", rngs=nnx.Rngs(0))
+    assert isinstance(layer.F, nnx.Sequential)
+    assert sum(isinstance(m, MonoLinear) for m in layer.F.layers) == 2
+
+
 def test_subdepth_builds_k_monolinears() -> None:
     layer = MonoResidual(8, 8, mode="absolute", activation="elu", sub_depth=3, rngs=nnx.Rngs(0))
     assert isinstance(layer.F, nnx.Sequential)
@@ -181,7 +200,13 @@ def test_subdepth1_is_single_monolinear() -> None:
     assert isinstance(layer.F, MonoLinear)
 
 
-def test_F_and_subdepth_conflict_raises() -> None:
+def test_F_alone_is_used() -> None:
+    f = MonoLinear(8, 8, mode="absolute", rngs=nnx.Rngs(0))
+    layer = MonoResidual(8, 8, F=f, rngs=nnx.Rngs(0))
+    assert layer.F is f
+
+
+def test_F_and_explicit_subdepth_raises() -> None:
     with pytest.raises(ValueError, match="sub_depth"):
         MonoResidual(
             8, 8, F=MonoLinear(8, 8, mode="absolute", rngs=nnx.Rngs(0)),
@@ -218,7 +243,7 @@ def test_monotone_projection_skip() -> None:
 Run: `MONONET_TEST_BACKEND=jax uv run pytest tests/jax/test_mono_residual_subdepth.py -q`
 Expected: FAIL — no `sub_depth` keyword.
 
-- [ ] **Step 3: Implement** — in `mononet/jax/layers.py`, add `sub_depth: int = 1,` to `MonoResidual.__init__` (after `init`, before `rngs`), a `:param sub_depth:` docstring line, and replace the `F`-construction block:
+- [ ] **Step 3: Implement** — in `mononet/jax/layers.py`, add `sub_depth: int | None = None,` to `MonoResidual.__init__` (after `init`, before `rngs`), a `:param sub_depth:` docstring line (default 2; `1` = legacy single layer), and replace the `F`-construction block:
 
 ```python
         if F is None:
@@ -239,12 +264,13 @@ Expected: FAIL — no `sub_depth` keyword.
 with:
 
 ```python
-        if sub_depth < 1:
+        if sub_depth is not None and sub_depth < 1:
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
-        if F is not None and sub_depth != 1:
-            raise ValueError("pass either F or sub_depth > 1, not both")
+        if F is not None and sub_depth is not None:
+            raise ValueError("pass either F or sub_depth, not both")
         if F is None:
-            if sub_depth == 1:
+            k = 2 if sub_depth is None else sub_depth
+            if k == 1:
                 self.F: nnx.Module = MonoLinear(
                     in_features, units, mode=mode, activation=activation,
                     init=init, rngs=rngs,
@@ -261,7 +287,7 @@ with:
                         units, units, mode=mode, activation=activation,
                         init=init, rngs=rngs,
                     )
-                    for _ in range(sub_depth - 1)
+                    for _ in range(k - 1)
                 ]
                 self.F = nnx.Sequential(*sub)
         elif callable(F) and not isinstance(F, nnx.Module):
@@ -296,7 +322,7 @@ git -c commit.gpgsign=false commit -m "feat(jax): MonoResidual sub_depth (skip e
 - Test: `tests/keras/test_mono_residual_subdepth.py`
 
 **Interfaces:**
-- Produces: Keras `MonoResidual(units, *, F=None, ..., init=None, sub_depth=1)`; `sub_depth=K>1` → `self.F` is `keras.Sequential` of `K` `MonoDense`; same validation.
+- Produces: Keras `MonoResidual(units, *, F=None, ..., init=None, sub_depth=None)`; default (`None`→k=2) → `self.F` is `keras.Sequential` of 2 `MonoDense`; `sub_depth=1` → single `MonoDense`; `sub_depth=K>1` → `keras.Sequential` of K; same validation (F+explicit raises; F alone OK; sub_depth<1 raises).
 
 - [ ] **Step 1: Write the failing tests** — `tests/keras/test_mono_residual_subdepth.py`:
 
@@ -316,6 +342,12 @@ from keras import ops
 from mononet.keras import MonoDense, MonoResidual
 
 
+def test_default_builds_two_monodense() -> None:
+    layer = MonoResidual(8, mode="absolute", activation="elu")  # default sub_depth -> 2
+    assert isinstance(layer.F, keras.Sequential)
+    assert sum(isinstance(m, MonoDense) for m in layer.F.layers) == 2
+
+
 def test_subdepth_builds_k_monodense() -> None:
     layer = MonoResidual(8, mode="absolute", activation="elu", sub_depth=3)
     assert isinstance(layer.F, keras.Sequential)
@@ -327,7 +359,13 @@ def test_subdepth1_is_single_monodense() -> None:
     assert isinstance(layer.F, MonoDense)
 
 
-def test_F_and_subdepth_conflict_raises() -> None:
+def test_F_alone_is_used() -> None:
+    f = MonoDense(8, mode="absolute")
+    layer = MonoResidual(8, F=f)
+    assert layer.F is f
+
+
+def test_F_and_explicit_subdepth_raises() -> None:
     with pytest.raises(ValueError, match="sub_depth"):
         MonoResidual(8, F=MonoDense(8, mode="absolute"), sub_depth=2)
 
@@ -362,7 +400,7 @@ def test_monotone_projection_skip() -> None:
 Run: `MONONET_TEST_BACKEND=keras uv run pytest tests/keras/test_mono_residual_subdepth.py -q`
 Expected: FAIL — no `sub_depth` keyword.
 
-- [ ] **Step 3: Implement** — in `mononet/keras/layers.py`, add `sub_depth: int = 1,` to `MonoResidual.__init__` (after `init`, before `**kwargs`), a `:param sub_depth:` docstring line, and replace:
+- [ ] **Step 3: Implement** — in `mononet/keras/layers.py`, add `sub_depth: int | None = None,` to `MonoResidual.__init__` (after `init`, before `**kwargs`), a `:param sub_depth:` docstring line (default 2; `1` = legacy single layer), and replace:
 
 ```python
         self.F = (
@@ -375,21 +413,23 @@ Expected: FAIL — no `sub_depth` keyword.
 with:
 
 ```python
-        if sub_depth < 1:
+        if sub_depth is not None and sub_depth < 1:
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
-        if F is not None and sub_depth != 1:
-            raise ValueError("pass either F or sub_depth > 1, not both")
+        if F is not None and sub_depth is not None:
+            raise ValueError("pass either F or sub_depth, not both")
         if F is not None:
             self.F: keras.layers.Layer = F
-        elif sub_depth == 1:
-            self.F = MonoDense(units, mode=mode, activation=activation, init=init)
         else:
-            self.F = keras.Sequential(
-                [
-                    MonoDense(units, mode=mode, activation=activation, init=init)
-                    for _ in range(sub_depth)
-                ]
-            )
+            k = 2 if sub_depth is None else sub_depth
+            if k == 1:
+                self.F = MonoDense(units, mode=mode, activation=activation, init=init)
+            else:
+                self.F = keras.Sequential(
+                    [
+                        MonoDense(units, mode=mode, activation=activation, init=init)
+                        for _ in range(k)
+                    ]
+                )
 ```
 
 - [ ] **Step 4: Run to verify it passes**
@@ -713,7 +753,8 @@ Stage 2 will report whether the now-trainable depth improves test metrics on rea
 the shallow tuned flavors. *(Results to be added.)*
 
 ## Recommendation
-`sub_depth=2` (a skip every 2 layers); K ≤ 4 works, K ≥ 8 fails; no normalization needed.
+The default `sub_depth=2` (a skip every 2 layers) is the sweet spot; K ≤ 4 works, K ≥ 8 fails;
+no normalization needed. Use `sub_depth=1` only to recover the legacy single-layer block.
 ````
 
 For the results table use a fenced `{code-cell}` (myst-nb) with a missing-results guard:
@@ -795,9 +836,15 @@ gh pr create --title "Deep monotonic networks via MonoResidual sub_depth" --body
 
 - Run mypy as `uv run --group bench mypy` (canonical gate; benchmarks/ imports need bench).
 - Backend tasks: matching `MONONET_TEST_BACKEND` + `pytest.importorskip`.
-- `sub_depth=1` must stay byte-equivalent to the current default `F` (single `MonoLinear`/`MonoDense`, NOT wrapped in `Sequential`) — Tasks 1–3 branch on `sub_depth == 1` for exactly this.
+- Default is now `sub_depth=2` (sentinel `None`→2; default `F` is a 2-layer `Sequential`). `sub_depth=1` must reproduce the LEGACY single-`MonoLinear`/`MonoDense` `F` (NOT wrapped in `Sequential`) — Tasks 1–3 branch on `k == 1` for exactly this. `F` alone (no `sub_depth`) must NOT raise (sentinel makes this work); `F` + explicit `sub_depth` raises.
 - Monotonicity tests use loose fp tolerances (torch f64 `1e-9`; jax `1e-4`; keras f32 `1e-3`) — do not tighten.
 - Stage 2 (real-dataset accuracy) is a documented follow-on, not in this plan.
+- **Default change accepted to flow into benchmarks (decision (b)).** `model_builder.py` builds
+  `MonoResidual` without `sub_depth`, so the Phase-2a "residual" flavor now becomes 2-deep. We do
+  NOT pin `sub_depth=1` there. Consequence: the committed `docs/benchmarks/flavor-comparison`
+  residual-flavor numbers are now **stale** — re-running Phase-2a under the new default is a
+  tracked **follow-up**, out of this plan's scope. (The `deep_residual_run` sweep in Task 4 passes
+  explicit `sub_depth`, so it is unaffected.)
 - **Cross-backend parity** (spec §6): no dedicated task. `sub_depth` adds *no new kernel* — it
   only composes the already-equivalence-tested `monotonic_dense` via each framework's
   `Sequential`, so numerical parity is inherited from the unchanged stateless-kernel equivalence
