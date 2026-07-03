@@ -54,6 +54,37 @@ with unconstrained scalars `α, β`, a monotone sub-module `F`, and **strictly p
 `g_α = elu(α)+1 ∈ (0,∞)` (=1 at α=0) and `g_β = max(β,0) + ε·exp(min(β,0)/ε)` (ε=1e-3, ∈(0,∞),
 =ε at β=0). Positivity holds for *all* real α, β.
 
+### 3.1.1 Why these gate parametrizations
+
+Three requirements pin the design, and each gate is the minimal function that meets them:
+
+- **Both gates must be strictly positive**, for every value of their unconstrained parameter.
+  A negative gate would flip `skip` or `F` to *non-increasing* and break monotonicity — so the
+  gate values, not just the layer weights, are what make monotonicity a hard invariant under
+  free optimization. Both forms map `ℝ → (0, ∞)`.
+
+- **The skip gate `g_α` must equal 1 at init** (`α=0`) so the block starts as a *true identity*
+  (`y ≈ 1·skip + ε·F ≈ skip`). `elu(α)+1` is the natural strictly-positive function with this
+  property: it is `1` at `0`, smooth (C¹, including at `0`), **unbounded above** yet only
+  *linearly* growing for `α>0` (`≈ α+1`), and **decays to `0⁺`** as `α→−∞`. So the skip can be
+  freely amplified *or* attenuated during training without exploding. Alternatives fail a
+  requirement: `sigmoid` caps at 1 (skip can never amplify), `exp` grows too fast (unstable),
+  `softplus(0)=ln2≈0.69` (no identity at init).
+
+- **The residual gate `g_β` must be ≈ 0 at init** so `F` starts *nearly off* — this is precisely
+  what makes deep stacks trainable (a stack of blocks ≈ identity, avoiding the plain-stack
+  blow-up). `scaled_elu` gives `g_β = ε = 1e-3` at `β=0`: tiny but **nonzero**. The nonzero part
+  is deliberate — a plain `ReLU(β)` would give exactly `0` at init *and zero gradient* for `β≤0`,
+  a **dead gate**: `F` could never learn to turn on. The `ε·exp(β/ε)` tail keeps `g_β` strictly
+  positive with a small but **nonzero gradient near the near-zero init**, so `β` can escape `0`
+  and `F` can come online. For `β>0` the gate is exactly linear (`= β`, unbounded, gradient 1),
+  letting `F` grow as strong as needed without exponential instability. `ε` sets both the init
+  value and the width of the smooth soft-zero region.
+
+Together: at init `y ≈ 1·skip + 1e-3·F ≈ identity` (deep-stack-friendly), and training can
+*independently* scale the residual up (`β↑`) and adjust the skip (`α`), while positivity of both
+gates preserves monotonicity at every step.
+
 ### 3.2 Monotonicity theorem (both size cases)
 
 **Claim.** For any parameter values, `∂yⱼ/∂xᵢ ≥ 0` for all i, j (the block is non-decreasing
