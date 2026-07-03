@@ -132,9 +132,25 @@ learns) and init input-gradient norm (conditioning). Reproduce:
 uv run --extra torch --group bench python -m benchmarks.deep_residual_run
 ```
 
-The sweep covers `mode ∈ {absolute, switch}` × `depth ∈ {4, 8, 16, 32}` × `K ∈ {plain, 1, 2, 4, 8}`.
+The sweep covers `mode ∈ {absolute, switch}` × `depth ∈ {4, 8, 16, 32}` × `K ∈ {plain, 1, 2, 4, 8}`
+(`K > depth` is skipped, shown `—`). Final train MSE (lower is better; `1e6` = diverged / capped):
 
-_Results table populated from the committed sweep (see reproduce command)._
+| mode | depth | plain | K=1 | K=2 | K=4 | K=8 |
+|---|---|---|---|---|---|---|
+| absolute | 4 | 1.75 | 0.093 | **0.090** | 0.090 | — |
+| absolute | 8 | 2.00 | 0.104 | **0.101** | 0.104 | 0.172 |
+| absolute | 16 | 1e6 | 0.104 | **0.103** | 0.108 | 0.721 |
+| absolute | 32 | 1e6 | 0.112 | **0.111** | 0.115 | 1.108 |
+| switch | 4 | 416 | 0.071 | **0.068** | 0.068 | — |
+| switch | 8 | 1e6 | 0.070 | **0.070** | 0.070 | 5.455 |
+| switch | 16 | 1e6 | 0.076 | **0.074** | 0.075 | 30.50 |
+| switch | 32 | 1e6 | 0.089 | **0.084** | 0.087 | 26.43 |
+
+Plain stacks diverge from depth 8 (`switch`) or 16 (`absolute`); K ∈ {1, 2, 4} train every
+depth to MSE ≈ 0.07–0.12, while K = 8 degrades with depth and fails outright by depth 16. The
+init input-gradient norm (`init_grad_norm` in the JSON) tracks this: it stays O(1–10) for the
+trainable K and explodes to 1e3–1e6 for plain and K = 8. `sub_depth=2` (bold) gives the lowest
+MSE and the tightest spread across all eight (mode, depth) cells.
 
 ## Real-dataset accuracy (forthcoming)
 
