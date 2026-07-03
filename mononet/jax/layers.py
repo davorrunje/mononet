@@ -123,13 +123,16 @@ class MonoResidual(nnx.Module):
 
     :param in_features: Number of input features.
     :param units: Number of output units.
-    :param F: Inner monotone sublayer; defaults to a single
-        :class:`MonoLinear`. May also be a callable ``(units) -> Module``.
+    :param F: Inner monotone sublayer; defaults to a stack of ``sub_depth``
+        :class:`MonoLinear` layers. May also be a callable ``(units) -> Module``.
     :param mode: ``switch`` or ``absolute``.
     :param activation: Base activation name or spec.
     :param alpha_gate: Gate token for the skip path; default ``shifted_elu``.
     :param beta_gate: Gate token for the dense path; default ``scaled_elu``.
     :param init: Weight initializer; defaults to ``he_normal``.
+    :param sub_depth: Number of :class:`MonoLinear` layers to stack when ``F``
+        is ``None``; default ``2``. Pass ``1`` for the legacy single-layer
+        behaviour. Mutually exclusive with an explicit ``F``.
     :param rngs: Flax NNX RNG container.
     """
 
@@ -144,18 +147,48 @@ class MonoResidual(nnx.Module):
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
+        sub_depth: int | None = None,
         rngs: nnx.Rngs,
     ) -> None:
         """Initialise MonoResidual with sublayer F and scalar gate params."""
+        if sub_depth is not None and sub_depth < 1:
+            raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
+        if F is not None and sub_depth is not None:
+            raise ValueError("pass either F or sub_depth, not both")
         if F is None:
-            self.F: nnx.Module = MonoLinear(
-                in_features,
-                units,
-                mode=mode,
-                activation=activation,
-                init=init,
-                rngs=rngs,
-            )
+            k = 2 if sub_depth is None else sub_depth
+            if k == 1:
+                self.F: nnx.Module = MonoLinear(
+                    in_features,
+                    units,
+                    mode=mode,
+                    activation=activation,
+                    init=init,
+                    rngs=rngs,
+                )
+            else:
+                sub = [
+                    MonoLinear(
+                        in_features,
+                        units,
+                        mode=mode,
+                        activation=activation,
+                        init=init,
+                        rngs=rngs,
+                    )
+                ]
+                sub += [
+                    MonoLinear(
+                        units,
+                        units,
+                        mode=mode,
+                        activation=activation,
+                        init=init,
+                        rngs=rngs,
+                    )
+                    for _ in range(k - 1)
+                ]
+                self.F = nnx.Sequential(*sub)
         elif callable(F) and not isinstance(F, nnx.Module):
             self.F = F(units)
         else:

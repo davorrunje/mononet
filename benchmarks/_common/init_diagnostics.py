@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from mononet.torch import MonoLinear
+from mononet.torch import MonoLinear, MonoResidual
 
 
 def synthetic_monotone(n: int, d: int, *, seed: int) -> tuple[np.ndarray, np.ndarray]:
@@ -98,3 +98,28 @@ def trainability(
         if loss_val < 0.5 and hit == float("inf"):
             hit = float(ep)
     return {"final_train_loss": loss_val, "epochs_to_threshold": hit}
+
+
+def build_residual_stack(
+    mode: str, depth: int, sub_depth: int | None, *, width: int = 32
+) -> nn.Module:
+    """Uniform-width monotone stack; residual (skip every ``sub_depth``) or plain.
+
+    :param mode: ``switch`` or ``absolute``.
+    :param depth: Number of hidden ``W->W`` monotone layers.
+    :param sub_depth: Layers per residual block; ``None`` builds a plain (no-skip) stack.
+    :param width: Uniform hidden width ``W``.
+    :returns: An ``nn.Sequential`` mapping ``(batch, 8) -> (batch, 1)``.
+    """
+    layers: list[nn.Module] = [MonoLinear(8, width, mode=mode, activation="elu")]
+    if sub_depth is None:
+        layers += [
+            MonoLinear(width, width, mode=mode, activation="elu") for _ in range(depth)
+        ]
+    else:
+        layers += [
+            MonoResidual(width, width, mode=mode, activation="elu", sub_depth=sub_depth)
+            for _ in range(depth // sub_depth)
+        ]
+    layers.append(MonoLinear(width, 1, mode=mode, activation="elu"))
+    return nn.Sequential(*[m.double() for m in layers])

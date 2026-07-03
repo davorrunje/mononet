@@ -147,6 +147,8 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
     :param alpha_gate: Gate token for the skip path (``shifted_elu``).
     :param beta_gate: Gate token for the dense path (``scaled_elu``).
     :param init: Forwarded to the default ``F``.
+    :param sub_depth: Number of :class:`MonoDense` layers in ``F`` (default 2;
+        ``1`` = legacy single layer).  Mutually exclusive with ``F``.
     """
 
     def __init__(
@@ -159,9 +161,15 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
+        sub_depth: int | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialise MonoResidual."""
+        """Initialise MonoResidual.
+
+        :param sub_depth: Number of :class:`MonoDense` layers inside ``F``
+            (default ``None`` → 2).  ``1`` reproduces the legacy single-layer
+            behaviour.  Mutually exclusive with ``F``.
+        """
         super().__init__(**kwargs)
         self.units = units
         self.mode = mode
@@ -169,11 +177,23 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         self.init_name = _init_name(init)
         self.alpha_gate = alpha_gate
         self.beta_gate = beta_gate
-        self.F = (
-            F
-            if F is not None
-            else MonoDense(units, mode=mode, activation=activation, init=init)
-        )
+        if sub_depth is not None and sub_depth < 1:
+            raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
+        if F is not None and sub_depth is not None:
+            raise ValueError("pass either F or sub_depth, not both")
+        if F is not None:
+            self.F: keras.layers.Layer = F
+        else:
+            k = 2 if sub_depth is None else sub_depth
+            if k == 1:
+                self.F = MonoDense(units, mode=mode, activation=activation, init=init)
+            else:
+                self.F = keras.Sequential(
+                    [
+                        MonoDense(units, mode=mode, activation=activation, init=init)
+                        for _ in range(k)
+                    ]
+                )
 
     def build(self, input_shape: Any) -> None:
         """Create gate scalars and the projection shortcut if needed.

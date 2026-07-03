@@ -103,13 +103,16 @@ class MonoResidual(nn.Module):
     :param in_features: Input feature count.
     :param units: Output feature count.
     :param F: Monotone sub-module, a `units -> Module` factory, or `None`
-        (default: a single `MonoLinear`). A custom `F` carries the caller's
-        responsibility for monotonicity.
+        (default: build from `sub_depth`). A custom `F` carries the caller's
+        responsibility for monotonicity. Mutually exclusive with `sub_depth`.
     :param mode: Mode for the default `F`.
     :param activation: Activation for the default `F`.
     :param alpha_gate: Skip-gate token.
     :param beta_gate: Residual-gate token.
     :param init: Initializer for the default `F` and the projection.
+    :param sub_depth: Number of `MonoLinear` layers in the default `F`.
+        `None` (default) uses 2; `1` gives a single `MonoLinear`. Must be
+        >= 1. Mutually exclusive with `F`.
     """
 
     def __init__(
@@ -123,13 +126,38 @@ class MonoResidual(nn.Module):
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
+        sub_depth: int | None = None,
     ) -> None:
-        """Initialise MonoResidual."""
+        """Initialise MonoResidual.
+
+        :param sub_depth: Number of `MonoLinear` layers in the default `F`.
+            `None` (default) uses 2; `1` gives a single `MonoLinear` (legacy
+            behaviour). Must be >= 1. Mutually exclusive with `F`.
+        """
         super().__init__()
+        if sub_depth is not None and sub_depth < 1:
+            raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
+        if F is not None and sub_depth is not None:
+            raise ValueError("pass either F or sub_depth, not both")
         if F is None:
-            self.F: nn.Module = MonoLinear(
-                in_features, units, mode=mode, activation=activation, init=init
-            )
+            k = 2 if sub_depth is None else sub_depth
+            if k == 1:
+                self.F: nn.Module = MonoLinear(
+                    in_features, units, mode=mode, activation=activation, init=init
+                )
+            else:
+                sub = [
+                    MonoLinear(
+                        in_features, units, mode=mode, activation=activation, init=init
+                    )
+                ]
+                sub += [
+                    MonoLinear(
+                        units, units, mode=mode, activation=activation, init=init
+                    )
+                    for _ in range(k - 1)
+                ]
+                self.F = nn.Sequential(*sub)
         elif callable(F) and not isinstance(F, nn.Module):
             self.F = F(units)
         else:
