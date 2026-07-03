@@ -7,5 +7,6 @@ Background reading on monotonic neural networks.
 
 monotonicity
 layers
+monotonic-residual
 proofs
 ```
