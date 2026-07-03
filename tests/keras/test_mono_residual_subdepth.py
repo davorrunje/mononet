@@ -52,6 +52,7 @@ def _nondecreasing(units: int, in_f: int, mode: str) -> None:
         np.random.default_rng(1).standard_normal((64, in_f)).astype("float32")
     )
     layer(x)  # build
+    layer.alpha.assign(ops.convert_to_tensor(0.3, dtype=layer.alpha.dtype))
     layer.beta.assign(ops.convert_to_tensor(0.7, dtype=layer.beta.dtype))
     y0 = ops.convert_to_numpy(layer(x))
     for i in range(in_f):
