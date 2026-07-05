@@ -1,8 +1,9 @@
 # PyTorch guide
 
-`mononet.torch` exposes `MonoLinear` and `MonoMLP`, both subclasses of
-`torch.nn.Module`. They drop into any existing training loop (plain
-PyTorch, PyTorch Lightning, etc.).
+`mononet.torch` provides monotonic layers as {py:class}`torch.nn.Module`
+subclasses. They drop into any existing training loop (plain PyTorch,
+PyTorch Lightning, etc.) and compose with the native
+{py:class}`torch.nn.Sequential`.
 
 ## Install
 
@@ -11,10 +12,33 @@ PyTorch, PyTorch Lightning, etc.).
 ## Public API
 
 - {py:class}`mononet.torch.layers.MonoLinear` — monotonic analogue of
-  {py:class}`torch.nn.Module`.
-- {py:class}`mononet.torch.models.MonoMLP` — multi-layer composition.
+  {py:class}`torch.nn.Linear` (non-decreasing in all inputs).
+- {py:class}`mononet.torch.layers.MonoResidual` — dual-gated monotone
+  residual block, warm-started near identity.
+- {py:class}`mononet.torch.layers.MonoInput` — sign-flip layer encoding
+  per-feature monotonicity directions.
 
-A worked example lands once the algorithm implementation is in.
+`mononet` ships layers only — stack them yourself; there is no composed
+`MonoMLP` model.
+
+## Example
+
+```python
+import torch
+from mononet.torch import MonoInput, MonoLinear
+
+# A monotonic MLP: non-decreasing in every input feature.
+net = torch.nn.Sequential(
+    MonoInput(1),                     # +1 => non-decreasing; -1 => non-increasing
+    MonoLinear(4, 32, mode="switch"),
+    MonoLinear(32, 1, mode="switch"),
+)
+y = net(torch.randn(8, 4))            # (8, 1), guaranteed monotone in all inputs
+```
+
+For per-feature monotonicity directions, pass a
+{py:class}`~mononet.core.types.MonotonicityMask` (a 1-D array of
+`{-1, +1}`) to `MonoInput`.
 
 ## See also
 
