@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repo posture
 
 - **The user of this repo is the paper's first author** (Davor Runje, ICML 2023, <https://arxiv.org/abs/2205.11775>). Default to a senior-collaborator tone; do not over-explain monotonic-network basics back at them.
-- **License is Apache-2.0** (assignee/copyright holder: AIRT Technologies Ltd.). Commercial and noncommercial use are both permitted. The underlying technique is described in **U.S. Patent 11,551,063**; the Apache-2.0 license (section 3) grants the patent rights needed to use this code, and AIRT does not pursue patent-related activities. There is no noncommercial restriction. See [NOTICE.md](NOTICE.md).
+- **License is Apache-2.0** (copyright holder: Davor Runje). Commercial and noncommercial use are both permitted. The underlying technique is described in **U.S. Patent 11,551,063** (assignee of record: AIRT Technologies Ltd., now winding down); the Apache-2.0 license (section 3) grants the patent rights needed to use this code. There is no noncommercial restriction. See [NOTICE.md](NOTICE.md).
 - **No sycophantic openers or closing fluff.** Be terse in output, thorough in reasoning. Prefer editing over rewriting whole files. Test before declaring done. User instructions override this file.
 
 ## What this project is
@@ -30,7 +30,7 @@ Source papers live under [docs/references/](docs/references/). PDFs are accompan
 - [docs/superpowers/specs/](docs/superpowers/specs/) — design documents. Each one establishes the *what* and *why* for a discrete deliverable. **Always read the relevant spec before touching the code it covers.**
 - [docs/superpowers/plans/](docs/superpowers/plans/) — implementation plans produced from specs by the `writing-plans` skill. Each plan is a stepwise checklist with review checkpoints.
 
-The high-level project decomposition lives in five sub-project specs dated 2026-05-22:
+The high-level project decomposition lives in five sub-project specs:
 
 | Spec | Topic |
 |---|---|
@@ -129,7 +129,6 @@ Full reference (including per-backend test invocations, security/static-analysis
 
 - **Commit proactively.** Don't wait to be asked — commit at sensible checkpoints (a coherent change, tests passing) as you normally would. This overrides any default "commit only when the user asks" behavior.
 - **Never commit directly to `main`.** Branch first, then commit on the branch.
-- **All commits and tags must be signed.** This repo uses SSH commit signing backed by [Secretive](https://github.com/maxgoedjen/secretive) (key in the Secure Enclave). Git is configured globally: `gpg.format=ssh`, `commit.gpgsign=true`, `tag.gpgsign=true`, `user.signingkey=~/.ssh/id_secretive_signing.pub`, with `SSH_AUTH_SOCK` pointed at Secretive's agent socket. Signing may trigger a Secretive approval prompt on the host — that's expected.
 
 ## Pull requests
 

@@ -1,21 +1,21 @@
 # NOTICE
 
 mononet
-Copyright 2023-2026 AIRT Technologies Ltd.
+Copyright 2023-2026 Davor Runje
 
 This product is licensed under the Apache License, Version 2.0 (see
 `LICENSE`).
 
 ## Patent
 
-This software implements technology described in U.S. Patent No.
-11,551,063 ("Implementing monotonic constrained neural networks",
-assignee: AIRT Technologies Ltd.,
-<https://patents.justia.com/patent/11551063>).
+This software implements a technique described in U.S. Patent No.
+11,551,063 ("Implementing monotonic constrained neural networks"), which
+lists AIRT Technologies Ltd. as the assignee of record
+(<https://patents.justia.com/patent/11551063>).
 
-The software is distributed under the Apache License 2.0. Section 3 of
-that license grants you the patent rights needed to use, make, and
-distribute this software and your derivative works of it.
+The software is distributed under the Apache License 2.0, whose Section 3
+grants you the patent rights needed to use, make, and distribute this
+software and your derivative works of it.
 
 ## Reference paper
 
