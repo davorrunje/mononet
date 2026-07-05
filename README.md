@@ -1,15 +1,20 @@
-# mononet — Unconstrained Monotonic Neural Networks
+# mononet — Constrained Monotonic Neural Networks
 
 [![PyPI version](https://img.shields.io/pypi/v/mononet)](https://pypi.org/project/mononet/)
 [![Python versions](https://img.shields.io/pypi/pyversions/mononet)](https://pypi.org/project/mononet/)
 [![Docs](https://img.shields.io/badge/docs-mononet-blue)](https://davorrunje.github.io/mononet/)
 [![Build](https://github.com/davorrunje/mononet/actions/workflows/build.yml/badge.svg)](https://github.com/davorrunje/mononet/actions/workflows/build.yml)
 
-Reference implementation of the unconstrained monotonic neural network
+Multi-backend implementation of the constrained monotonic neural network
 construction from:
 
 > Runje, D., Shankaranarayana, S. M. (2023). *Constrained Monotonic
 > Neural Networks.* ICML 2023. <https://arxiv.org/abs/2205.11775>
+
+with the activation-switch refinement (the default `mode="switch"`) from:
+
+> Sartor, D. et al. (2025). *Advancing Constrained Monotonic Neural
+> Networks.* ICML 2025. <https://arxiv.org/abs/2505.02537>
 
 First-class support for **PyTorch**, **JAX** (Flax NNX), and **Keras 3**.
 
@@ -22,21 +27,28 @@ First-class support for **PyTorch**, **JAX** (Flax NNX), and **Keras 3**.
 
 ## Quick start
 
-A 60-second tour will appear here once the algorithm implementation lands.
-Each backend exposes the same composed model (`MonoMLP`) and the
-framework-idiomatic layer name (`MonoLinear` for PyTorch and JAX,
-`MonoDense` for Keras).
+`mononet` ships **layers**, not composed models — stack them with your
+framework's native `Sequential` (or equivalent). Each backend exposes
+`MonoResidual`, `MonoInput`, and the framework-idiomatic dense layer:
+`MonoLinear` for PyTorch and JAX, `MonoDense` for Keras.
 
 ```python
-# PyTorch
-from mononet.torch import MonoMLP
+import torch
+from mononet.torch import MonoInput, MonoLinear
 
-# JAX
-from mononet.jax import MonoMLP
-
-# Keras 3
-from mononet.keras import MonoMLP
+# A monotonic MLP: non-decreasing in every input feature.
+net = torch.nn.Sequential(
+    MonoInput(1),                    # +1 => non-decreasing; -1 => non-increasing
+    MonoLinear(4, 32, mode="switch"),
+    MonoLinear(32, 1, mode="switch"),
+)
+y = net(torch.randn(8, 4))           # (8, 1), guaranteed monotone in all inputs
 ```
+
+For per-feature monotonicity directions, pass a
+`mononet.core.types.MonotonicityMask` (a 1-D array of `{-1, +1}`) to
+`MonoInput`. The same layers exist under `mononet.jax` and
+`mononet.keras`; see the [per-backend guides](docs/guides/).
 
 ## License
 
@@ -56,7 +68,7 @@ for the paper-claim ↔ Lean-theorem ↔ Python-test mapping.
 ## Documentation
 
 Full docs at <https://davorrunje.github.io/mononet/>. Source for guides
-and benchmarks lives in [`docs/docs/`](docs/docs/).
+and benchmarks lives in [`docs/`](docs/).
 
 ## Contributing
 
@@ -65,5 +77,6 @@ devcontainer choice, `uv sync`, pre-commit, per-backend test commands.
 
 ## Citation
 
-If you use `mononet` in academic work, please cite the paper. BibTeX is
-in [`docs/docs/about/citation.md`](docs/docs/about/citation.md).
+If you use `mononet` in academic work, please cite the paper (see
+[`NOTICE.md`](NOTICE.md)). BibTeX is in the
+[documentation homepage](https://davorrunje.github.io/mononet/#citation).

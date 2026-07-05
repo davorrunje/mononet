@@ -30,7 +30,7 @@ Source papers live under [docs/references/](docs/references/). PDFs are accompan
 - [docs/superpowers/specs/](docs/superpowers/specs/) — design documents. Each one establishes the *what* and *why* for a discrete deliverable. **Always read the relevant spec before touching the code it covers.**
 - [docs/superpowers/plans/](docs/superpowers/plans/) — implementation plans produced from specs by the `writing-plans` skill. Each plan is a stepwise checklist with review checkpoints.
 
-The high-level project decomposition lives in five sub-project specs dated 2026-05-22:
+The high-level project decomposition lives in five sub-project specs:
 
 | Spec | Topic |
 |---|---|
@@ -129,7 +129,6 @@ Full reference (including per-backend test invocations, security/static-analysis
 
 - **Commit proactively.** Don't wait to be asked — commit at sensible checkpoints (a coherent change, tests passing) as you normally would. This overrides any default "commit only when the user asks" behavior.
 - **Never commit directly to `main`.** Branch first, then commit on the branch.
-- **All commits and tags must be signed.** This repo uses SSH commit signing backed by [Secretive](https://github.com/maxgoedjen/secretive) (key in the Secure Enclave). Git is configured globally: `gpg.format=ssh`, `commit.gpgsign=true`, `tag.gpgsign=true`, `user.signingkey=~/.ssh/id_secretive_signing.pub`, with `SSH_AUTH_SOCK` pointed at Secretive's agent socket. Signing may trigger a Secretive approval prompt on the host — that's expected.
 
 ## Pull requests
 
