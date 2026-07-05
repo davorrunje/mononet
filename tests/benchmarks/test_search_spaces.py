@@ -77,3 +77,32 @@ def test_non_deep_keeps_shallow_depth_band() -> None:
     for _ in range(25):
         cfg = _cfg("switch", residual=True, deep=False)
         assert 1 <= cfg.depth <= 4
+
+
+def _cfg_for_dataset(dataset: str) -> BenchmarkConfig:
+    study = optuna.create_study()
+    trial = study.ask()
+    return suggest_config(
+        trial,
+        dataset=dataset,
+        backend="torch",
+        mode="switch",
+        residual=False,
+        epochs=3,
+        metric="mse",
+    )
+
+
+def test_small_datasets_use_standard_batch_band() -> None:
+    for _ in range(25):
+        cfg = _cfg_for_dataset("auto")
+        assert cfg.batch_size in (8, 16, 32, 64, 128, 256)
+
+
+def test_large_datasets_use_large_batch_band() -> None:
+    # loan/blog are large enough that tiny batches make training intractable;
+    # the sampler must draw only from the large-batch band.
+    for dataset in ("loan", "blog"):
+        for _ in range(25):
+            cfg = _cfg_for_dataset(dataset)
+            assert cfg.batch_size in (512, 1024, 2048, 4096)
