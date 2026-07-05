@@ -28,7 +28,7 @@ _SMOKE: dict[str, Any] = {
 def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool, bool], ...]:
     """Parse a comma-separated flavor spec into ``(mode, residual, deep)`` triples.
 
-    :param spec: Comma-separated flavor names like ``switch-plain,absolute-residual``,
+    :param spec: Comma-separated flavor names like ``switch-plain,absolute-deep``,
         or ``None``/empty string to return all flavors.
     :returns: Tuple of ``(mode, residual, deep)`` triples.
     """

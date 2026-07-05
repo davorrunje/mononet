@@ -53,3 +53,25 @@ def test_dry_run_reports_plan_without_running() -> None:
 def test_invalid_flavors_exits_nonzero() -> None:
     res = runner.invoke(app, ["--flavors", "foo", "--dry-run"])
     assert res.exit_code != 0
+
+
+def test_parse_flavors_accepts_deep() -> None:
+    from benchmarks.search import _parse_flavors
+
+    assert _parse_flavors("absolute-deep") == (("absolute", True, True),)
+    assert _parse_flavors("switch-plain,switch-residual") == (
+        ("switch", False, False),
+        ("switch", True, False),
+    )
+
+
+def test_parse_flavors_default_is_all_six() -> None:
+    from benchmarks.search import _parse_flavors
+
+    assert len(_parse_flavors("")) == 6
+
+
+def test_dry_run_lists_deep_flavor() -> None:
+    res = runner.invoke(app, ["--flavors", "absolute-deep", "--dry-run"])
+    assert res.exit_code == 0
+    assert "absolute-deep" in res.output
