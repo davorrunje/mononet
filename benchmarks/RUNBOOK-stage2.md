@@ -34,8 +34,10 @@ Notes:
 - The `sub_depth=2` default (merged in #67) makes the *prior* `auto` residual
   numbers stale — this run regenerates all `auto` flavors, so the whole table
   is internally consistent.
-- `--storage-dir` writes resumable Optuna `.db` files; these are git-ignored
-  (never commit `*.db`). Use `--n-jobs` to parallelize trials on the GPU box.
+- `--storage-dir` writes resumable Optuna `.db` files (NOT the JSON results —
+  those go to `benchmarks/results/phase2/`, see below). That directory ships a
+  `.gitignore` for `*.db`/`*.jsonl`, so the study databases are git-ignored;
+  never commit `*.db`. Use `--n-jobs` to parallelize trials on the GPU box.
 - To smoke-test the plumbing first: append `--smoke` (tiny 2-trial/2-fold run).
 
 Outputs: `benchmarks/results/phase2/<dataset>-<flavor>.json` for all 5 × 6 = 30
