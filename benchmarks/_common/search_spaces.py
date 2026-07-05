@@ -19,6 +19,7 @@ def suggest_config(
     residual: bool,
     epochs: int,
     metric: Literal["accuracy", "rmse", "mse"],
+    deep: bool = False,
 ) -> BenchmarkConfig:
     """Sample a BenchmarkConfig for one (dataset, flavor) trial.
 
@@ -33,10 +34,17 @@ def suggest_config(
     :param epochs: Number of training epochs per trial.
     :param metric: Primary metric; propagated into `cfg.metrics` so the
         objective's metric and the training config always agree.
+    :param deep: When ``True``, draw ``depth`` from the deep categorical band
+        ``{6, 10, 16}`` (residual skips make these trainable); otherwise draw
+        ``depth`` from the shallow range ``[1, 4]``. Only affects the ``depth``
+        dimension; all other hyperparameters are sampled identically.
     :returns: A fully populated `BenchmarkConfig` ready for `run()`.
     """
     width = trial.suggest_categorical("width", [8, 16, 21, 32, 64])
-    depth = trial.suggest_int("depth", 1, 4)
+    if deep:
+        depth = trial.suggest_categorical("depth", [6, 10, 16])
+    else:
+        depth = trial.suggest_int("depth", 1, 4)
     lr = trial.suggest_float("lr", 1e-4, 1e-1, log=True)
     weight_decay = trial.suggest_float("weight_decay", 0.0, 0.2)
     dropout = trial.suggest_float("dropout", 0.0, 0.5)
