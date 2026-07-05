@@ -29,6 +29,32 @@ def _bundle() -> DatasetBundle:
 def test_flavor_name() -> None:
     assert flavor_name("switch", False) == "switch-plain"
     assert flavor_name("absolute", True) == "absolute-residual"
+    assert flavor_name("switch", True, deep=True) == "switch-deep"
+    assert flavor_name("absolute", True, deep=True) == "absolute-deep"
+
+
+def test_all_flavors_has_six_entries_including_deep() -> None:
+    from benchmarks._common.search import _ALL_FLAVORS, flavor_name
+
+    assert len(_ALL_FLAVORS) == 6
+    names = {flavor_name(m, r, d) for m, r, d in _ALL_FLAVORS}
+    assert {"switch-deep", "absolute-deep"} <= names
+
+
+def test_search_deep_flavor_names_study_and_uses_high_depth() -> None:
+    res = search(
+        _bundle(),
+        mode="absolute",
+        residual=True,
+        deep=True,
+        backend="torch",
+        n_trials=2,
+        seed=0,
+        epochs=1,
+        n_splits=2,
+    )
+    assert res.flavor == "absolute-deep"
+    assert res.best_params["depth"] in (6, 10, 16)
 
 
 def test_search_two_trials_two_folds_returns_finite_best() -> None:

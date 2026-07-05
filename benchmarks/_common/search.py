@@ -23,7 +23,18 @@ if TYPE_CHECKING:
     from benchmarks._common.bundle import DatasetBundle
 
 
-def flavor_name(mode: str, residual: bool) -> str:
+def flavor_name(mode: str, residual: bool, deep: bool = False) -> str:
+    """Canonical flavor label for result files and Optuna study names.
+
+    :param mode: Monotonicity mode (``"switch"`` or ``"absolute"``).
+    :param residual: Whether the stack uses residual blocks.
+    :param deep: Whether this is the deep-depth-band flavor. When ``True`` the
+        label is ``"{mode}-deep"`` regardless of ``residual`` (deep implies
+        residual); otherwise ``"{mode}-residual"`` or ``"{mode}-plain"``.
+    :returns: The flavor label string.
+    """
+    if deep:
+        return f"{mode}-deep"
     return f"{mode}-{'residual' if residual else 'plain'}"
 
 
@@ -73,6 +84,7 @@ def search(
     mode: str,
     residual: bool,
     backend: str,
+    deep: bool = False,
     n_trials: int = 50,
     seed: int = 0,
     epochs: int = 50,
@@ -95,6 +107,7 @@ def search(
             residual=residual,
             epochs=epochs,  # type: ignore[arg-type]
             metric=metric,  # type: ignore[arg-type]
+            deep=deep,
         )
         scores: list[float] = []
         for fb in folds:
@@ -105,7 +118,7 @@ def search(
         return float(np.mean(scores))
 
     study = optuna.create_study(
-        study_name=f"{bundle.name}-{flavor_name(mode, residual)}",
+        study_name=f"{bundle.name}-{flavor_name(mode, residual, deep)}",
         direction=direction,
         sampler=optuna.samplers.TPESampler(seed=seed),
         storage=storage,
@@ -114,7 +127,7 @@ def search(
     study.optimize(objective, n_trials=n_trials, n_jobs=n_jobs)
     return StudyResult(
         dataset=bundle.name,
-        flavor=flavor_name(mode, residual),
+        flavor=flavor_name(mode, residual, deep),
         best_params=dict(study.best_params),
         best_value=float(study.best_value),
         n_trials=len(study.trials),
@@ -162,11 +175,15 @@ def final_eval(
     )
 
 
-_ALL_FLAVORS: tuple[tuple[str, bool], ...] = (
-    ("switch", False),
-    ("switch", True),
-    ("absolute", False),
-    ("absolute", True),
+# (mode, residual, deep) triples. Deep implies residual=True with a larger
+# depth search band (see suggest_config); it is a separate Optuna study.
+_ALL_FLAVORS: tuple[tuple[str, bool, bool], ...] = (
+    ("switch", False, False),
+    ("switch", True, False),
+    ("absolute", False, False),
+    ("absolute", True, False),
+    ("switch", True, True),
+    ("absolute", True, True),
 )
 # (n_trials, final_seeds, n_splits) per dataset.
 # n_splits: 5-fold CV for small/medium datasets; 1 (single holdout) for the large
@@ -184,7 +201,7 @@ def run_dataset(
     dataset: str,
     *,
     backend: str = "torch",
-    flavors: tuple[tuple[str, bool], ...] = _ALL_FLAVORS,
+    flavors: tuple[tuple[str, bool, bool], ...] = _ALL_FLAVORS,
     n_trials: int | None = None,
     epochs: int = 50,
     n_jobs: int = 1,
@@ -212,8 +229,8 @@ def run_dataset(
 
     bundle = load(dataset, data_dir=data_dir)
     written: list[Path] = []
-    for mode, residual in flavors:
-        fname = flavor_name(mode, residual)
+    for mode, residual, deep in flavors:
+        fname = flavor_name(mode, residual, deep)
         storage = (
             f"sqlite:///{storage_dir}/{dataset}-{fname}.db" if storage_dir else None
         )
@@ -221,6 +238,7 @@ def run_dataset(
             bundle,
             mode=mode,
             residual=residual,
+            deep=deep,
             backend=backend,
             n_trials=n_trials,
             epochs=epochs,
