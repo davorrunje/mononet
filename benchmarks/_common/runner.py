@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -14,6 +15,22 @@ from benchmarks._common.seeds import seed_everything
 if TYPE_CHECKING:
     from benchmarks._common.bundle import DatasetBundle
     from benchmarks._common.config import BenchmarkConfig
+
+
+def _torch_device() -> Any:
+    """Select the torch device for benchmark training/eval.
+
+    Uses ``$MONONET_TORCH_DEVICE`` when set (e.g. ``"cuda:0"`` / ``"cpu"``),
+    otherwise CUDA when available, else CPU.
+
+    :returns: A ``torch.device``.
+    """
+    import torch
+
+    override = os.environ.get("MONONET_TORCH_DEVICE")
+    if override:
+        return torch.device(override)
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +89,9 @@ def _train_torch(model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle) -> int
     import torch
     import torch.nn as nn
 
+    device = _torch_device()
+    model.to(device)
+
     binary = bundle.task == "binary_classification"
     criterion: nn.Module = nn.BCELoss() if binary else nn.MSELoss()
     adam = torch.optim.Adam(
@@ -80,8 +100,10 @@ def _train_torch(model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle) -> int
         weight_decay=cfg.optimizer.weight_decay,
     )
 
-    x_train = torch.tensor(bundle.X_train, dtype=torch.float64)
-    y_train = torch.tensor(bundle.y_train, dtype=torch.float64).unsqueeze(1)
+    x_train = torch.tensor(bundle.X_train, dtype=torch.float32, device=device)
+    y_train = torch.tensor(
+        bundle.y_train, dtype=torch.float32, device=device
+    ).unsqueeze(1)
 
     n = x_train.shape[0]
     batch_size = min(cfg.batch_size, n)
@@ -89,7 +111,7 @@ def _train_torch(model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle) -> int
 
     model.train()
     for _ in range(cfg.epochs):
-        perm = torch.randperm(n)
+        perm = torch.randperm(n, device=device)
         x_shuf = x_train[perm]
         y_shuf = y_train[perm]
 
@@ -271,9 +293,10 @@ def _predict(model: Any, cfg: BenchmarkConfig, bundle: DatasetBundle) -> np.ndar
     if cfg.backend == "torch":
         import torch
 
+        device = next(model.parameters()).device
         with torch.no_grad():
-            x_t = torch.tensor(bundle.X_test, dtype=torch.float64)
-            out_np: np.ndarray = model(x_t).numpy().ravel()  # type: ignore[type-arg]
+            x_t = torch.tensor(bundle.X_test, dtype=torch.float32, device=device)
+            out_np: np.ndarray = model(x_t).cpu().numpy().ravel()  # type: ignore[type-arg]
         return out_np.astype(np.float64)
 
     if cfg.backend == "jax":

@@ -57,7 +57,7 @@ def test_builds_and_output_shape(
 ) -> None:
     b = _bundle()
     model = build_model(_cfg(mode, residual), b)
-    x = torch.tensor(b.X_train)
+    x = torch.tensor(b.X_train, dtype=torch.float32)
     out = model(x)
     assert out.shape == (b.X_train.shape[0], 1)
 
@@ -67,7 +67,7 @@ def test_monotone_in_decreasing_feature(mode: Literal["switch", "absolute"]) -> 
     # Output must be non-increasing in column 4 (declared decreasing).
     b = _bundle()
     model = build_model(_cfg(mode, residual=False), b).eval()
-    x = torch.tensor(b.X_train)
+    x = torch.tensor(b.X_train, dtype=torch.float32)
     x_hi = x.clone()
     x_hi[:, 4] += 1.0
     with torch.no_grad():

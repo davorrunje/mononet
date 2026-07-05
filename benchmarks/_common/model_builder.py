@@ -94,7 +94,7 @@ def _build_torch(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
 
     :param cfg: Benchmark configuration.
     :param bundle: Dataset bundle.
-    :returns: ``nn.Module`` in float64 mode.
+    :returns: ``nn.Module`` in float32 mode.
     """
     import torch
     from torch import nn
@@ -151,7 +151,7 @@ def _build_torch(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
             y = self.head(self.mono_stack(z))
             return torch.sigmoid(y) if binary else y
 
-    return Model().double()
+    return Model()
 
 
 def _build_jax_embed(
