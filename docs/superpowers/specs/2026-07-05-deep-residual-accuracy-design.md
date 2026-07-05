@@ -53,8 +53,9 @@ Flavors become **triples** `(mode: str, residual: bool, deep: bool)`.
       ("switch", True, True), ("absolute", True, True),
   )
   ```
-- `search(...)` and `final_eval(...)` gain `deep: bool = False`; `search`'s objective calls `suggest_config(..., deep=deep)`; both call `flavor_name(mode, residual, deep)`.
-- `run_dataset(...)`: the flavor loop unpacks the triple `for mode, residual, deep in flavors:` and threads `deep` into `search`/`final_eval`. The Optuna `study_name`/storage `.db` filename derive from `flavor_name(mode, residual, deep)` so the deep study is separate.
+- `search(...)` gains `deep: bool = False`; its objective calls `suggest_config(..., deep=deep)`, and its `study_name` + `StudyResult.flavor` derive from `flavor_name(mode, residual, deep)` so the deep study is **separate** from the `residual` study (both have `residual=True`).
+- `final_eval(...)` is **unchanged** — it builds its config directly from `best_params` (including `depth`) and `residual`, never names a flavor, so a `deep` param would be dead. Depth flows through `best_params["depth"]`.
+- `run_dataset(...)`: the flavor loop unpacks the triple `for mode, residual, deep in flavors:` and threads `deep` into `search` only. The storage `.db` filename and output JSON name derive from `study.flavor` (= `flavor_name(mode, residual, deep)`), so the deep study/results are separate.
 - `_BUDGET` is unchanged: `auto/heart/compas = (50, range(10), 5)`, `loan/blog = (25, range(5), 1)`. **1-fold for loan/blog stays on statistical grounds** (large split → low variance), independent of the now-ample GPU compute.
 
 ### 3.3 `benchmarks/search.py` (CLI)
