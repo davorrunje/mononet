@@ -77,6 +77,19 @@ devcontainer choice, `uv sync`, pre-commit, per-backend test commands.
 
 ## Citation
 
-If you use `mononet` in academic work, please cite the paper (see
-[`NOTICE.md`](NOTICE.md)). BibTeX is in the
-[documentation homepage](https://davorrunje.github.io/mononet/#citation).
+If you use `mononet` in academic work, please cite the paper:
+
+```bibtex
+@inproceedings{runje2023constrained,
+  title         = {Constrained Monotonic Neural Networks},
+  author        = {Runje, Davor and Shankaranarayana, Sharath M.},
+  booktitle     = {Proceedings of the 40th International Conference on Machine Learning},
+  series        = {Proceedings of Machine Learning Research},
+  volume        = {202},
+  year          = {2023},
+  publisher     = {PMLR},
+  url           = {https://proceedings.mlr.press/v202/runje23a.html},
+  eprint        = {2205.11775},
+  archivePrefix = {arXiv}
+}
+```

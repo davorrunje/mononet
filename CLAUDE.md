@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repo posture
 
 - **The user of this repo is the paper's first author** (Davor Runje, ICML 2023, <https://arxiv.org/abs/2205.11775>). Default to a senior-collaborator tone; do not over-explain monotonic-network basics back at them.
-- **License is Apache-2.0** (assignee/copyright holder: AIRT Technologies Ltd.). Commercial and noncommercial use are both permitted. The underlying technique is described in **U.S. Patent 11,551,063**; the Apache-2.0 license (section 3) grants the patent rights needed to use this code, and AIRT does not pursue patent-related activities. There is no noncommercial restriction. See [NOTICE.md](NOTICE.md).
+- **License is Apache-2.0** (copyright holder: Davor Runje). Commercial and noncommercial use are both permitted. The underlying technique is described in **U.S. Patent 11,551,063** (assignee of record: AIRT Technologies Ltd., now winding down); the Apache-2.0 license (section 3) grants the patent rights needed to use this code. There is no noncommercial restriction. See [NOTICE.md](NOTICE.md).
 - **No sycophantic openers or closing fluff.** Be terse in output, thorough in reasoning. Prefer editing over rewriting whole files. Test before declaring done. User instructions override this file.
 
 ## What this project is
