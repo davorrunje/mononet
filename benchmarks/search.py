@@ -25,23 +25,24 @@ _SMOKE: dict[str, Any] = {
 }
 
 
-def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool], ...]:
-    """Parse a comma-separated flavor spec into ``(mode, residual)`` pairs.
+def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool, bool], ...]:
+    """Parse a comma-separated flavor spec into ``(mode, residual, deep)`` triples.
 
     :param spec: Comma-separated flavor names like ``switch-plain,absolute-residual``,
         or ``None``/empty string to return all flavors.
-    :returns: Tuple of ``(mode, residual)`` pairs.
+    :returns: Tuple of ``(mode, residual, deep)`` triples.
     """
     if not spec:
         return _ALL_FLAVORS
     valid_modes = {"switch", "absolute"}
-    valid_kinds = {"plain", "residual"}
-    out: list[tuple[str, bool]] = []
+    valid_kinds = {"plain", "residual", "deep"}
+    out: list[tuple[str, bool, bool]] = []
     for name in spec.split(","):
         mode, _, kind = name.partition("-")
         if mode not in valid_modes or kind not in valid_kinds:
             raise typer.BadParameter(f"bad flavor: {name}")
-        out.append((mode, kind == "residual"))
+        deep = kind == "deep"
+        out.append((mode, kind == "residual" or deep, deep))
     return tuple(out)
 
 
@@ -73,7 +74,7 @@ def main(
     fseeds: int | None = _SMOKE["final_seeds"] if smoke else final_seeds
     cvf: int | None = _SMOKE["cv_folds"] if smoke else cv_folds
     flavs = _parse_flavors(flavors)
-    flav_names = [flavor_name(m, r) for m, r in flavs]
+    flav_names = [flavor_name(m, r, d) for m, r, d in flavs]
 
     if dry_run:
         typer.echo(
