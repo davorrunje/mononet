@@ -90,12 +90,23 @@ def search(
     epochs: int = 50,
     n_jobs: int = 1,
     n_splits: int = 5,
+    search_seeds: int = 3,
     metric: str | None = None,
     storage: str | None = None,
 ) -> StudyResult:
-    """Tune (dataset, flavor) HPs by mean k-fold CV metric via Optuna TPE."""
+    """Tune (dataset, flavor) HPs by a **stability-aware** k-fold CV objective.
+
+    Each trial is scored over ``n_splits`` folds x ``search_seeds`` seeds, and
+    the objective is the risk-adjusted (one-sigma) bound rather than the plain
+    mean: ``mean - std`` for maximize metrics, ``mean + std`` for minimize
+    metrics. Evaluating several seeds per fold exposes seed-dependent training
+    collapses (which a single-seed CV misses), and the variance penalty steers
+    the search away from fragile HP regions that train well on average but
+    collapse on some seeds. See [[stage2-collapse-investigation]].
+    """
     metric = metric or _primary_metric(bundle)
-    direction = "minimize" if _lower_is_better(metric) else "maximize"
+    lower = _lower_is_better(metric)
+    direction = "minimize" if lower else "maximize"
     folds = _fold_bundles(bundle, n_splits=n_splits, seed=seed)
 
     def objective(trial: optuna.Trial) -> float:
@@ -109,13 +120,17 @@ def search(
             metric=metric,  # type: ignore[arg-type]
             deep=deep,
         )
+        cfg = dataclasses.replace(cfg, seeds=tuple(range(search_seeds)))
         scores: list[float] = []
         for fb in folds:
             rows = run(cfg, fb)
             if not rows:
                 raise RuntimeError("run() returned no rows for trial")
-            scores.append(float(rows[0].scores[metric]))  # type: ignore[index]
-        return float(np.mean(scores))
+            scores.extend(float(r.scores[metric]) for r in rows)  # type: ignore[index]
+        arr = np.asarray(scores, dtype=np.float64)
+        # Risk-adjusted objective: penalise seed variance so unstable HP regions
+        # (good mean, occasional collapse) are not selected.
+        return float(arr.mean() + arr.std()) if lower else float(arr.mean() - arr.std())
 
     study = optuna.create_study(
         study_name=f"{bundle.name}-{flavor_name(mode, residual, deep)}",
@@ -188,13 +203,39 @@ _ALL_FLAVORS: tuple[tuple[str, bool, bool], ...] = (
 # (n_trials, final_seeds, n_splits) per dataset.
 # n_splits: 5-fold CV for small/medium datasets; 1 (single holdout) for the large
 # ones (loan/blog), where a single split is already low-variance and 5x cheaper.
+# final_seeds bumped to 20 for the small/medium datasets so the robust
+# estimators (median, IQM) and the collapse count are stable; loan/blog keep a
+# smaller count (their single-holdout final_eval is already near-deterministic,
+# std ~1e-4).
 _BUDGET: dict[str, tuple[int, range, int]] = {
-    "auto": (50, range(10), 5),
-    "heart": (50, range(10), 5),
-    "compas": (50, range(10), 5),
-    "loan": (25, range(5), 1),
-    "blog": (25, range(5), 1),
+    "auto": (50, range(20), 5),
+    "heart": (50, range(20), 5),
+    "compas": (50, range(20), 5),
+    "loan": (25, range(10), 1),
+    "blog": (25, range(10), 1),
 }
+
+
+def _count_collapses(
+    values: tuple[float, ...], *, task: str, base_rate: float, lower_is_better: bool
+) -> int:
+    """Count collapsed/degenerate seeds among ``values``.
+
+    Classification: seeds at or below ``base_rate + 0.02`` (constant-prediction
+    collapse). Regression: gross bad-side Tukey outliers (beyond ``q75 + 3*IQR``).
+
+    :param values: Per-seed metric values.
+    :param task: ``binary_classification`` or ``regression``.
+    :param base_rate: Majority-class fraction (classification only).
+    :param lower_is_better: Metric direction.
+    :returns: Number of collapsed seeds.
+    """
+    arr = np.asarray(values, dtype=np.float64)
+    if task == "binary_classification":
+        return int((arr <= base_rate + 0.02).sum())
+    q25, q75 = np.percentile(arr, [25, 75])
+    iqr = q75 - q25
+    return int((arr > q75 + 3.0 * iqr).sum())
 
 
 def run_dataset(
@@ -207,6 +248,7 @@ def run_dataset(
     n_jobs: int = 1,
     final_seeds: Iterable[int] | None = None,
     n_splits: int | None = None,
+    search_seeds: int = 3,
     data_dir: Path | None = None,
     out_dir: Path | None = None,
     storage_dir: Path | None = None,
@@ -244,6 +286,7 @@ def run_dataset(
             epochs=epochs,
             n_jobs=n_jobs,
             n_splits=n_splits,
+            search_seeds=search_seeds,
             storage=storage,
         )
         agg = final_eval(
@@ -255,14 +298,29 @@ def run_dataset(
             seeds=final_seeds,
             epochs=epochs,
         )
+        base_rate = max(
+            float(np.mean(bundle.y_test)), 1.0 - float(np.mean(bundle.y_test))
+        )
         rec = {
             "dataset": dataset,
             "flavor": study.flavor,
             "best_params": study.best_params,
+            # cv_best is the stability-aware objective (mean -/+ std over
+            # folds x search_seeds), not a plain CV mean.
             "cv_best": study.best_value,
             "test_metric": agg.metric,
+            # multi-protocol reporting: paper-comparable + outlier-robust.
             "test_mean": agg.mean,
             "test_std": agg.std,
+            "test_median": agg.median,
+            "test_iqm": agg.iqm,
+            "test_values": list(agg.values),
+            "n_collapse": _count_collapses(
+                agg.values,
+                task=bundle.task,
+                base_rate=base_rate,
+                lower_is_better=_lower_is_better(agg.metric),
+            ),
             "n_seeds": agg.n_seeds,
         }
         path = out_dir / f"{dataset}-{fname}.json"

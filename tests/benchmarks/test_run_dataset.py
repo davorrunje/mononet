@@ -68,8 +68,8 @@ def test_run_dataset_deep_flavor_writes_deep_json(tmp_path: Path) -> None:
 def test_run_dataset_default_budget_from_table() -> None:
     from benchmarks._common.search import _BUDGET
 
-    assert _BUDGET["auto"] == (50, range(10), 5)
-    assert _BUDGET["loan"] == (25, range(5), 1)
+    assert _BUDGET["auto"] == (50, range(20), 5)
+    assert _BUDGET["loan"] == (25, range(10), 1)
     assert _BUDGET["blog"][2] == 1  # large datasets use single holdout
 
 
