@@ -19,7 +19,7 @@ _SELU = torch.nn.SELU()
 def activation(name: str, h: torch.Tensor) -> torch.Tensor:
     """Apply the base activation by name.
 
-    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``.
+    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``, ``identity``.
     :param h: Input tensor.
     :returns: Activated tensor with the same shape as ``h``.
     :raises ValueError: If ``name`` is not a recognised activation.
@@ -35,6 +35,8 @@ def activation(name: str, h: torch.Tensor) -> torch.Tensor:
     if name == "softplus":
         sp: torch.Tensor = functional.softplus(h)
         return sp
+    if name == "identity":
+        return h
     raise ValueError(f"unknown activation {name!r}")
 
 
