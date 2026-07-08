@@ -9,17 +9,21 @@ cd /workspaces/mononet
 
 echo -e "\033[36m=== Installing Common Tools ===\033[0m"
 
-# Ensure the Claude config dir is writable by the non-root user. Every
-# flavor mounts CLAUDE_CONFIG_DIR as the 'mononet-claude-config' named
-# volume; Docker initialises named volumes root-owned, so without this
-# the user cannot write there (e.g. the Claude installer's
-# ~/.claude/downloads), failing updateContentCommand. Idempotent — only
-# acts when the dir exists and is not already writable; passwordless
-# sudo is available in all flavors.
-if [ -n "${CLAUDE_CONFIG_DIR:-}" ] && [ -d "${CLAUDE_CONFIG_DIR}" ] && [ ! -w "${CLAUDE_CONFIG_DIR}" ]; then
-  echo "[setup.sh] Claiming ownership of ${CLAUDE_CONFIG_DIR} (root-owned named volume)..."
-  sudo chown "$(id -u):$(id -g)" "${CLAUDE_CONFIG_DIR}"
-fi
+# Named Docker volumes are initialised root-owned, so the non-root user
+# cannot write to them until we take ownership. Every flavor mounts two:
+#   - CLAUDE_CONFIG_DIR (~/.claude): needed by the Claude installer
+#     (~/.claude/downloads) and plugin provisioning.
+#   - /workspaces/mononet/.venv: container-private virtualenv volume,
+#     needed by `uv sync`; also isolates it from any host-side .venv.
+# Claim both before anything writes to them. Idempotent — only acts on an
+# existing, non-writable dir; passwordless sudo is available in all flavors.
+for _vol in "${CLAUDE_CONFIG_DIR:-}" /workspaces/mononet/.venv; do
+  if [ -n "${_vol}" ] && [ -d "${_vol}" ] && [ ! -w "${_vol}" ]; then
+    echo "[setup.sh] Claiming ownership of ${_vol} (root-owned named volume)..."
+    sudo chown "$(id -u):$(id -g)" "${_vol}"
+  fi
+done
+unset _vol
 
 # Conditionally install git-lfs if .gitattributes has LFS entries
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)

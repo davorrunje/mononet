@@ -35,6 +35,14 @@ hooks are installed, Claude Code plugins are set up, and this repo's Claude
 sessions are shared with your host (see [Claude Code](#claude-code-plugins--sessions)).
 Working locally, you do those steps yourself.
 
+> **The devcontainer `.venv` is container-private.** Each flavor mounts the
+> project virtualenv (`/workspaces/mononet/.venv`) as its own named Docker
+> volume, isolated from any `.venv` on your host — so a host-side `uv` run and
+> the container never clobber each other's environment (their interpreters live
+> at different paths and can't be shared). It persists across rebuilds; if it
+> goes stale, reset it with `docker volume rm <compose-project>_mononet-venv`
+> (find the name via `docker volume ls | grep mononet-venv`) and rebuild.
+
 ## Claude Code (plugins & sessions)
 
 The Claude Code plugins this repo uses are declared in

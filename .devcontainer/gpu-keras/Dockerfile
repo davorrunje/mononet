@@ -6,6 +6,10 @@ FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
+# The nvidia/cuda base ships no generated locale; force the always-present
+# C.UTF-8 so locale-sensitive tools (e.g. sphinx docs build) don't crash.
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \

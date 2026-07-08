@@ -83,8 +83,8 @@ We share **only this repo's session directory**, mapping the host slug onto the 
 - `.devcontainer/shared/provision-claude-plugins.sh` — **new**, idempotent, **environment-agnostic** marketplace-add + plugin-install loop over the manifest; non-fatal on failure (network/CI). Runs unchanged in the container (via `post-create`) and on the host (run manually).
 - `.devcontainer/shared/post-create.sh` — call `provision-claude-plugins.sh`.
 - `.devcontainer/shared/host-init.sh` — additionally compute the host session slug and create the `claude-session` symlink in the secrets dir (non-fatal on failure, like the gh-token block).
-- `.devcontainer/<flavor>/devcontainer.json` (×5) — replace the whole-`~/.claude` bind with (a) a named-volume `~/.claude` and (b) the targeted session bind mount.
-- `.devcontainer/<flavor>/docker-compose.yml` (×5) — declare the named volume.
+- `.devcontainer/<flavor>/devcontainer.json` (×5) — replace the whole-`~/.claude` bind with (a) a named-volume `~/.claude` and (b) the targeted session bind mount. Also add a per-flavor container-private `.venv` named volume (see §5b). The volumes are declared inline as `type=volume` mounts here (no separate `docker-compose.yml` volume block needed).
+- `.devcontainer/shared/install_common_tools.sh` — claim ownership of the root-owned named volumes at setup time (see §5b).
 - `CONTRIBUTING.md` — **new section** documenting the two supported workflows (see §5a).
 
 ### 5a. Two documented workflows (`CONTRIBUTING.md`)
@@ -100,6 +100,27 @@ Plus a **pre-commit** note (the devcontainer runs `pre-commit install --install-
 - **Install the hooks locally:** `uv run pre-commit install --install-hooks`. (Not needed in the devcontainer — it's already done on build.)
 - **pre-commit is the full gate.** It runs everything CI enforces: ruff lint + format, mypy/static analysis, the docs build, codespell, detect-secrets, and file hygiene — so a clean `git commit` means the change already passes the checks.
 - **The same checks run manually** any time, hooks installed or not: `uv run pre-commit run --all-files` (all of them), or piecemeal — `uv run ruff check` / `uv run ruff format`, `uv run mypy`, `uv run pytest`, `./tools/build-docs.sh`. So contributors who skip the hooks can still reproduce the gate on demand.
+
+### 5b. Named-volume ownership (implementation note)
+
+Docker initialises a fresh named volume **root-owned**, and every flavor runs
+as the non-root `vscode` user — so the `mononet-claude-config` (`~/.claude`)
+and `mononet-venv` (`.venv`) volumes are unwritable by `vscode` on first mount.
+This surfaced as `updateContentCommand` dying at the Claude installer:
+
+    mkdir: cannot create directory '/home/vscode/.claude/downloads': Permission denied
+
+`.devcontainer/shared/install_common_tools.sh` (run by every flavor, before the
+Claude install / plugin provisioning / `uv sync`) claims ownership of both
+volumes with one idempotent guard — `sudo chown` only when the dir exists and
+is not already writable. This is **not** the rejected §6 "repair-in-place":
+that would chown the *shared host* `~/.claude`; this touches only the
+**container-private** named volumes and never mutates host state.
+
+The `.venv` volume is per flavor (extras differ) and container-private, which
+also closes an orthogonal footgun — a host-side `uv` run and the container can
+no longer clobber each other's virtualenv, since `.venv` no longer lives on the
+bind-mounted workspace.
 
 ## 6. Alternatives considered
 
