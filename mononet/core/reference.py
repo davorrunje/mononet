@@ -27,7 +27,7 @@ def base_activation(
 ) -> npt.NDArray[np.floating]:
     """Apply base activation `rho_breve in A_breve` element-wise.
 
-    :param name: One of `relu`, `elu`, `selu`, `softplus`.
+    :param name: One of `relu`, `elu`, `selu`, `softplus`, `identity`.
     :param x: Input array.
     :returns: `rho_breve(x)`.
     :raises ValueError: If `name` is not a known activation.
@@ -40,6 +40,8 @@ def base_activation(
         return _SELU_SCALE * np.where(x > 0.0, x, _SELU_ALPHA * np.expm1(x))
     if name == "softplus":
         return np.logaddexp(0.0, x)  # type: ignore[no-any-return]
+    if name == "identity":
+        return x
     raise ValueError(f"unknown activation {name!r}")
 
 

@@ -12,7 +12,7 @@ import jax.numpy as jnp
 def activation(name: str, h: jnp.ndarray) -> jnp.ndarray:
     """Apply the base activation by name.
 
-    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``.
+    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``, ``identity``.
     :param h: Input array.
     :returns: Element-wise activation applied to ``h``.
     :raises ValueError: If ``name`` is not a supported activation.
@@ -25,6 +25,8 @@ def activation(name: str, h: jnp.ndarray) -> jnp.ndarray:
         return jnn.selu(h)
     if name == "softplus":
         return jnn.softplus(h)
+    if name == "identity":
+        return h
     raise ValueError(f"unknown activation {name!r}")
 
 

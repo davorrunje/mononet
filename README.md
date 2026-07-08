@@ -50,6 +50,46 @@ For per-feature monotonicity directions, pass a
 `MonoInput`. The same layers exist under `mononet.jax` and
 `mononet.keras`; see the [per-backend guides](docs/guides/).
 
+## Benchmark results
+
+Held-out accuracy on the paper's five tabular datasets, comparing the `switch`
+and `absolute` monotone constructions at shallow (`plain`) and deep (`residual`)
+depth. Cells report **IQM** (interquartile mean; robust) and **mean ± std** over
+seeds, with the effective monotone-layer count `L` and a collapse flag `⚠` (shown
+only when some seeds degenerated). Metric per dataset: MSE (`auto`), RMSE
+(`blog`), accuracy (`heart`/`compas`/`loan`); **↓** lower / **↑** higher is
+better. **Bold** = best per dataset. Full methodology and the per-flavor
+robustness table are in the
+[benchmark docs](https://davorrunje.github.io/mononet/benchmarks/deep-residual-accuracy.html).
+
+| dataset | mode | variant | layers | IQM | mean ± std | ⚠ |
+|---|---|---|--:|--:|--:|:-:|
+| auto (MSE ↓) | switch | plain | 2 | **9.78** | 9.76 ± 0.18 | · |
+|  | switch | residual | 4 | 9.89 | 10.11 ± 0.62 | 2/20 |
+|  | absolute | plain | 2 | 10.91 | 10.90 ± 0.21 | · |
+|  | absolute | residual | 4 | 9.92 | 9.94 ± 0.33 | · |
+| heart (acc ↑) | switch | plain | 4 | 0.836 | 0.711 ± 0.249 | 4/20 |
+|  | switch | residual | 14 | 0.831 | 0.829 ± 0.012 | 2/20 |
+|  | absolute | plain | 3 | **0.836** | 0.839 ± 0.012 | · |
+|  | absolute | residual | 4 | 0.821 | 0.825 ± 0.008 | · |
+| compas (acc ↑) | switch | plain | 2 | 0.679 | 0.679 ± 0.002 | · |
+|  | switch | residual | 14 | 0.641 | 0.632 ± 0.033 | 4/20 |
+|  | absolute | plain | 4 | 0.683 | 0.683 ± 0.002 | · |
+|  | absolute | residual | 10 | **0.684** | 0.684 ± 0.002 | · |
+| loan (acc ↑) | switch | plain | 3 | 0.647 | 0.647 ± 0.001 | · |
+|  | switch | residual | 6 | 0.647 | 0.646 ± 0.001 | · |
+|  | absolute | plain | 3 | 0.648 | 0.648 ± 0.000 | · |
+|  | absolute | residual | 14 | **0.649** | 0.650 ± 0.001 | · |
+| blog (RMSE ↓) | switch | plain | 2 | 0.185 | 0.185 ± 0.002 | · |
+|  | switch | residual | 4 | 0.182 | 0.182 ± 0.000 | 1/10 |
+|  | absolute | plain | 2 | 0.189 | 0.189 ± 0.000 | · |
+|  | absolute | residual | 4 | **0.173** | 0.173 ± 0.001 | · |
+
+`residual` collapses the better of the residual/deep depth bands (by CV);
+`L = 2·blocks + 2` effective monotone layers. Depth helps only on `loan` (the
+largest dataset, 14 layers); elsewhere ≤ 4 layers is best. `absolute` wins 4 of 5
+datasets; the `⚠` instabilities are all shallow `switch`.
+
 ## License
 
 Apache License 2.0 — see [`LICENSE`](LICENSE) and [`NOTICE.md`](NOTICE.md).

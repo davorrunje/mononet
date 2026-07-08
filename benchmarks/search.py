@@ -22,26 +22,28 @@ _SMOKE: dict[str, Any] = {
     "epochs": 5,
     "final_seeds": 2,
     "cv_folds": 2,
+    "search_seeds": 2,
 }
 
 
-def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool], ...]:
-    """Parse a comma-separated flavor spec into ``(mode, residual)`` pairs.
+def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool, bool], ...]:
+    """Parse a comma-separated flavor spec into ``(mode, residual, deep)`` triples.
 
-    :param spec: Comma-separated flavor names like ``switch-plain,absolute-residual``,
+    :param spec: Comma-separated flavor names like ``switch-plain,absolute-deep``,
         or ``None``/empty string to return all flavors.
-    :returns: Tuple of ``(mode, residual)`` pairs.
+    :returns: Tuple of ``(mode, residual, deep)`` triples.
     """
     if not spec:
         return _ALL_FLAVORS
     valid_modes = {"switch", "absolute"}
-    valid_kinds = {"plain", "residual"}
-    out: list[tuple[str, bool]] = []
+    valid_kinds = {"plain", "residual", "deep"}
+    out: list[tuple[str, bool, bool]] = []
     for name in spec.split(","):
         mode, _, kind = name.partition("-")
         if mode not in valid_modes or kind not in valid_kinds:
             raise typer.BadParameter(f"bad flavor: {name}")
-        out.append((mode, kind == "residual"))
+        deep = kind == "deep"
+        out.append((mode, kind == "residual" or deep, deep))
     return tuple(out)
 
 
@@ -57,6 +59,9 @@ def main(
     n_jobs: int = typer.Option(1, "--n-jobs"),
     final_seeds: int | None = typer.Option(None, "--final-seeds"),
     cv_folds: int | None = typer.Option(None, "--cv-folds"),
+    search_seeds: int = typer.Option(
+        3, "--search-seeds", help="seeds per fold in the stability-aware search"
+    ),
     out_dir: Path | None = typer.Option(None, "--out-dir"),  # noqa: B008
     storage_dir: Path | None = typer.Option(None, "--storage-dir"),  # noqa: B008
     smoke: bool = typer.Option(False, "--smoke", help="tiny preset for validation"),
@@ -72,8 +77,9 @@ def main(
     ep: int = _SMOKE["epochs"] if smoke else epochs
     fseeds: int | None = _SMOKE["final_seeds"] if smoke else final_seeds
     cvf: int | None = _SMOKE["cv_folds"] if smoke else cv_folds
+    ss: int = _SMOKE["search_seeds"] if smoke else search_seeds
     flavs = _parse_flavors(flavors)
-    flav_names = [flavor_name(m, r) for m, r in flavs]
+    flav_names = [flavor_name(m, r, d) for m, r, d in flavs]
 
     if dry_run:
         typer.echo(
@@ -92,6 +98,7 @@ def main(
             n_jobs=n_jobs,
             final_seeds=range(fseeds) if fseeds is not None else None,
             n_splits=cvf,
+            search_seeds=ss,
             out_dir=out_dir,
             storage_dir=storage_dir,
         )

@@ -12,7 +12,7 @@ from keras import ops
 def activation(name: str, h: Any) -> Any:
     """Apply the base activation by name.
 
-    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``.
+    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``, ``identity``.
     :param h: Input tensor (any keras-compatible array).
     :returns: Activated tensor with the same shape as `h`.
     :raises ValueError: If `name` is not a supported activation.
@@ -25,6 +25,8 @@ def activation(name: str, h: Any) -> Any:
         return ops.selu(h)
     if name == "softplus":
         return ops.softplus(h)
+    if name == "identity":
+        return h
     raise ValueError(f"unknown activation {name!r}")
 
 
