@@ -22,4 +22,29 @@ else
     rm -f "${TOKEN_FILE}"
 fi
 
+# Expose this repo's HOST Claude session dir at a stable, host-user-agnostic
+# path so the devcontainer can bind-mount it onto the container's session dir
+# (container cwd /workspaces/mononet -> slug -workspaces-mononet). This shares
+# *this project's* transcripts between host and container without sharing the
+# rest of ~/.claude. Best-effort: must not block container start.
+#
+# The host session slug is the cwd with '/' -> '-'. host-init runs with cwd =
+# the host workspace folder, so $PWD is that path. If Claude's slug algorithm
+# ever diverges from slash->dash, sessions simply won't line up (no breakage).
+# SESSION_LINK MUST exist (the container bind-mounts it); otherwise container
+# start fails. Prefer a symlink to the real host session dir; on any failure
+# fall back to a plain dir so the mount source always exists (sessions then
+# persist there but aren't shared with a pre-existing host session dir).
+CLAUDE_PROJECTS="${HOME}/.claude/projects"
+SESSION_LINK="${SECRETS_DIR}/claude-session"
+host_slug="$(printf '%s' "${PWD}" | sed 's#/#-#g')"
+rm -rf "${SESSION_LINK}" 2>/dev/null || true
+if mkdir -p "${CLAUDE_PROJECTS}/${host_slug}" 2>/dev/null \
+    && ln -sfn "${CLAUDE_PROJECTS}/${host_slug}" "${SESSION_LINK}" 2>/dev/null; then
+    :  # symlinked to the real host session dir -> sessions shared
+else
+    echo "WARNING: host-init.sh: could not link host Claude session dir; using a standalone dir (sessions not shared)." >&2
+    mkdir -p "${SESSION_LINK}" || true
+fi
+
 exit 0

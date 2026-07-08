@@ -11,4 +11,7 @@ cd /workspaces/mononet
 echo ">>> installing pre-commit hooks"
 uv run pre-commit install --install-hooks
 
+echo ">>> provisioning Claude Code plugins"
+bash .devcontainer/shared/provision-claude-plugins.sh
+
 echo ">>> done"
