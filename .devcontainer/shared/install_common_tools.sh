@@ -9,6 +9,18 @@ cd /workspaces/mononet
 
 echo -e "\033[36m=== Installing Common Tools ===\033[0m"
 
+# Ensure the Claude config dir is writable by the non-root user. Every
+# flavor mounts CLAUDE_CONFIG_DIR as the 'mononet-claude-config' named
+# volume; Docker initialises named volumes root-owned, so without this
+# the user cannot write there (e.g. the Claude installer's
+# ~/.claude/downloads), failing updateContentCommand. Idempotent — only
+# acts when the dir exists and is not already writable; passwordless
+# sudo is available in all flavors.
+if [ -n "${CLAUDE_CONFIG_DIR:-}" ] && [ -d "${CLAUDE_CONFIG_DIR}" ] && [ ! -w "${CLAUDE_CONFIG_DIR}" ]; then
+  echo "[setup.sh] Claiming ownership of ${CLAUDE_CONFIG_DIR} (root-owned named volume)..."
+  sudo chown "$(id -u):$(id -g)" "${CLAUDE_CONFIG_DIR}"
+fi
+
 # Conditionally install git-lfs if .gitattributes has LFS entries
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 if [ -f "$REPO_ROOT/.gitattributes" ] && grep -qE '^[[:space:]]*[^#[:space:]].*filter=lfs' "$REPO_ROOT/.gitattributes"; then
