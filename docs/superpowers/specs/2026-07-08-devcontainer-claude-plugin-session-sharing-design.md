@@ -95,6 +95,12 @@ A new "Claude Code setup" section covering:
 - **Local (host)** — run `bash .devcontainer/shared/provision-claude-plugins.sh` once to install the same plugin set at user scope; sessions/config are native to your host `~/.claude`. Note that host and container keep **independent** plugin/config state (only this repo's sessions are shared), and that running Claude Code on the host and in the container **simultaneously on the same project** can interleave session writes.
 - **Adding a plugin** — edit `.devcontainer/claude-plugins.txt`; re-run the script (host) / rebuild (container).
 
+Plus a **pre-commit** note (the devcontainer runs `pre-commit install --install-hooks` in `post-create`, so this is only for **local** contributors):
+
+- **Install the hooks locally:** `uv run pre-commit install --install-hooks`. (Not needed in the devcontainer — it's already done on build.)
+- **pre-commit is the full gate.** It runs everything CI enforces: ruff lint + format, mypy/static analysis, the docs build, codespell, detect-secrets, and file hygiene — so a clean `git commit` means the change already passes the checks.
+- **The same checks run manually** any time, hooks installed or not: `uv run pre-commit run --all-files` (all of them), or piecemeal — `uv run ruff check` / `uv run ruff format`, `uv run mypy`, `uv run pytest`, `./tools/build-docs.sh`. So contributors who skip the hooks can still reproduce the gate on demand.
+
 ## 6. Alternatives considered
 
 - **Keep sharing the whole `~/.claude`** — rejected: the absolute-path conflict is unfixable without hacks that break one side.
