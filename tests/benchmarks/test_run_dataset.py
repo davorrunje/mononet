@@ -15,7 +15,7 @@ def test_run_dataset_writes_one_json_per_flavor(tmp_path: Path) -> None:
     paths = run_dataset(
         "auto",
         backend="torch",
-        flavors=(("switch", False), ("absolute", False)),
+        flavors=(("switch", False, False), ("absolute", False, False)),
         n_trials=2,
         epochs=1,
         final_seeds=range(2),
@@ -43,11 +43,33 @@ def test_run_dataset_writes_one_json_per_flavor(tmp_path: Path) -> None:
     assert "val_best" not in rec
 
 
+def test_run_dataset_deep_flavor_writes_deep_json(tmp_path: Path) -> None:
+    import json as _json
+    import math
+
+    paths = run_dataset(
+        "auto",
+        backend="torch",
+        flavors=(("absolute", True, True),),
+        n_trials=2,
+        epochs=1,
+        final_seeds=range(2),
+        n_splits=2,
+        data_dir=FIXTURES,
+        out_dir=tmp_path,
+    )
+    assert [p.name for p in paths] == ["auto-absolute-deep.json"]
+    rec = _json.loads(paths[0].read_text())
+    assert rec["flavor"] == "absolute-deep"
+    assert rec["best_params"]["depth"] in (6, 10, 16)
+    assert math.isfinite(rec["test_mean"])
+
+
 def test_run_dataset_default_budget_from_table() -> None:
     from benchmarks._common.search import _BUDGET
 
-    assert _BUDGET["auto"] == (50, range(10), 5)
-    assert _BUDGET["loan"] == (25, range(5), 1)
+    assert _BUDGET["auto"] == (50, range(20), 5)
+    assert _BUDGET["loan"] == (25, range(10), 1)
     assert _BUDGET["blog"][2] == 1  # large datasets use single holdout
 
 

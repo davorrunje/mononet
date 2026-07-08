@@ -13,9 +13,11 @@ from typing import Literal
 import numpy as np
 import numpy.typing as npt
 
-_KNOWN_ACTIVATIONS: frozenset[str] = frozenset({"relu", "elu", "selu", "softplus"})
+_KNOWN_ACTIVATIONS: frozenset[str] = frozenset(
+    {"relu", "elu", "selu", "softplus", "identity"}
+)
 
-ActivationName = Literal["relu", "elu", "selu", "softplus"]
+ActivationName = Literal["relu", "elu", "selu", "softplus", "identity"]
 
 
 @dataclass(frozen=True, slots=True)

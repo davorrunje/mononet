@@ -66,6 +66,8 @@ def _dense_cases() -> None:
         ("4x2x3-abs-relu-c0", 4, 2, 3, "absolute", "relu", 0.0),
         ("3x5x11-abs-selu", 3, 5, 11, "absolute", "selu", 0.5),
         ("2x16x1-switch-softplus", 2, 16, 1, "switch", "softplus", 0.5),
+        ("5x4x6-abs-identity", 5, 4, 6, "absolute", "identity", 0.5),
+        ("5x4x6-switch-identity", 5, 4, 6, "switch", "identity", 0.5),
     ]
     for name, b, n, m, mode, act, cf in grid:
         rng = np.random.default_rng(_seed(name))
@@ -151,6 +153,7 @@ def _residual_cases() -> None:
         ("4x3x3-identity-switch", 4, 3, 3, None, "switch", "relu"),
         ("4x2x5-proj-switch", 4, 2, 5, (2, 5), "switch", "relu"),
         ("6x4x4-identity-abs", 6, 4, 4, None, "absolute", "elu"),
+        ("5x3x3-identity-abs-id", 5, 3, 3, None, "absolute", "identity"),
     ]
     for name, b, n, m, proj, mode, act in grid:
         rng = np.random.default_rng(_seed(name))

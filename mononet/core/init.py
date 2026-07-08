@@ -26,7 +26,7 @@ _W = _W_RAW / np.sqrt(2.0 * np.pi)
 def _act(name: str, h: np.ndarray) -> np.ndarray:
     """NumPy mirror of the backend base activations.
 
-    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``.
+    :param name: One of ``relu``, ``elu``, ``selu``, ``softplus``, ``identity``.
     :param h: Pre-activation values.
     :returns: Activated values, same shape as ``h``.
     :raises ValueError: If ``name`` is not a known activation.
@@ -41,6 +41,8 @@ def _act(name: str, h: np.ndarray) -> np.ndarray:
         return scale * np.where(h > 0.0, h, alpha * np.expm1(h))
     if name == "softplus":
         return np.asarray(np.logaddexp(0.0, h))
+    if name == "identity":
+        return h
     raise ValueError(f"unknown activation {name!r}")
 
 

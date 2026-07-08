@@ -152,10 +152,11 @@ init input-gradient norm (`init_grad_norm` in the JSON) tracks this: it stays O(
 trainable K and explodes to 1e3–1e6 for plain and K = 8. `sub_depth=2` (bold) gives the lowest
 MSE and the tightest spread across all eight (mode, depth) cells.
 
-## Real-dataset accuracy (forthcoming)
+## Real-dataset accuracy
 
-Stage 2 will report whether the now-trainable depth improves test metrics on real datasets vs
-the shallow tuned flavors. *(Results to be added.)*
+Whether this now-trainable depth improves held-out accuracy on real datasets —
+versus the shallow tuned flavors — is measured in
+[Deep residual accuracy](../benchmarks/deep-residual-accuracy.md) (Stage 2).
 
 ## Recommendation
 
