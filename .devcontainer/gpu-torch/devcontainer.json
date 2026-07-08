@@ -19,7 +19,8 @@
     "updateContentCommand": "bash .devcontainer/gpu-torch/setup.sh",
     "initializeCommand": "bash .devcontainer/shared/host-init.sh",
     "mounts": [
-        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+        "source=mononet-claude-config,target=/home/vscode/.claude,type=volume",
+        "source=${localEnv:HOME}/.config/mononet-devcontainer/claude-session,target=/home/vscode/.claude/projects/-workspaces-mononet,type=bind",
         "source=${localEnv:HOME}/.config/mononet-devcontainer,target=/var/run/devcontainer-host-secrets,type=bind,readonly"
     ],
     "customizations": {
