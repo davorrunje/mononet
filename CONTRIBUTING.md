@@ -30,14 +30,60 @@ then pick the flavor by name.
 Outside devcontainers, you need Python ≥3.11, [uv](https://docs.astral.sh/uv/),
 and git.
 
+The devcontainers also **auto-provision your tooling** on build: pre-commit
+hooks are installed, Claude Code plugins are set up, and this repo's Claude
+sessions are shared with your host (see [Claude Code](#claude-code-plugins--sessions)).
+Working locally, you do those steps yourself.
+
+> **The devcontainer `.venv` is container-private.** Each flavor mounts the
+> project virtualenv (`/workspaces/mononet/.venv`) as its own named Docker
+> volume, isolated from any `.venv` on your host — so a host-side `uv` run and
+> the container never clobber each other's environment (their interpreters live
+> at different paths and can't be shared). It persists across rebuilds; if it
+> goes stale, reset it with `docker volume rm <compose-project>_mononet-venv`
+> (find the name via `docker volume ls | grep mononet-venv`) and rebuild.
+
+## Claude Code (plugins & sessions)
+
+The Claude Code plugins this repo uses are declared in
+[`.devcontainer/claude-plugins.txt`](.devcontainer/claude-plugins.txt) and
+installed by `.devcontainer/shared/provision-claude-plugins.sh` (idempotent,
+user scope). That one script is the source of truth for both environments:
+
+- **In a devcontainer** — nothing to do. `post-create` runs the script
+  (plugins) and installs the pre-commit hooks, and this repo's session
+  transcripts are bind-mounted to/from your host, so a conversation started on
+  the host continues in the container and vice-versa. You log in inside the
+  container (auth is not shared).
+- **Locally (host)** — run it once:
+
+  ```bash
+  bash .devcontainer/shared/provision-claude-plugins.sh   # install the repo's Claude plugins
+  ```
+
+  Your host `~/.claude` (settings, auth, other plugins) stays otherwise
+  independent from the container's.
+
+To add a plugin, append a `<marketplace-source>  <plugin@marketplace>` line to
+`.devcontainer/claude-plugins.txt`, then re-run the script (host) or rebuild the
+container.
+
+> Host and container keep **independent** plugin/config state; only *this
+> repo's* sessions are shared. Avoid running Claude Code on the host and in the
+> container for this project **at the same time** — concurrent writes can
+> interleave the shared transcript.
+
 ## Setup
 
 ```bash
 git clone https://github.com/davorrunje/mononet.git
 cd mononet
 uv sync                            # install runtime + dev + docs + lint
-uv run pre-commit install          # install git hooks
+uv run pre-commit install          # install git hooks (devcontainers do this for you)
 ```
+
+If you skip the hooks, run the checks manually before pushing (see
+[Lint, format, static analysis](#lint-format-static-analysis)).
 
 ## Running tests
 
@@ -64,6 +110,12 @@ uv run bandit -c pyproject.toml -r mononet   # security scan
 uv run semgrep scan --config auto --error    # semgrep
 uv run pre-commit run --all-files            # everything pre-commit runs
 ```
+
+`pre-commit` **is the full gate**: on every commit it runs all of the above
+plus the docs build, codespell, secret detection, and file-hygiene hooks — so a
+clean `git commit` means the change already passes what CI enforces. The same
+checks run on demand whether or not the hooks are installed: `uv run pre-commit
+run --all-files` for the lot, or the individual commands above piecemeal.
 
 ## Building docs
 

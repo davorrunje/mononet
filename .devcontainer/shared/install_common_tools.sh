@@ -9,6 +9,22 @@ cd /workspaces/mononet
 
 echo -e "\033[36m=== Installing Common Tools ===\033[0m"
 
+# Named Docker volumes are initialised root-owned, so the non-root user
+# cannot write to them until we take ownership. Every flavor mounts two:
+#   - CLAUDE_CONFIG_DIR (~/.claude): needed by the Claude installer
+#     (~/.claude/downloads) and plugin provisioning.
+#   - /workspaces/mononet/.venv: container-private virtualenv volume,
+#     needed by `uv sync`; also isolates it from any host-side .venv.
+# Claim both before anything writes to them. Idempotent — only acts on an
+# existing, non-writable dir; passwordless sudo is available in all flavors.
+for _vol in "${CLAUDE_CONFIG_DIR:-}" /workspaces/mononet/.venv; do
+  if [ -n "${_vol}" ] && [ -d "${_vol}" ] && [ ! -w "${_vol}" ]; then
+    echo "[setup.sh] Claiming ownership of ${_vol} (root-owned named volume)..."
+    sudo chown "$(id -u):$(id -g)" "${_vol}"
+  fi
+done
+unset _vol
+
 # Conditionally install git-lfs if .gitattributes has LFS entries
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 if [ -f "$REPO_ROOT/.gitattributes" ] && grep -qE '^[[:space:]]*[^#[:space:]].*filter=lfs' "$REPO_ROOT/.gitattributes"; then
