@@ -26,6 +26,8 @@ Net: `superpowers` (and its `brainstorming`/`writing-plans` skills) is installed
 - **Share the *environment* across host and container** — specifically **sessions** (conversation transcripts) and **plugins**. Login/auth is *not* important (re-authenticating in the container is acceptable).
 - **Portable** — must work for any contributor and in CI, with no hardcoded host username or host path, and must **never mutate the host's `~/.claude`** from inside the container.
 - **Per-flavor** — the fix applies to all five flavors (`default`, `gpu-torch`, `gpu-jax`, `gpu-keras`, `proofs`) via the shared scripts, not copy-pasted logic.
+- **Host/container parity via one script** — the *same* plugin-provisioning script provisions the identical plugin set whether run by the container's `post-create` hook or **manually on the host**; a single checked-in manifest is the source of truth.
+- **Documented workflows** — `CONTRIBUTING.md` must explain the two supported ways to work (devcontainer vs local host) and the one-time Claude setup each needs.
 
 ## 3. Core constraint (why "just share the folder" fails)
 
@@ -47,16 +49,18 @@ Two independent halves.
 ### 4a. Container-local `~/.claude` + plugins provisioned at build
 
 - **Drop** the whole-`~/.claude` bind mount. Give the container **its own `~/.claude`** as a **named Docker volume** (container-owned, persists across rebuilds so plugins aren't re-cloned every time). Defined once per flavor's `docker-compose.yml`.
-- **Provision plugins declaratively** in `postCreateCommand` (`shared/post-create.sh`), via a new idempotent `shared/provision-claude-plugins.sh` driven by a checked-in manifest `.devcontainer/claude-plugins.txt`:
+- **Provision plugins declaratively** via a new idempotent, **environment-agnostic** script `.devcontainer/shared/provision-claude-plugins.sh`, driven by a checked-in manifest `.devcontainer/claude-plugins.txt`:
 
   ```
   # marketplace-source                         plugin@marketplace
   https://github.com/obra/superpowers.git      superpowers@superpowers-dev
   ```
 
-  For each line: `claude plugin marketplace add <source>` (skip if present) then `claude plugin install <plugin> --scope user` (skip if already installed via `claude plugin list`). Writes only into the container-local volume, so the host is never touched. `plugin install`/`marketplace add` are local operations and **do not require login**.
+  For each line: `claude plugin marketplace add <source>` (skip if present) then `claude plugin install <plugin> --scope user` (skip if already installed via `claude plugin list`). `plugin install`/`marketplace add` are local operations and **do not require login**. The script is the **single source of truth for both environments**:
+  - **Container:** called from `shared/post-create.sh`; writes only into the container-local volume, so the host is never touched.
+  - **Host:** a contributor runs the same script once (`bash .devcontainer/shared/provision-claude-plugins.sh`) to get the identical plugin set on their host at user scope. Idempotent, so re-running is safe.
 
-- **Result:** the container has a correct, reproducible, container-owned plugin set; `superpowers` skills work; the host's plugin config is untouched.
+- **Result:** container and host converge on the same reproducible plugin set from one manifest; `superpowers` skills work in both; neither environment's config is mutated by the other.
 
 ### 4b. Sessions shared via a targeted slug-mapping mount
 
@@ -76,11 +80,20 @@ We share **only this repo's session directory**, mapping the host slug onto the 
 ## 5. Concrete changes
 
 - `.devcontainer/claude-plugins.txt` — **new**, declarative plugin manifest (superpowers to start).
-- `.devcontainer/shared/provision-claude-plugins.sh` — **new**, idempotent marketplace-add + plugin-install loop over the manifest; non-fatal on failure (network/CI).
+- `.devcontainer/shared/provision-claude-plugins.sh` — **new**, idempotent, **environment-agnostic** marketplace-add + plugin-install loop over the manifest; non-fatal on failure (network/CI). Runs unchanged in the container (via `post-create`) and on the host (run manually).
 - `.devcontainer/shared/post-create.sh` — call `provision-claude-plugins.sh`.
 - `.devcontainer/shared/host-init.sh` — additionally compute the host session slug and create the `claude-session` symlink in the secrets dir (non-fatal on failure, like the gh-token block).
 - `.devcontainer/<flavor>/devcontainer.json` (×5) — replace the whole-`~/.claude` bind with (a) a named-volume `~/.claude` and (b) the targeted session bind mount.
 - `.devcontainer/<flavor>/docker-compose.yml` (×5) — declare the named volume.
+- `CONTRIBUTING.md` — **new section** documenting the two supported workflows (see §5a).
+
+### 5a. Two documented workflows (`CONTRIBUTING.md`)
+
+A new "Claude Code setup" section covering:
+
+- **Devcontainer** — plugins are auto-provisioned on build (`post-create` → `provision-claude-plugins.sh`); this repo's sessions are shared with the host via the mount; you authenticate inside the container (login is disposable). Nothing to do beyond opening the container.
+- **Local (host)** — run `bash .devcontainer/shared/provision-claude-plugins.sh` once to install the same plugin set at user scope; sessions/config are native to your host `~/.claude`. Note that host and container keep **independent** plugin/config state (only this repo's sessions are shared), and that running Claude Code on the host and in the container **simultaneously on the same project** can interleave session writes.
+- **Adding a plugin** — edit `.devcontainer/claude-plugins.txt`; re-run the script (host) / rebuild (container).
 
 ## 6. Alternatives considered
 
