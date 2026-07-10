@@ -79,7 +79,7 @@ lint = [
     "pre-commit==4.6.0",
     "mypy==2.1.0",
     "types-pyyaml==6.0.12.20260518",
-    "types-setuptools==82.0.0.20260518",
+    "types-setuptools==83.0.0.20260706",
     "ruff==0.15.20",
     "bandit==1.9.4",
     "semgrep==1.168.0",
