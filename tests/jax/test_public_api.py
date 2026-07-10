@@ -28,7 +28,7 @@ def test_mono_linear_runs() -> None:
 def test_mono_residual_warm_start_near_identity() -> None:
     import mononet.jax as j
 
-    block = j.MonoResidual(4, 4, mode="switch", rngs=nnx.Rngs(0))
+    block = j.MonoResidual(4, 4, mode="switch", activation="relu", rngs=nnx.Rngs(0))
     x = jax.random.normal(jax.random.key(1), (3, 4))
     assert jnp.allclose(block(x), x, atol=5e-3)
 

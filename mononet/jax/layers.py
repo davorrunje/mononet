@@ -142,7 +142,7 @@ class MonoResidual(nnx.Module):
         *,
         F: nnx.Module | Callable[[int], nnx.Module] | None = None,  # noqa: N803
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | str | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
@@ -154,7 +154,12 @@ class MonoResidual(nnx.Module):
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
         if F is not None and sub_depth is not None:
             raise ValueError("pass either F or sub_depth, not both")
+        if F is None and activation is None:
+            raise ValueError("activation is required when F is not provided")
+        if F is not None and activation is not None:
+            raise ValueError("pass either F or activation, not both")
         if F is None:
+            assert activation is not None  # nosec B101 -- guaranteed by the check above
             k = 2 if sub_depth is None else sub_depth
             if k == 1:
                 self.F: nnx.Module = MonoLinear(
