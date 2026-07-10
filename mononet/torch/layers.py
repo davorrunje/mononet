@@ -10,11 +10,17 @@ import torch
 from torch import nn
 
 from mononet.core.init import absolute_init_params
-from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
+from mononet.core.types import (
+    ActivationName,
+    ActivationSpec,
+    InitSpec,
+    MonotonicityMask,
+)
 from mononet.torch import _kernels
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
 
 _INIT_FNS: dict[str, Callable[[torch.Tensor], torch.Tensor]] = {
     "he_normal": lambda t: nn.init.kaiming_normal_(t, nonlinearity="relu"),
@@ -23,7 +29,7 @@ _INIT_FNS: dict[str, Callable[[torch.Tensor], torch.Tensor]] = {
 }
 
 
-def _act_name(activation: ActivationSpec | str) -> str:
+def _act_name(activation: ActivationSpec | ActivationName) -> str:
     return activation if isinstance(activation, str) else activation.name
 
 
@@ -51,8 +57,10 @@ class MonoLinear(nn.Module):
     :param in_features: Number of input features.
     :param units: Number of output features.
     :param mode: `"switch"` or `"absolute"`.
-    :param activation: Base activation name or `ActivationSpec` (default
-        `"identity"`, i.e. a linear monotone map).
+    :param activation: Base activation, one of `"relu"`, `"elu"`, `"selu"`,
+        `"softplus"`, `"identity"`, or an `ActivationSpec`. `None` (the
+        default) means `"identity"` — a linear monotone map, matching
+        `torch.nn.Linear`.
     :param convex_fraction: Convex-neuron fraction (absolute mode).
     :param init: Weight initializer name/`InitSpec`/`None` (default `he_normal`).
     :param bias: Whether to include a bias term.
@@ -64,7 +72,7 @@ class MonoLinear(nn.Module):
         units: int,
         *,
         mode: str = "switch",
-        activation: ActivationSpec | str = "identity",
+        activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
@@ -72,7 +80,9 @@ class MonoLinear(nn.Module):
         """Initialise MonoLinear."""
         super().__init__()
         self.mode = mode
-        self.activation_name = _act_name(activation)
+        self.activation_name = (
+            "identity" if activation is None else _act_name(activation)
+        )
         self.convex_fraction = convex_fraction
         self.weight = nn.Parameter(torch.empty(in_features, units))
         bias_fill = 0.0
@@ -127,7 +137,7 @@ class MonoResidual(nn.Module):
         *,
         F: nn.Module | Callable[[int], nn.Module] | None = None,  # noqa: N803
         mode: str = "switch",
-        activation: ActivationSpec | str | None = None,
+        activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
@@ -144,12 +154,9 @@ class MonoResidual(nn.Module):
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
         if F is not None and sub_depth is not None:
             raise ValueError("pass either F or sub_depth, not both")
-        if F is None and activation is None:
-            raise ValueError("activation is required when F is not provided")
-        if F is not None and activation is not None:
-            raise ValueError("pass either F or activation, not both")
         if F is None:
-            assert activation is not None  # nosec B101 -- guaranteed by the check above
+            if activation is None:
+                raise ValueError("activation is required when F is not provided")
             k = 2 if sub_depth is None else sub_depth
             if k == 1:
                 self.F: nn.Module = MonoLinear(
@@ -168,10 +175,13 @@ class MonoResidual(nn.Module):
                     for _ in range(k - 1)
                 ]
                 self.F = nn.Sequential(*sub)
-        elif callable(F) and not isinstance(F, nn.Module):
-            self.F = F(units)
         else:
-            self.F = F
+            if activation is not None:
+                raise ValueError("pass either F or activation, not both")
+            if callable(F) and not isinstance(F, nn.Module):
+                self.F = F(units)
+            else:
+                self.F = F
         self.alpha_gate = alpha_gate
         self.beta_gate = beta_gate
         self.alpha = nn.Parameter(torch.zeros(()))

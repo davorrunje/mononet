@@ -33,14 +33,26 @@ but a layer that should be a linear read-out becomes nonlinear.
 
 ### 3a. Leaf dense layers default to `identity`
 
-`MonoLinear` (PyTorch, JAX), `MonoDense` (Keras), and `MonoConfig` change their
-`activation` default from `"relu"` to `"identity"`. A bare `MonoLinear(d, h)` is
+`MonoLinear` (PyTorch, JAX) and `MonoDense` (Keras) change their `activation`
+default so an unspecified activation yields a linear monotone map. Following
+review, the leaf default is expressed as **`activation=None`** (resolved to
+`"identity"` internally), matching the `torch.nn.Linear` / `keras.Dense`
+convention where `activation=None` means linear. A bare `MonoLinear(d, h)` is
 then a monotone **linear** map (`|W|·x + b` in `absolute`; the switch-mode
 degenerate linear form otherwise); nonlinearity is opt-in via `activation=`.
+`MonoConfig.activation` keeps a concrete `ActivationSpec("identity")` default
+(a serializable value object holds a concrete activation, not a sentinel).
 
-The NumPy reference `monotonic_dense` default flips to match, so the three
-backends and the reference stay mutually consistent. Committed equivalence
+The NumPy reference `monotonic_dense` already takes `activation` as a required
+argument (no default), so it needs no change; the layers resolve their `None`
+default to `"identity"` before calling the kernels. Committed equivalence
 vectors set `activation` explicitly, so they are unaffected.
+
+Note (`None` sentinel overloading): `None` means *identity* on the leaf layers
+but *"you must supply it"* on `MonoResidual` (§3b). The two are different
+classes with independently idiomatic contracts (a leaf has a sensible linear
+default; a residual block does not), documented on each — an accepted, eyes-open
+overloading.
 
 Consequence, stated plainly: mononet applies the activation **inside** the layer
 (it is a parameter, not a separate module inserted between layers). So a bare
@@ -53,13 +65,17 @@ model class to attach a guardrail to, so the convention stands on documentation.
 ### 3b. Residual blocks require an explicit activation (Option A)
 
 `MonoResidual` (all three backends): `activation` becomes
-`ActivationSpec | str | None = None`, validated in `__init__`:
+`ActivationSpec | ActivationName | None = None`, validated in `__init__`:
 
 - `F is None and activation is None` → `ValueError("activation is required when
-  F is not provided; the default F would otherwise be linear")`.
+  F is not provided")`.
 - `F is not None and activation is not None` → `ValueError("pass either F or
   activation, not both")` — mirrors the existing `F`/`sub_depth` mutual
   exclusion (`activation` only ever configures the default `F`).
+
+The validation is structured as `if F is None: … else: …` so the type narrows
+naturally (no `assert` for the type-checker — asserts are stripped under `-O`
+and are not used in production code here).
 
 So: no silently-linear default `F`, and no ignored `activation` alongside a
 custom `F`.
@@ -82,13 +98,24 @@ gates (`alpha_gate`/`beta_gate`), and `MonoInput`.
 - `mononet/core/config.py` — `MonoConfig.activation` default `relu`→`identity`;
   `MonoResidualConfig.activation` becomes required (`field(kw_only=True)`, no
   default).
-- `mononet/core/reference.py` — `monotonic_dense` activation default
-  `relu`→`identity`.
+- `mononet/core/reference.py` — no change (`monotonic_dense` already requires
+  `activation`).
 - `mononet/torch/layers.py`, `mononet/jax/layers.py`, `mononet/keras/layers.py`:
-  - `MonoLinear`/`MonoDense`: `activation` default `relu`→`identity`.
-  - `MonoResidual`: `activation` default → `None` + the Option-A validation.
-- Docstrings: update `:param activation:` defaults on all touched
-  layers/configs.
+  - `MonoLinear`/`MonoDense`: `activation` default `relu`→`None` (→`identity`).
+  - `MonoResidual`: `activation` default → `None` + the Option-A validation,
+    structured branch-wise (no `assert`).
+  - String-activation params typed `ActivationSpec | ActivationName | None`
+    instead of `… | str`, so only the known activation names are accepted
+    statically (`ActivationName` = `Literal["relu","elu","selu","softplus",
+    "identity"]`, already defined in `core/types.py`). `mode` stays `str` here;
+    tightening it to the `Mode` literal is deferred to the mode-default
+    follow-up PR (it cascades into benchmark call sites).
+- `benchmarks/_common/{config,config_io,init_diagnostics}.py`, `benchmarks/run.py`
+  — propagate `ActivationName` where `activation` was a bare `str` (one `cast`
+  at the TOML-read boundary) so the tightened layer API type-checks.
+- Docstrings: `:param activation:` on all touched layers/configs document the
+  `None`→identity default, the allowed names, and (`MonoResidual`) the
+  `:raises ValueError:` contract.
 - `CHANGELOG.md` — a **Breaking changes** entry (see §5).
 - Docs/examples audit (see §6).
 

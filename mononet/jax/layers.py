@@ -12,11 +12,17 @@ import numpy as np
 from flax import nnx
 
 from mononet.core.init import absolute_init_params
-from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
+from mononet.core.types import (
+    ActivationName,
+    ActivationSpec,
+    InitSpec,
+    MonotonicityMask,
+)
 from mononet.jax import _kernels
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
 
 _INIT_FNS = {
     "he_normal": jinit.he_normal(),
@@ -25,7 +31,7 @@ _INIT_FNS = {
 }
 
 
-def _act_name(activation: ActivationSpec | str) -> str:
+def _act_name(activation: ActivationSpec | ActivationName) -> str:
     """Extract activation name string from spec or plain string.
 
     :param activation: Either a string name or an :class:`ActivationSpec`.
@@ -58,9 +64,10 @@ class MonoLinear(nnx.Module):
     :param in_features: Number of input features.
     :param units: Number of output units.
     :param mode: ``switch`` (default) or ``absolute``.
-    :param activation: Base activation name or
-        :class:`~mononet.core.types.ActivationSpec` (default ``"identity"``,
-        i.e. a linear monotone map).
+    :param activation: Base activation, one of ``"relu"``, ``"elu"``,
+        ``"selu"``, ``"softplus"``, ``"identity"``, or an
+        :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
+        means ``"identity"`` — a linear monotone map, matching ``nnx.Linear``.
     :param convex_fraction: Fraction of convex units (``absolute`` mode only).
     :param init: Weight initializer; defaults to ``he_normal``.
     :param bias: Whether to include a bias vector.
@@ -73,7 +80,7 @@ class MonoLinear(nnx.Module):
         units: int,
         *,
         mode: str = "switch",
-        activation: ActivationSpec | str = "identity",
+        activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
@@ -81,7 +88,9 @@ class MonoLinear(nnx.Module):
     ) -> None:
         """Initialise MonoLinear with weights and optional bias."""
         self.mode = mode
-        self.activation_name = _act_name(activation)
+        self.activation_name = (
+            "identity" if activation is None else _act_name(activation)
+        )
         self.convex_fraction = convex_fraction
         bias_fill = 0.0
         if mode == "absolute" and init is None:
@@ -148,7 +157,7 @@ class MonoResidual(nnx.Module):
         *,
         F: nnx.Module | Callable[[int], nnx.Module] | None = None,  # noqa: N803
         mode: str = "switch",
-        activation: ActivationSpec | str | None = None,
+        activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
@@ -160,12 +169,9 @@ class MonoResidual(nnx.Module):
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
         if F is not None and sub_depth is not None:
             raise ValueError("pass either F or sub_depth, not both")
-        if F is None and activation is None:
-            raise ValueError("activation is required when F is not provided")
-        if F is not None and activation is not None:
-            raise ValueError("pass either F or activation, not both")
         if F is None:
-            assert activation is not None  # nosec B101 -- guaranteed by the check above
+            if activation is None:
+                raise ValueError("activation is required when F is not provided")
             k = 2 if sub_depth is None else sub_depth
             if k == 1:
                 self.F: nnx.Module = MonoLinear(
@@ -199,10 +205,13 @@ class MonoResidual(nnx.Module):
                     for _ in range(k - 1)
                 ]
                 self.F = nnx.Sequential(*sub)
-        elif callable(F) and not isinstance(F, nnx.Module):
-            self.F = F(units)
         else:
-            self.F = F
+            if activation is not None:
+                raise ValueError("pass either F or activation, not both")
+            if callable(F) and not isinstance(F, nnx.Module):
+                self.F = F(units)
+            else:
+                self.F = F
         self.alpha_gate = alpha_gate
         self.beta_gate = beta_gate
         self.alpha = nnx.Param(jnp.zeros(()))
