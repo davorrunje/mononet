@@ -10,6 +10,7 @@ pytest.importorskip("keras")
 import keras
 from keras import ops
 
+from mononet.core.config import Mode
 from mononet.keras import MonoDense, MonoResidual
 
 
@@ -46,7 +47,7 @@ def test_subdepth_below_one_raises() -> None:
         MonoResidual(8, mode="absolute", sub_depth=0)
 
 
-def _nondecreasing(units: int, in_f: int, mode: str) -> None:
+def _nondecreasing(units: int, in_f: int, mode: Mode) -> None:
     layer = MonoResidual(units, mode=mode, activation="elu", sub_depth=2)
     x = ops.convert_to_tensor(
         np.random.default_rng(1).standard_normal((64, in_f)).astype("float32")
