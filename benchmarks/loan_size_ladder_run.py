@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from benchmarks._common.results import interquartile_mean
 from benchmarks._common.search import _count_collapses, final_eval, search
 from benchmarks._common.splits import subsample_train
 
@@ -26,12 +27,6 @@ if TYPE_CHECKING:
 
 _NS: tuple[int, ...] = (5_000, 15_000, 45_000, 135_000, 1_000_000_000)  # last = full
 _ARMS: tuple[str, ...] = ("shallow", "deep")
-
-
-def _iqm(values: list[float]) -> float:
-    v = np.sort(np.asarray(values, dtype=np.float64))
-    k = len(v) // 4
-    return float(v[k : len(v) - k].mean()) if len(v) - 2 * k > 0 else float(v.mean())
 
 
 def _ladder_eval(
@@ -113,7 +108,7 @@ def run_ladder(
                     "test_mean": float(np.mean(values)),
                     "test_std": float(np.std(values)),
                     "test_median": float(np.median(values)),
-                    "test_iqm": _iqm(values),
+                    "test_iqm": interquartile_mean(np.asarray(values)),
                     "test_values": values,
                     "n_collapse": _count_collapses(
                         tuple(values),
