@@ -64,8 +64,10 @@ def render_plot(records: list[dict[str, Any]], out_path: Path) -> None:
     rows = delta_by_n(records)
     ns = [r["n"] for r in rows]
     delta = [r["delta"] for r in rows]
-    lo = [r["delta"] - r["delta_lo"] for r in rows]
-    hi = [r["delta_hi"] - r["delta"] for r in rows]
+    # Clip to >= 0: with few seeds the point IQM Δ can fall just outside its own
+    # bootstrap band, which would make matplotlib reject a negative error length.
+    lo = np.clip([r["delta"] - r["delta_lo"] for r in rows], 0.0, None)
+    hi = np.clip([r["delta_hi"] - r["delta"] for r in rows], 0.0, None)
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.axhline(0.0, color="0.7", lw=1)
     ax.errorbar(ns, delta, yerr=[lo, hi], marker="o", capsize=3)

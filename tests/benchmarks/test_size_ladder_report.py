@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from benchmarks._common.size_ladder_report import delta_by_n
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _rec(n: int, arm: str, iqm: float, values: list[float]) -> dict[str, Any]:
@@ -24,3 +27,20 @@ def test_delta_by_n_pairs_arms_and_signs_delta() -> None:
     assert by_n[100]["delta"] == pytest.approx(-0.02, abs=1e-9)
     assert by_n[400]["delta"] == pytest.approx(0.06, abs=1e-9)
     assert by_n[400]["delta_lo"] <= by_n[400]["delta"] <= by_n[400]["delta_hi"]
+
+
+def test_render_plot_writes_png(tmp_path: Path) -> None:
+    """render_plot writes a PNG without raising (error bars clipped to >= 0)."""
+    pytest.importorskip("matplotlib")
+    from benchmarks._common.size_ladder_report import render_plot
+
+    records = [
+        _rec(100, "shallow", 0.60, [0.59, 0.61]),
+        _rec(100, "deep", 0.58, [0.57, 0.59]),
+        _rec(400, "shallow", 0.60, [0.60, 0.60]),
+        _rec(400, "deep", 0.66, [0.65, 0.67]),
+    ]
+    out = tmp_path / "plot.png"
+    render_plot(records, out)
+    assert out.exists()
+    assert out.stat().st_size > 0
