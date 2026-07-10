@@ -36,10 +36,17 @@ def test_subsample_size_and_test_untouched() -> None:
 
 
 def test_subsample_preserves_class_ratio() -> None:
-    """Stratified subsample keeps the positive-class fraction within tolerance."""
+    """Stratified subsample allocates the positive class near-exactly.
+
+    Asserts ±1 row of the expected count for *every* seed — a bound an
+    unstratified draw (binomial noise ≈ ±4 here) would violate on some seed,
+    so this actually exercises the stratified path.
+    """
     b = _bundle(pos_frac=0.3)
-    s = subsample_train(b, 100, seed=0)
-    assert abs(float(s.y_train.mean()) - float(b.y_train.mean())) < 0.05
+    expected_pos = 100 * float(b.y_train.mean())
+    for seed in range(10):
+        s = subsample_train(b, 100, seed=seed)
+        assert abs(float(s.y_train.sum()) - expected_pos) <= 1.0
 
 
 def test_subsample_deterministic_and_seed_varies() -> None:
