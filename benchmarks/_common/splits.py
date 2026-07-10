@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -73,3 +74,34 @@ def cv_splits(
         else KFold(n_splits=n_splits, shuffle=True, random_state=seed)
     )
     return [(tr, val) for tr, val in splitter.split(idx, bundle.y_train)]
+
+
+def subsample_train(
+    bundle: DatasetBundle,
+    n: int,
+    *,
+    seed: int,
+    stratify: bool | None = None,
+) -> DatasetBundle:
+    """Return a copy of `bundle` with its train split stratified-subsampled to `n`.
+
+    The test arrays and all other fields are unchanged. Deterministic given
+    `seed`. If `n >= len(bundle.X_train)`, the bundle is returned unchanged.
+
+    :param n: Target number of train rows.
+    :param seed: Deterministic subsample seed.
+    :param stratify: Stratify on `y`; defaults to True for binary classification.
+    :returns: A new `DatasetBundle` (or the original if `n` covers the whole train).
+    """
+    total = len(bundle.X_train)
+    if n >= total:
+        return bundle
+    if stratify is None:
+        stratify = bundle.task == "binary_classification"
+    strat = bundle.y_train if stratify else None
+    keep, _ = train_test_split(
+        np.arange(total), train_size=n, random_state=seed, stratify=strat
+    )
+    return dataclasses.replace(
+        bundle, X_train=bundle.X_train[keep], y_train=bundle.y_train[keep]
+    )
