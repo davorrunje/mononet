@@ -23,6 +23,8 @@ from mononet.jax import _kernels
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from mononet.core.config import Mode
+
 
 _INIT_FNS = {
     "he_normal": jinit.he_normal(),
@@ -79,7 +81,7 @@ class MonoLinear(nnx.Module):
         in_features: int,
         units: int,
         *,
-        mode: str = "absolute",
+        mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -156,7 +158,7 @@ class MonoResidual(nnx.Module):
         units: int,
         *,
         F: nnx.Module | Callable[[int], nnx.Module] | None = None,  # noqa: N803
-        mode: str = "absolute",
+        mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",

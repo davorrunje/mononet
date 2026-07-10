@@ -11,6 +11,7 @@ from torch import nn
 from mononet.torch import MonoLinear, MonoResidual
 
 if TYPE_CHECKING:
+    from mononet.core.config import Mode
     from mononet.core.types import ActivationName
 
 
@@ -33,7 +34,7 @@ def synthetic_monotone(n: int, d: int, *, seed: int) -> tuple[np.ndarray, np.nda
 
 
 def _stack(
-    mode: str, depth: int, d: int, width: int, activation: ActivationName
+    mode: Mode, depth: int, d: int, width: int, activation: ActivationName
 ) -> nn.Module:
     layers: list[nn.Module] = [MonoLinear(d, width, mode=mode, activation=activation)]
     layers += [
@@ -45,7 +46,7 @@ def _stack(
 
 
 def grad_flow(
-    mode: str,
+    mode: Mode,
     depth: int,
     *,
     activation: ActivationName = "elu",
@@ -81,7 +82,7 @@ def grad_flow(
 
 
 def trainability(
-    mode: str,
+    mode: Mode,
     depth: int,
     *,
     activation: ActivationName = "elu",
@@ -118,7 +119,7 @@ def trainability(
 
 
 def build_residual_stack(
-    mode: str, depth: int, sub_depth: int | None, *, width: int = 32
+    mode: Mode, depth: int, sub_depth: int | None, *, width: int = 32
 ) -> nn.Module:
     """Uniform-width monotone stack; residual (skip every ``sub_depth``) or plain.
 

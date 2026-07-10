@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 
@@ -9,6 +13,9 @@ from benchmarks._common.init_diagnostics import (
     trainability,
 )
 
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
+
 
 def test_synthetic_monotone_shapes_and_standardized() -> None:
     X, y = synthetic_monotone(256, 5, seed=0)
@@ -19,7 +26,7 @@ def test_synthetic_monotone_shapes_and_standardized() -> None:
 
 
 @pytest.mark.parametrize("mode", ["switch", "absolute"])
-def test_grad_flow_finite(mode: str) -> None:
+def test_grad_flow_finite(mode: Mode) -> None:
     out = grad_flow(mode, depth=4, activation="elu", width=16, seed=0)
     assert np.isfinite(out["input_grad_norm"])
     layer_norms = out["layer_grad_norms"]
@@ -29,6 +36,6 @@ def test_grad_flow_finite(mode: str) -> None:
 
 
 @pytest.mark.parametrize("mode", ["switch", "absolute"])
-def test_trainability_finite(mode: str) -> None:
+def test_trainability_finite(mode: Mode) -> None:
     out = trainability(mode, depth=2, activation="elu", epochs=3, seed=0)
     assert np.isfinite(out["final_train_loss"])

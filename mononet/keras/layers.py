@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import keras
 import numpy as np
@@ -18,6 +18,9 @@ from mononet.core.types import (
     MonotonicityMask,
 )
 from mononet.keras import _kernels
+
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
 
 
 def _act_name(activation: ActivationSpec | ActivationName) -> str:
@@ -63,7 +66,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         self,
         units: int,
         *,
-        mode: str = "absolute",
+        mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -173,7 +176,7 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         units: int,
         *,
         F: keras.layers.Layer | None = None,  # noqa: N803
-        mode: str = "absolute",
+        mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
