@@ -23,17 +23,15 @@ PyTorch Lightning, etc.) and compose with the native
 
 ## Example
 
-```python
-import torch
-from mononet.torch import MonoInput, MonoLinear
+A mixed-feature network: monotone in 3 features (2 non-decreasing, 1
+non-increasing) via {py:class}`mononet.torch.layers.MonoInput`, and
+unconstrained in 2 non-monotone features, which are embedded through a plain
+MLP before being concatenated with the monotone path. The embedding absorbs
+the non-monotonicity, so the composite `RiskNet` is monotone in `x_mono` and
+free in `x_free`. `MonoLinear` and `MonoResidual` default to `mode="absolute"`.
 
-# A monotonic MLP: non-decreasing in every input feature.
-net = torch.nn.Sequential(
-    MonoInput(1),                     # +1 => non-decreasing; -1 => non-increasing
-    MonoLinear(4, 32, mode="switch", activation="relu"),
-    MonoLinear(32, 1, mode="switch"),  # linear read-out
-)
-y = net(torch.randn(8, 4))            # (8, 1), guaranteed monotone in all inputs
+```{literalinclude} ../examples/risk_net_torch.py
+:language: python
 ```
 
 For per-feature monotonicity directions, pass a
