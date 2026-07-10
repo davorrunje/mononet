@@ -21,7 +21,7 @@ class MonoConfig:
     """Hyperparameters for a single monotonic dense layer."""
 
     units: int
-    mode: Mode = "switch"
+    mode: Mode = "absolute"
     activation: ActivationSpec = field(
         default_factory=lambda: ActivationSpec("identity")
     )
@@ -86,7 +86,7 @@ class MonoResidualConfig:
     """
 
     units: int
-    mode: Mode = "switch"
+    mode: Mode = "absolute"
     activation: ActivationSpec = field(kw_only=True)
     alpha_gate: str = "shifted_elu"
     beta_gate: str = "scaled_elu"

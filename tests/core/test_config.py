@@ -23,7 +23,7 @@ def test_mono_config_roundtrip() -> None:
 
 def test_mono_config_defaults() -> None:
     cfg = MonoConfig(units=4)
-    assert cfg.mode == "switch"
+    assert cfg.mode == "absolute"
     assert cfg.activation.name == "identity"
     assert cfg.convex_fraction == 0.5
     assert cfg.bias is True

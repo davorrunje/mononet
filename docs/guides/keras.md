@@ -22,18 +22,17 @@ devcontainer ships with `KERAS_BACKEND=jax`.
 
 ## Example
 
-```python
-import keras
-from mononet.keras import MonoDense, MonoInput
+A mixed-feature network: monotone in 3 features (2 non-decreasing, 1
+non-increasing) via {py:class}`mononet.keras.layers.MonoInput`, and
+unconstrained in 2 non-monotone features, which are embedded through a plain
+MLP before being concatenated with the monotone path. The embedding absorbs
+the non-monotonicity, so the composite `RiskNet` is monotone in `x_mono` and
+free in `x_free`. `MonoDense` and `MonoResidual` default to `mode="absolute"`.
+`MonoDense` infers the input width at build time (Keras style) — no
+`in_features`.
 
-# A monotonic MLP: non-decreasing in every input feature.
-# MonoDense infers the input width at build time (Keras style) — no in_features.
-net = keras.Sequential([
-    MonoInput(1),                     # +1 => non-decreasing; -1 => non-increasing
-    MonoDense(32, mode="switch", activation="relu"),
-    MonoDense(1, mode="switch"),  # linear read-out
-])
-y = net(keras.ops.zeros((8, 4)))      # (8, 1), guaranteed monotone in all inputs
+```{literalinclude} ../examples/risk_net_keras.py
+:language: python
 ```
 
 For per-feature monotonicity directions, pass a

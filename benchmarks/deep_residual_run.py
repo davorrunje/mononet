@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -17,14 +18,17 @@ from torch import nn
 
 from benchmarks._common.init_diagnostics import build_residual_stack, synthetic_monotone
 
-_MODES = ("absolute", "switch")
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
+
+_MODES: tuple[Mode, ...] = ("absolute", "switch")
 _DEPTHS = (4, 8, 16, 32)
 _KS: tuple[int | None, ...] = (None, 1, 2, 4, 8)
 _CAP = 1.0e6
 
 
 def _run(
-    mode: str, depth: int, sub_depth: int | None, *, epochs: int = 300, seed: int = 0
+    mode: Mode, depth: int, sub_depth: int | None, *, epochs: int = 300, seed: int = 0
 ) -> tuple[float, float]:
     torch.manual_seed(seed)
     x_np, y_np = synthetic_monotone(512, 8, seed=seed)

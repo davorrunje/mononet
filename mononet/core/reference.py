@@ -124,7 +124,7 @@ def monotonic_residual(
     alpha: npt.NDArray[np.floating],
     beta: npt.NDArray[np.floating],
     *,
-    mode: str = "switch",
+    mode: str = "absolute",
     activation: ActivationSpec,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
@@ -142,7 +142,7 @@ def monotonic_residual(
     :param bias: `F` bias `(units,)`.
     :param alpha: Scalar raw skip-gate parameter.
     :param beta: Scalar raw residual-gate parameter.
-    :param mode: `F` mode.
+    :param mode: `F` mode. `"absolute"` (default) or `"switch"`.
     :param activation: `F` base activation.
     :param convex_fraction: `F` convex fraction (absolute mode).
     :param alpha_gate: Skip-gate token.

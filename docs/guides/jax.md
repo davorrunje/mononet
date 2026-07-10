@@ -22,18 +22,15 @@
 
 ## Example
 
-```python
-import jax.numpy as jnp
-from flax import nnx
-from mononet.jax import MonoInput, MonoLinear
+A mixed-feature network: monotone in 3 features (2 non-decreasing, 1
+non-increasing) via {py:class}`mononet.jax.layers.MonoInput`, and
+unconstrained in 2 non-monotone features, which are embedded through a plain
+MLP before being concatenated with the monotone path. The embedding absorbs
+the non-monotonicity, so the composite `RiskNet` is monotone in `x_mono` and
+free in `x_free`. `MonoLinear` and `MonoResidual` default to `mode="absolute"`.
 
-# A monotonic MLP: non-decreasing in every input feature.
-net = nnx.Sequential(
-    MonoInput(1),                                    # +1 => up; -1 => down
-    MonoLinear(4, 32, mode="switch", activation="relu", rngs=nnx.Rngs(0)),
-    MonoLinear(32, 1, mode="switch", rngs=nnx.Rngs(1)),  # linear read-out
-)
-y = net(jnp.zeros((8, 4)))                           # (8, 1), monotone in all inputs
+```{literalinclude} ../examples/risk_net_jax.py
+:language: python
 ```
 
 The dense layers take an explicit `rngs` ({py:class}`flax.nnx.Rngs`) for
