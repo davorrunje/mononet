@@ -22,7 +22,9 @@ class MonoConfig:
 
     units: int
     mode: Mode = "switch"
-    activation: ActivationSpec = field(default_factory=lambda: ActivationSpec("relu"))
+    activation: ActivationSpec = field(
+        default_factory=lambda: ActivationSpec("identity")
+    )
     convex_fraction: float = 0.5
     init: InitSpec = field(default_factory=InitSpec)
     bias: bool = True
@@ -77,11 +79,15 @@ class MonoResidualConfig:
 
     Gate fields are string tokens only; a custom callable gate or `F`
     module is not serialized.
+
+    :param activation: Base activation for the default `F`. Required
+        (keyword-only, no default) since a custom `F` is not representable
+        here.
     """
 
     units: int
     mode: Mode = "switch"
-    activation: ActivationSpec = field(default_factory=lambda: ActivationSpec("relu"))
+    activation: ActivationSpec = field(kw_only=True)
     alpha_gate: str = "shifted_elu"
     beta_gate: str = "scaled_elu"
     init: InitSpec = field(default_factory=InitSpec)

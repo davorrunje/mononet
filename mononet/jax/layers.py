@@ -12,11 +12,17 @@ import numpy as np
 from flax import nnx
 
 from mononet.core.init import absolute_init_params
-from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
+from mononet.core.types import (
+    ActivationName,
+    ActivationSpec,
+    InitSpec,
+    MonotonicityMask,
+)
 from mononet.jax import _kernels
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
 
 _INIT_FNS = {
     "he_normal": jinit.he_normal(),
@@ -25,7 +31,7 @@ _INIT_FNS = {
 }
 
 
-def _act_name(activation: ActivationSpec | str) -> str:
+def _act_name(activation: ActivationSpec | ActivationName) -> str:
     """Extract activation name string from spec or plain string.
 
     :param activation: Either a string name or an :class:`ActivationSpec`.
@@ -58,8 +64,10 @@ class MonoLinear(nnx.Module):
     :param in_features: Number of input features.
     :param units: Number of output units.
     :param mode: ``switch`` (default) or ``absolute``.
-    :param activation: Base activation; one of ``relu``, ``elu``, ``selu``,
-        ``softplus``.
+    :param activation: Base activation, one of ``"relu"``, ``"elu"``,
+        ``"selu"``, ``"softplus"``, ``"identity"``, or an
+        :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
+        means ``"identity"`` — a linear monotone map, matching ``nnx.Linear``.
     :param convex_fraction: Fraction of convex units (``absolute`` mode only).
     :param init: Weight initializer; defaults to ``he_normal``.
     :param bias: Whether to include a bias vector.
@@ -72,7 +80,7 @@ class MonoLinear(nnx.Module):
         units: int,
         *,
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
@@ -80,7 +88,9 @@ class MonoLinear(nnx.Module):
     ) -> None:
         """Initialise MonoLinear with weights and optional bias."""
         self.mode = mode
-        self.activation_name = _act_name(activation)
+        self.activation_name = (
+            "identity" if activation is None else _act_name(activation)
+        )
         self.convex_fraction = convex_fraction
         bias_fill = 0.0
         if mode == "absolute" and init is None:
@@ -126,7 +136,9 @@ class MonoResidual(nnx.Module):
     :param F: Inner monotone sublayer; defaults to a stack of ``sub_depth``
         :class:`MonoLinear` layers. May also be a callable ``(units) -> Module``.
     :param mode: ``switch`` or ``absolute``.
-    :param activation: Base activation name or spec.
+    :param activation: Base activation name or spec for the default ``F``
+        (default ``None``). Required when ``F`` is not provided; mutually
+        exclusive with an explicit ``F``.
     :param alpha_gate: Gate token for the skip path; default ``shifted_elu``.
     :param beta_gate: Gate token for the dense path; default ``scaled_elu``.
     :param init: Weight initializer; defaults to ``he_normal``.
@@ -134,6 +146,8 @@ class MonoResidual(nnx.Module):
         is ``None``; default ``2``. Pass ``1`` for the legacy single-layer
         behaviour. Mutually exclusive with an explicit ``F``.
     :param rngs: Flax NNX RNG container.
+    :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
+        provided, or if both ``F`` and ``activation`` are provided.
     """
 
     def __init__(
@@ -143,7 +157,7 @@ class MonoResidual(nnx.Module):
         *,
         F: nnx.Module | Callable[[int], nnx.Module] | None = None,  # noqa: N803
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
@@ -156,6 +170,8 @@ class MonoResidual(nnx.Module):
         if F is not None and sub_depth is not None:
             raise ValueError("pass either F or sub_depth, not both")
         if F is None:
+            if activation is None:
+                raise ValueError("activation is required when F is not provided")
             k = 2 if sub_depth is None else sub_depth
             if k == 1:
                 self.F: nnx.Module = MonoLinear(
@@ -189,10 +205,13 @@ class MonoResidual(nnx.Module):
                     for _ in range(k - 1)
                 ]
                 self.F = nnx.Sequential(*sub)
-        elif callable(F) and not isinstance(F, nnx.Module):
-            self.F = F(units)
         else:
-            self.F = F
+            if activation is not None:
+                raise ValueError("pass either F or activation, not both")
+            if callable(F) and not isinstance(F, nnx.Module):
+                self.F = F(units)
+            else:
+                self.F = F
         self.alpha_gate = alpha_gate
         self.beta_gate = beta_gate
         self.alpha = nnx.Param(jnp.zeros(()))

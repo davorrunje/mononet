@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from mononet.core.types import ActivationName
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,7 +67,7 @@ class BenchmarkConfig:
     residual: bool
     depth: int
     width: int
-    activation: str
+    activation: ActivationName
     convex_fraction: float
     embed_hidden: tuple[int, ...]
     dropout: float

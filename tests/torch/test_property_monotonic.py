@@ -33,7 +33,7 @@ def test_mono_linear_nondecreasing(mode: str, seed: int) -> None:
 @given(seed=st.integers(0, 10_000))
 def test_mono_residual_nondecreasing(seed: int) -> None:
     torch.manual_seed(seed)
-    block = MonoResidual(3, 3, mode="switch")
+    block = MonoResidual(3, 3, mode="switch", activation="relu")
     # perturb the gate raws away from the warm start
     with torch.no_grad():
         block.beta.add_(torch.rand(()) * 2)

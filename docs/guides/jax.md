@@ -30,8 +30,8 @@ from mononet.jax import MonoInput, MonoLinear
 # A monotonic MLP: non-decreasing in every input feature.
 net = nnx.Sequential(
     MonoInput(1),                                    # +1 => up; -1 => down
-    MonoLinear(4, 32, mode="switch", rngs=nnx.Rngs(0)),
-    MonoLinear(32, 1, mode="switch", rngs=nnx.Rngs(1)),
+    MonoLinear(4, 32, mode="switch", activation="relu", rngs=nnx.Rngs(0)),
+    MonoLinear(32, 1, mode="switch", rngs=nnx.Rngs(1)),  # linear read-out
 )
 y = net(jnp.zeros((8, 4)))                           # (8, 1), monotone in all inputs
 ```

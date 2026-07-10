@@ -24,7 +24,9 @@ def test_subdepth_builds_k_monolinears() -> None:
 
 
 def test_subdepth1_is_single_monolinear() -> None:
-    layer = MonoResidual(8, 8, mode="absolute", sub_depth=1, rngs=nnx.Rngs(0))
+    layer = MonoResidual(
+        8, 8, mode="absolute", activation="elu", sub_depth=1, rngs=nnx.Rngs(0)
+    )
     assert isinstance(layer.F, MonoLinear)
 
 
@@ -78,3 +80,14 @@ def test_monotone_projection_skip() -> None:
         ),
         6,
     )
+
+
+def test_default_F_without_activation_raises() -> None:  # noqa: N802
+    with pytest.raises(ValueError, match="activation is required"):
+        MonoResidual(8, 8, mode="absolute", rngs=nnx.Rngs(0))
+
+
+def test_F_and_activation_together_raises() -> None:  # noqa: N802
+    f = MonoLinear(8, 8, mode="absolute", rngs=nnx.Rngs(0))
+    with pytest.raises(ValueError, match="either F or activation"):
+        MonoResidual(8, 8, F=f, activation="elu", rngs=nnx.Rngs(1))

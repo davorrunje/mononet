@@ -26,7 +26,7 @@ def test_subdepth_builds_k_monodense() -> None:
 
 
 def test_subdepth1_is_single_monodense() -> None:
-    layer = MonoResidual(8, mode="absolute", sub_depth=1)
+    layer = MonoResidual(8, mode="absolute", activation="elu", sub_depth=1)
     assert isinstance(layer.F, MonoDense)
 
 
@@ -68,3 +68,14 @@ def test_monotone_identity_skip() -> None:
 
 def test_monotone_projection_skip() -> None:
     _nondecreasing(4, 6, "switch")
+
+
+def test_default_F_without_activation_raises() -> None:  # noqa: N802
+    with pytest.raises(ValueError, match="activation is required"):
+        MonoResidual(8, mode="absolute")
+
+
+def test_F_and_activation_together_raises() -> None:  # noqa: N802
+    f = MonoDense(8, mode="absolute")
+    with pytest.raises(ValueError, match="either F or activation"):
+        MonoResidual(8, F=f, activation="elu")

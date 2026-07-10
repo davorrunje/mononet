@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
+
+if TYPE_CHECKING:
+    from mononet.core.types import ActivationName
 
 
 def load_config(
@@ -63,7 +66,7 @@ def load_config(
         residual=residual,
         depth=depth,
         width=width,
-        activation=activation,
+        activation=cast("ActivationName", activation),
         convex_fraction=convex_fraction,
         embed_hidden=tuple(embed_hidden_list),
         dropout=dropout,
