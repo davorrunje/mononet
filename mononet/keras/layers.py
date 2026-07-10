@@ -43,7 +43,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
 
     :param units: Output dimensionality.
     :param mode: One of ``switch`` (default) or ``absolute``.
-    :param activation: Base activation name or :class:`~mononet.core.types.ActivationSpec`.
+    :param activation: Base activation name or :class:`~mononet.core.types.ActivationSpec` (default ``"identity"``, i.e. a linear monotone map).
     :param convex_fraction: Fraction of output units using the convex branch
         (only used in ``absolute`` mode).
     :param init: Initializer name or :class:`~mononet.core.types.InitSpec`.
@@ -55,7 +55,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         units: int,
         *,
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | str = "identity",
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,

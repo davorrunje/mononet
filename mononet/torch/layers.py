@@ -51,7 +51,7 @@ class MonoLinear(nn.Module):
     :param in_features: Number of input features.
     :param units: Number of output features.
     :param mode: `"switch"` or `"absolute"`.
-    :param activation: Base activation name or `ActivationSpec`.
+    :param activation: Base activation name or `ActivationSpec` (default `"identity"`, i.e. a linear monotone map).
     :param convex_fraction: Convex-neuron fraction (absolute mode).
     :param init: Weight initializer name/`InitSpec`/`None` (default `he_normal`).
     :param bias: Whether to include a bias term.
@@ -63,7 +63,7 @@ class MonoLinear(nn.Module):
         units: int,
         *,
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | str = "identity",
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,

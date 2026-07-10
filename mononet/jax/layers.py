@@ -58,8 +58,7 @@ class MonoLinear(nnx.Module):
     :param in_features: Number of input features.
     :param units: Number of output units.
     :param mode: ``switch`` (default) or ``absolute``.
-    :param activation: Base activation; one of ``relu``, ``elu``, ``selu``,
-        ``softplus``.
+    :param activation: Base activation name or :class:`~mononet.core.types.ActivationSpec` (default ``"identity"``, i.e. a linear monotone map).
     :param convex_fraction: Fraction of convex units (``absolute`` mode only).
     :param init: Weight initializer; defaults to ``he_normal``.
     :param bias: Whether to include a bias vector.
@@ -72,7 +71,7 @@ class MonoLinear(nnx.Module):
         units: int,
         *,
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | str = "identity",
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
