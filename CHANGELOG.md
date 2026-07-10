@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   releases.
 
 ### Changed
+- **BREAKING:** the default `mode` is now `"absolute"` (was `"switch"`) for
+  `MonoLinear` / `MonoDense` / `MonoResidual` / `MonoConfig` /
+  `MonoResidualConfig`. `absolute` uses the static init (no `init` needed) and
+  is the paper's base `|W|` construction — pass `mode="switch"` explicitly to
+  keep the previous behaviour.
 - **BREAKING:** `MonoLinear` / `MonoDense` now default `activation` to `None`,
   meaning `"identity"` — a linear monotone map, matching `torch.nn.Linear` and
   `keras.layers.Dense(activation=None)` (`MonoConfig` keeps a concrete

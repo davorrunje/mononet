@@ -56,7 +56,7 @@ class MonoLinear(nn.Module):
 
     :param in_features: Number of input features.
     :param units: Number of output features.
-    :param mode: `"switch"` or `"absolute"`.
+    :param mode: `"absolute"` (default) or `"switch"`.
     :param activation: Base activation, one of `"relu"`, `"elu"`, `"selu"`,
         `"softplus"`, `"identity"`, or an `ActivationSpec`. `None` (the
         default) means `"identity"` — a linear monotone map, matching
@@ -71,7 +71,7 @@ class MonoLinear(nn.Module):
         in_features: int,
         units: int,
         *,
-        mode: str = "switch",
+        mode: str = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -116,7 +116,8 @@ class MonoResidual(nn.Module):
     :param F: Monotone sub-module, a `units -> Module` factory, or `None`
         (default: build from `sub_depth`). A custom `F` carries the caller's
         responsibility for monotonicity. Mutually exclusive with `sub_depth`.
-    :param mode: Mode for the default `F`.
+    :param mode: Mode for the default `F`. `"absolute"` (default) or
+        `"switch"`.
     :param activation: Activation for the default `F` (default `None`).
         Required when `F` is not provided; mutually exclusive with an
         explicit `F`.
@@ -136,7 +137,7 @@ class MonoResidual(nn.Module):
         units: int,
         *,
         F: nn.Module | Callable[[int], nn.Module] | None = None,  # noqa: N803
-        mode: str = "switch",
+        mode: str = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",

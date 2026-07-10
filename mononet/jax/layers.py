@@ -63,7 +63,7 @@ class MonoLinear(nnx.Module):
 
     :param in_features: Number of input features.
     :param units: Number of output units.
-    :param mode: ``switch`` (default) or ``absolute``.
+    :param mode: ``absolute`` (default) or ``switch``.
     :param activation: Base activation, one of ``"relu"``, ``"elu"``,
         ``"selu"``, ``"softplus"``, ``"identity"``, or an
         :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
@@ -79,7 +79,7 @@ class MonoLinear(nnx.Module):
         in_features: int,
         units: int,
         *,
-        mode: str = "switch",
+        mode: str = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -135,7 +135,7 @@ class MonoResidual(nnx.Module):
     :param units: Number of output units.
     :param F: Inner monotone sublayer; defaults to a stack of ``sub_depth``
         :class:`MonoLinear` layers. May also be a callable ``(units) -> Module``.
-    :param mode: ``switch`` or ``absolute``.
+    :param mode: ``absolute`` (default) or ``switch``.
     :param activation: Base activation name or spec for the default ``F``
         (default ``None``). Required when ``F`` is not provided; mutually
         exclusive with an explicit ``F``.
@@ -156,7 +156,7 @@ class MonoResidual(nnx.Module):
         units: int,
         *,
         F: nnx.Module | Callable[[int], nnx.Module] | None = None,  # noqa: N803
-        mode: str = "switch",
+        mode: str = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
