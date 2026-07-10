@@ -24,7 +24,7 @@ def test_mono_config_roundtrip() -> None:
 def test_mono_config_defaults() -> None:
     cfg = MonoConfig(units=4)
     assert cfg.mode == "switch"
-    assert cfg.activation.name == "relu"
+    assert cfg.activation.name == "identity"
     assert cfg.convex_fraction == 0.5
     assert cfg.bias is True
 
@@ -41,3 +41,18 @@ def test_mono_residual_config_roundtrip() -> None:
     assert MonoResidualConfig.from_json(cfg.to_json()) == cfg
     assert cfg.alpha_gate == "shifted_elu"
     assert cfg.beta_gate == "scaled_elu"
+
+
+def test_monoconfig_default_activation_is_identity() -> None:
+    from mononet.core.config import MonoConfig
+
+    assert MonoConfig(units=8).activation.name == "identity"
+
+
+def test_monoresidualconfig_requires_activation() -> None:
+    import pytest
+
+    from mononet.core.config import MonoResidualConfig
+
+    with pytest.raises(TypeError):
+        MonoResidualConfig(units=8)  # type: ignore[call-arg]
