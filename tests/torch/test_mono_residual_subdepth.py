@@ -67,3 +67,14 @@ def test_monotone_projection_skip() -> None:
     _nondecreasing(
         MonoResidual(6, 4, mode="switch", activation="elu", sub_depth=2).double(), 6
     )
+
+
+def test_default_F_without_activation_raises() -> None:  # noqa: N802
+    with pytest.raises(ValueError, match="activation is required"):
+        MonoResidual(8, 8, mode="absolute")
+
+
+def test_F_and_activation_together_raises() -> None:  # noqa: N802
+    f = MonoLinear(8, 8, mode="absolute")
+    with pytest.raises(ValueError, match="either F or activation"):
+        MonoResidual(8, 8, F=f, activation="elu")

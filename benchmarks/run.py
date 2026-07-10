@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
 from benchmarks._common.results import ResultRow, aggregate, write_jsonl
@@ -25,13 +25,16 @@ from benchmarks._common.runner import run
 from benchmarks.datasets.download import default_dest
 from benchmarks.datasets.registry import load
 
+if TYPE_CHECKING:
+    from mononet.core.types import ActivationName
+
 # ---------------------------------------------------------------------------
 # Sensible defaults for a single CLI invocation
 # ---------------------------------------------------------------------------
 
 _DEFAULT_DEPTH = 2
 _DEFAULT_WIDTH = 64
-_DEFAULT_ACTIVATION = "elu"
+_DEFAULT_ACTIVATION: ActivationName = "elu"
 _DEFAULT_CONVEX_FRACTION = 0.5
 _DEFAULT_EMBED_HIDDEN: tuple[int, ...] = (64,)
 _DEFAULT_DROPOUT = 0.0

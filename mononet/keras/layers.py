@@ -11,11 +11,16 @@ import numpy as np
 from keras import ops
 
 from mononet.core.init import absolute_init_params
-from mononet.core.types import ActivationSpec, InitSpec, MonotonicityMask
+from mononet.core.types import (
+    ActivationName,
+    ActivationSpec,
+    InitSpec,
+    MonotonicityMask,
+)
 from mononet.keras import _kernels
 
 
-def _act_name(activation: ActivationSpec | str) -> str:
+def _act_name(activation: ActivationSpec | ActivationName) -> str:
     """Return the string name of an activation spec or pass through a string.
 
     :param activation: Activation spec or name string.
@@ -43,7 +48,11 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
 
     :param units: Output dimensionality.
     :param mode: One of ``switch`` (default) or ``absolute``.
-    :param activation: Base activation name or :class:`~mononet.core.types.ActivationSpec`.
+    :param activation: Base activation, one of ``"relu"``, ``"elu"``,
+        ``"selu"``, ``"softplus"``, ``"identity"``, or an
+        :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
+        means ``"identity"`` — a linear monotone map, matching
+        ``keras.layers.Dense``.
     :param convex_fraction: Fraction of output units using the convex branch
         (only used in ``absolute`` mode).
     :param init: Initializer name or :class:`~mononet.core.types.InitSpec`.
@@ -55,7 +64,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         units: int,
         *,
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
@@ -65,7 +74,9 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         super().__init__(**kwargs)
         self.units = units
         self.mode = mode
-        self.activation_name = _act_name(activation)
+        self.activation_name = (
+            "identity" if activation is None else _act_name(activation)
+        )
         self.convex_fraction = convex_fraction
         self.init_name = _init_name(init)
         self._absolute_default = mode == "absolute" and init is None
@@ -143,12 +154,17 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         desired.
     :param F: Inner monotone layer; defaults to a fresh :class:`MonoDense`.
     :param mode: Forwarded to the default ``F``.
-    :param activation: Forwarded to the default ``F``.
+    :param activation: Forwarded to the default ``F`` (default ``None``).
+        Required when ``F`` is not provided; mutually exclusive with an
+        explicit ``F``. A custom ``F`` is not serializable, so
+        :meth:`get_config` emits ``activation=None`` in that case.
     :param alpha_gate: Gate token for the skip path (``shifted_elu``).
     :param beta_gate: Gate token for the dense path (``scaled_elu``).
     :param init: Forwarded to the default ``F``.
     :param sub_depth: Number of :class:`MonoDense` layers in ``F`` (default 2;
         ``1`` = legacy single layer).  Mutually exclusive with ``F``.
+    :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
+        provided, or if both ``F`` and ``activation`` are provided.
     """
 
     def __init__(
@@ -157,7 +173,7 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         *,
         F: keras.layers.Layer | None = None,  # noqa: N803
         mode: str = "switch",
-        activation: ActivationSpec | str = "relu",
+        activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
         init: InitSpec | str | None = None,
@@ -173,7 +189,6 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         super().__init__(**kwargs)
         self.units = units
         self.mode = mode
-        self.activation_name = _act_name(activation)
         self.init_name = _init_name(init)
         self.alpha_gate = alpha_gate
         self.beta_gate = beta_gate
@@ -181,12 +196,15 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
         if F is not None and sub_depth is not None:
             raise ValueError("pass either F or sub_depth, not both")
-        if F is not None:
-            self.F: keras.layers.Layer = F
-        else:
+        if F is None:
+            if activation is None:
+                raise ValueError("activation is required when F is not provided")
+            self.activation_name: str | None = _act_name(activation)
             k = 2 if sub_depth is None else sub_depth
             if k == 1:
-                self.F = MonoDense(units, mode=mode, activation=activation, init=init)
+                self.F: keras.layers.Layer = MonoDense(
+                    units, mode=mode, activation=activation, init=init
+                )
             else:
                 self.F = keras.Sequential(
                     [
@@ -194,6 +212,11 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
                         for _ in range(k)
                     ]
                 )
+        else:
+            if activation is not None:
+                raise ValueError("pass either F or activation, not both")
+            self.activation_name = None
+            self.F = F
 
     def build(self, input_shape: Any) -> None:
         """Create gate scalars and the projection shortcut if needed.

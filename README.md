@@ -39,8 +39,8 @@ from mononet.torch import MonoInput, MonoLinear
 # A monotonic MLP: non-decreasing in every input feature.
 net = torch.nn.Sequential(
     MonoInput(1),                    # +1 => non-decreasing; -1 => non-increasing
-    MonoLinear(4, 32, mode="switch"),
-    MonoLinear(32, 1, mode="switch"),
+    MonoLinear(4, 32, mode="switch", activation="relu"),
+    MonoLinear(32, 1, mode="switch"),  # linear (identity) read-out
 )
 y = net(torch.randn(8, 4))           # (8, 1), guaranteed monotone in all inputs
 ```

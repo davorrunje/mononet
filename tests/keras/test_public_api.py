@@ -34,7 +34,7 @@ def test_mono_dense_runs_and_serializes() -> None:
 def test_mono_residual_warm_start_near_identity() -> None:
     import mononet.keras as kmod
 
-    block = kmod.MonoResidual(4, mode="switch")
+    block = kmod.MonoResidual(4, mode="switch", activation="relu")
     x = ops.convert_to_tensor(np.random.default_rng(0).normal(size=(3, 4)))
     assert bool(ops.all(ops.abs(block(x) - x) < 5e-3))
 

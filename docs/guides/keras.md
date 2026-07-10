@@ -30,8 +30,8 @@ from mononet.keras import MonoDense, MonoInput
 # MonoDense infers the input width at build time (Keras style) — no in_features.
 net = keras.Sequential([
     MonoInput(1),                     # +1 => non-decreasing; -1 => non-increasing
-    MonoDense(32, mode="switch"),
-    MonoDense(1, mode="switch"),
+    MonoDense(32, mode="switch", activation="relu"),
+    MonoDense(1, mode="switch"),  # linear read-out
 ])
 y = net(keras.ops.zeros((8, 4)))      # (8, 1), guaranteed monotone in all inputs
 ```

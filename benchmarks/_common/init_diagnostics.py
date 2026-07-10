@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import torch
 from torch import nn
 
 from mononet.torch import MonoLinear, MonoResidual
+
+if TYPE_CHECKING:
+    from mononet.core.types import ActivationName
 
 
 def synthetic_monotone(n: int, d: int, *, seed: int) -> tuple[np.ndarray, np.ndarray]:
@@ -27,7 +32,9 @@ def synthetic_monotone(n: int, d: int, *, seed: int) -> tuple[np.ndarray, np.nda
     return x, y
 
 
-def _stack(mode: str, depth: int, d: int, width: int, activation: str) -> nn.Module:
+def _stack(
+    mode: str, depth: int, d: int, width: int, activation: ActivationName
+) -> nn.Module:
     layers: list[nn.Module] = [MonoLinear(d, width, mode=mode, activation=activation)]
     layers += [
         MonoLinear(width, width, mode=mode, activation=activation)
@@ -38,7 +45,12 @@ def _stack(mode: str, depth: int, d: int, width: int, activation: str) -> nn.Mod
 
 
 def grad_flow(
-    mode: str, depth: int, *, activation: str = "elu", width: int = 32, seed: int = 0
+    mode: str,
+    depth: int,
+    *,
+    activation: ActivationName = "elu",
+    width: int = 32,
+    seed: int = 0,
 ) -> dict[str, float | list[float]]:
     """Init-time gradient flow through an untrained plain stack.
 
@@ -69,7 +81,12 @@ def grad_flow(
 
 
 def trainability(
-    mode: str, depth: int, *, activation: str = "elu", epochs: int = 100, seed: int = 0
+    mode: str,
+    depth: int,
+    *,
+    activation: ActivationName = "elu",
+    epochs: int = 100,
+    seed: int = 0,
 ) -> dict[str, float]:
     """Fixed-budget train loss of a plain stack on the synthetic target.
 

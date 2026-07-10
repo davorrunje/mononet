@@ -29,6 +29,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   releases.
 
 ### Changed
+- **BREAKING:** `MonoLinear` / `MonoDense` now default `activation` to `None`,
+  meaning `"identity"` — a linear monotone map, matching `torch.nn.Linear` and
+  `keras.layers.Dense(activation=None)` (`MonoConfig` keeps a concrete
+  `ActivationSpec("identity")` default). Layers that relied on the implicit
+  ReLU are now linear — pass `activation="relu"` explicitly to restore the
+  previous behavior.
+- **BREAKING:** `MonoResidual` and `MonoResidualConfig` now require an explicit
+  `activation` when the default `F` is built (a custom `F` must not also pass
+  `activation`), preventing a silently-linear residual branch.
+- Layer `activation` parameters are now typed `ActivationSpec | ActivationName`
+  (`ActivationName = Literal["relu","elu","selu","softplus","identity"]`)
+  instead of accepting an arbitrary `str`, so unknown names are rejected at
+  type-check time.
 - Relicensed from PolyForm Noncommercial License 1.0.0 to the **Apache
   License 2.0**, following AIRT Technologies Ltd.'s decision to discontinue
   patent-related activities. Apache-2.0's section 3 grants the patent
