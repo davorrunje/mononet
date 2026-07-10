@@ -11,7 +11,7 @@ construction from:
 > Runje, D., Shankaranarayana, S. M. (2023). *Constrained Monotonic
 > Neural Networks.* ICML 2023. <https://arxiv.org/abs/2205.11775>
 
-with the activation-switch refinement (the default `mode="switch"`) from:
+with the optional activation-switch refinement (`mode="switch"`) from:
 
 > Sartor, D. et al. (2025). *Advancing Constrained Monotonic Neural
 > Networks.* ICML 2025. <https://arxiv.org/abs/2505.02537>

@@ -23,4 +23,5 @@ def test_risk_net_forward_and_monotone() -> None:
         bumped = x_mono.copy()
         bumped[:, j] += 0.5
         diff = (np.asarray(net(bumped, x_free)) - base)[:, 0]
+        assert np.abs(diff).max() > 1e-4  # genuinely responds to x_mono
         assert (diff >= -1e-4).all() if sign > 0 else (diff <= 1e-4).all()

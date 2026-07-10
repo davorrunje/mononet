@@ -22,6 +22,7 @@ def test_risk_net_forward_and_monotone() -> None:
             bumped = x_mono.clone()
             bumped[:, j] += 0.5
             diff = (net(bumped, x_free) - base).squeeze(-1)
+            assert bool(diff.abs().max() > 1e-4)  # genuinely responds to x_mono
             if sign > 0:
                 assert bool((diff >= -1e-4).all())
             else:
