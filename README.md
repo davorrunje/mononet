@@ -11,7 +11,7 @@ construction from:
 > Runje, D., Shankaranarayana, S. M. (2023). *Constrained Monotonic
 > Neural Networks.* ICML 2023. <https://arxiv.org/abs/2205.11775>
 
-with the activation-switch refinement (the default `mode="switch"`) from:
+with the optional activation-switch refinement (`mode="switch"`) from:
 
 > Sartor, D. et al. (2025). *Advancing Constrained Monotonic Neural
 > Networks.* ICML 2025. <https://arxiv.org/abs/2505.02537>
@@ -32,17 +32,53 @@ framework's native `Sequential` (or equivalent). Each backend exposes
 `MonoResidual`, `MonoInput`, and the framework-idiomatic dense layer:
 `MonoLinear` for PyTorch and JAX, `MonoDense` for Keras.
 
-```python
-import torch
-from mononet.torch import MonoInput, MonoLinear
+A mixed-feature example: monotone in 3 features (2 non-decreasing, 1
+non-increasing) via `MonoInput`, and unconstrained in 2 non-monotone
+features, which are embedded through a plain MLP. `MonoLinear` and
+`MonoResidual` default to `mode="absolute"`.
 
-# A monotonic MLP: non-decreasing in every input feature.
-net = torch.nn.Sequential(
-    MonoInput(1),                    # +1 => non-decreasing; -1 => non-increasing
-    MonoLinear(4, 32, mode="switch", activation="relu"),
-    MonoLinear(32, 1, mode="switch"),  # linear (identity) read-out
-)
-y = net(torch.randn(8, 4))           # (8, 1), guaranteed monotone in all inputs
+```python
+"""Mixed-feature monotone network (PyTorch).
+
+Monotone in 3 features (2 non-decreasing, 1 non-increasing) via ``MonoInput``,
+and unconstrained in 2 non-monotone features, which are embedded through a
+plain MLP. The embedding absorbs the non-monotonicity, so the composite map is
+monotone in ``x_mono`` and free in ``x_free``. Absolute mode is the default.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import torch
+from torch import nn
+
+from mononet import MonotonicityMask
+from mononet.torch import MonoInput, MonoLinear, MonoResidual
+
+
+class RiskNet(nn.Module):
+    """Monotone in ``x_mono`` (directions +1, +1, -1); free in ``x_free``."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.embed = nn.Sequential(
+            nn.Linear(2, 16),
+            nn.ReLU(),
+            nn.Linear(16, 8),
+            nn.ReLU(),
+        )
+        self.mono_in = MonoInput(MonotonicityMask(np.array([1, 1, -1], dtype=np.int8)))
+        self.net = nn.Sequential(
+            MonoLinear(11, 64, activation="elu"),
+            MonoResidual(64, 64, activation="elu"),
+            MonoResidual(64, 64, activation="elu"),
+            MonoLinear(64, 1),
+        )
+
+    def forward(self, x_mono: torch.Tensor, x_free: torch.Tensor) -> torch.Tensor:
+        """Combine the sign-flipped monotone features with the free embedding."""
+        z = torch.cat([self.mono_in(x_mono), self.embed(x_free)], dim=-1)
+        return self.net(z)
 ```
 
 For per-feature monotonicity directions, pass a

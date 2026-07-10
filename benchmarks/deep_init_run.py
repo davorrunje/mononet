@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -21,9 +22,12 @@ from torch import nn
 from benchmarks._common.init_diagnostics import synthetic_monotone
 from mononet.torch import MonoLinear
 
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
+
 _DEPTHS: tuple[int, ...] = (2, 4, 8, 16)
 # (label, mode, init)
-_METHODS: tuple[tuple[str, str, str | None], ...] = (
+_METHODS: tuple[tuple[str, Mode, str | None], ...] = (
     ("absolute (new init)", "absolute", None),
     ("absolute (he_normal)", "absolute", "he_normal"),
     ("switch", "switch", None),
@@ -32,7 +36,7 @@ _CAP = 1.0e6  # cap diverged losses so the committed JSON stays standard (no inf
 
 
 def _final_train_mse(
-    mode: str,
+    mode: Mode,
     init: str | None,
     depth: int,
     *,

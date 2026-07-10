@@ -7,16 +7,21 @@ import pytest
 
 jax = pytest.importorskip("jax")
 nnx = pytest.importorskip("flax.nnx")
+from typing import TYPE_CHECKING  # noqa: E402
+
 import jax.numpy as jnp  # noqa: E402
 from hypothesis import given, settings  # noqa: E402
 from hypothesis import strategies as st  # noqa: E402
 
 from mononet.jax import MonoLinear  # noqa: E402
 
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
+
 
 @settings(deadline=None, max_examples=40)
 @given(mode=st.sampled_from(["switch", "absolute"]), seed=st.integers(0, 10_000))
-def test_mono_linear_nondecreasing(mode: str, seed: int) -> None:
+def test_mono_linear_nondecreasing(mode: Mode, seed: int) -> None:
     layer = MonoLinear(3, 4, mode=mode, rngs=nnx.Rngs(seed))
     key = jax.random.key(seed)
     x = jax.random.normal(key, (6, 3))

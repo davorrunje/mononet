@@ -7,10 +7,15 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
+from typing import TYPE_CHECKING  # noqa: E402
+
 from hypothesis import given, settings  # noqa: E402
 from hypothesis import strategies as st  # noqa: E402
 
 from mononet.torch import MonoLinear, MonoResidual  # noqa: E402
+
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
 
 
 @settings(deadline=None, max_examples=50)
@@ -18,7 +23,7 @@ from mononet.torch import MonoLinear, MonoResidual  # noqa: E402
     mode=st.sampled_from(["switch", "absolute"]),
     seed=st.integers(0, 10_000),
 )
-def test_mono_linear_nondecreasing(mode: str, seed: int) -> None:
+def test_mono_linear_nondecreasing(mode: Mode, seed: int) -> None:
     torch.manual_seed(seed)
     layer = MonoLinear(3, 4, mode=mode)
     x = torch.randn(6, 3)

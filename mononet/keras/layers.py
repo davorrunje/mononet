@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import keras
 import numpy as np
@@ -18,6 +18,9 @@ from mononet.core.types import (
     MonotonicityMask,
 )
 from mononet.keras import _kernels
+
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
 
 
 def _act_name(activation: ActivationSpec | ActivationName) -> str:
@@ -47,7 +50,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
     by the ``switch`` or ``absolute`` mode, as described in the paper.
 
     :param units: Output dimensionality.
-    :param mode: One of ``switch`` (default) or ``absolute``.
+    :param mode: One of ``absolute`` (default) or ``switch``.
     :param activation: Base activation, one of ``"relu"``, ``"elu"``,
         ``"selu"``, ``"softplus"``, ``"identity"``, or an
         :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
@@ -63,7 +66,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         self,
         units: int,
         *,
-        mode: str = "switch",
+        mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -153,7 +156,8 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
     :param units: Output width; must equal input width if no skip projection is
         desired.
     :param F: Inner monotone layer; defaults to a fresh :class:`MonoDense`.
-    :param mode: Forwarded to the default ``F``.
+    :param mode: Forwarded to the default ``F``. ``absolute`` (default) or
+        ``switch``.
     :param activation: Forwarded to the default ``F`` (default ``None``).
         Required when ``F`` is not provided; mutually exclusive with an
         explicit ``F``. A custom ``F`` is not serializable, so
@@ -172,7 +176,7 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         units: int,
         *,
         F: keras.layers.Layer | None = None,  # noqa: N803
-        mode: str = "switch",
+        mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "scaled_elu",
