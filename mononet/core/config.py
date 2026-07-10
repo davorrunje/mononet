@@ -79,6 +79,10 @@ class MonoResidualConfig:
 
     Gate fields are string tokens only; a custom callable gate or `F`
     module is not serialized.
+
+    :param activation: Base activation for the default `F`. Required
+        (keyword-only, no default) since a custom `F` is not representable
+        here.
     """
 
     units: int

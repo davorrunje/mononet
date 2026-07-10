@@ -51,7 +51,8 @@ class MonoLinear(nn.Module):
     :param in_features: Number of input features.
     :param units: Number of output features.
     :param mode: `"switch"` or `"absolute"`.
-    :param activation: Base activation name or `ActivationSpec` (default `"identity"`, i.e. a linear monotone map).
+    :param activation: Base activation name or `ActivationSpec` (default
+        `"identity"`, i.e. a linear monotone map).
     :param convex_fraction: Convex-neuron fraction (absolute mode).
     :param init: Weight initializer name/`InitSpec`/`None` (default `he_normal`).
     :param bias: Whether to include a bias term.
@@ -106,13 +107,17 @@ class MonoResidual(nn.Module):
         (default: build from `sub_depth`). A custom `F` carries the caller's
         responsibility for monotonicity. Mutually exclusive with `sub_depth`.
     :param mode: Mode for the default `F`.
-    :param activation: Activation for the default `F`.
+    :param activation: Activation for the default `F` (default `None`).
+        Required when `F` is not provided; mutually exclusive with an
+        explicit `F`.
     :param alpha_gate: Skip-gate token.
     :param beta_gate: Residual-gate token.
     :param init: Initializer for the default `F` and the projection.
     :param sub_depth: Number of `MonoLinear` layers in the default `F`.
         `None` (default) uses 2; `1` gives a single `MonoLinear`. Must be
         >= 1. Mutually exclusive with `F`.
+    :raises ValueError: If `F` is `None` and `activation` is not provided,
+        or if both `F` and `activation` are provided.
     """
 
     def __init__(

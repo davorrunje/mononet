@@ -43,7 +43,9 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
 
     :param units: Output dimensionality.
     :param mode: One of ``switch`` (default) or ``absolute``.
-    :param activation: Base activation name or :class:`~mononet.core.types.ActivationSpec` (default ``"identity"``, i.e. a linear monotone map).
+    :param activation: Base activation name or
+        :class:`~mononet.core.types.ActivationSpec` (default ``"identity"``,
+        i.e. a linear monotone map).
     :param convex_fraction: Fraction of output units using the convex branch
         (only used in ``absolute`` mode).
     :param init: Initializer name or :class:`~mononet.core.types.InitSpec`.
@@ -143,12 +145,17 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         desired.
     :param F: Inner monotone layer; defaults to a fresh :class:`MonoDense`.
     :param mode: Forwarded to the default ``F``.
-    :param activation: Forwarded to the default ``F``.
+    :param activation: Forwarded to the default ``F`` (default ``None``).
+        Required when ``F`` is not provided; mutually exclusive with an
+        explicit ``F``. A custom ``F`` is not serializable, so
+        :meth:`get_config` emits ``activation=None`` in that case.
     :param alpha_gate: Gate token for the skip path (``shifted_elu``).
     :param beta_gate: Gate token for the dense path (``scaled_elu``).
     :param init: Forwarded to the default ``F``.
     :param sub_depth: Number of :class:`MonoDense` layers in ``F`` (default 2;
         ``1`` = legacy single layer).  Mutually exclusive with ``F``.
+    :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
+        provided, or if both ``F`` and ``activation`` are provided.
     """
 
     def __init__(

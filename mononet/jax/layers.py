@@ -58,7 +58,9 @@ class MonoLinear(nnx.Module):
     :param in_features: Number of input features.
     :param units: Number of output units.
     :param mode: ``switch`` (default) or ``absolute``.
-    :param activation: Base activation name or :class:`~mononet.core.types.ActivationSpec` (default ``"identity"``, i.e. a linear monotone map).
+    :param activation: Base activation name or
+        :class:`~mononet.core.types.ActivationSpec` (default ``"identity"``,
+        i.e. a linear monotone map).
     :param convex_fraction: Fraction of convex units (``absolute`` mode only).
     :param init: Weight initializer; defaults to ``he_normal``.
     :param bias: Whether to include a bias vector.
@@ -125,7 +127,9 @@ class MonoResidual(nnx.Module):
     :param F: Inner monotone sublayer; defaults to a stack of ``sub_depth``
         :class:`MonoLinear` layers. May also be a callable ``(units) -> Module``.
     :param mode: ``switch`` or ``absolute``.
-    :param activation: Base activation name or spec.
+    :param activation: Base activation name or spec for the default ``F``
+        (default ``None``). Required when ``F`` is not provided; mutually
+        exclusive with an explicit ``F``.
     :param alpha_gate: Gate token for the skip path; default ``shifted_elu``.
     :param beta_gate: Gate token for the dense path; default ``scaled_elu``.
     :param init: Weight initializer; defaults to ``he_normal``.
@@ -133,6 +137,8 @@ class MonoResidual(nnx.Module):
         is ``None``; default ``2``. Pass ``1`` for the legacy single-layer
         behaviour. Mutually exclusive with an explicit ``F``.
     :param rngs: Flax NNX RNG container.
+    :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
+        provided, or if both ``F`` and ``activation`` are provided.
     """
 
     def __init__(
