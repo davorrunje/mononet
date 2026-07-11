@@ -51,3 +51,11 @@ def test_absolute_convex_fraction_endpoints() -> None:
     all_concave = ref.monotonic_dense(x, w, b, "absolute", spec, 0.0)
     np.testing.assert_allclose(all_convex, ref.base_activation("relu", h))
     np.testing.assert_allclose(all_concave, ref.concave_reflection("relu", h))
+
+
+def test_monotonic_dense_rejects_unknown_mode() -> None:
+    x = np.zeros((2, 3))
+    w = np.ones((3, 4))
+    b = np.zeros(4)
+    with pytest.raises(ValueError, match="mode must be"):
+        ref.monotonic_dense(x, w, b, "bogus", ActivationSpec("relu"))

@@ -38,3 +38,20 @@ def test_deterministic() -> None:
 def test_unknown_activation_raises() -> None:
     with pytest.raises(ValueError, match="unknown activation"):
         absolute_init_params("gelu", 0.5)
+
+
+def test_identity_activation_is_supported() -> None:
+    # Exercises the identity branch of the private `_act` helper: for
+    # identity, act(h) = h, so Var[gain*H] = 1 at gain == 1 and bias == 0.
+    gain, bias = absolute_init_params("identity", 0.5)
+    assert gain == pytest.approx(1.0)
+    assert bias == 0.0
+
+
+def test_bisect_returns_midpoint_when_iterations_exhausted() -> None:
+    from mononet.core.init import _bisect
+
+    # Root of (x - 1/3) is 1/3; with tol=0 the |fmid| < tol test never fires,
+    # so after `iters` steps the loop falls through to `return 0.5*(lo+hi)`.
+    root = _bisect(lambda x: x - 1.0 / 3.0, 0.0, 1.0, tol=0.0, iters=5)
+    assert abs(root - 1.0 / 3.0) < 0.1

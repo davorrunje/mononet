@@ -56,3 +56,15 @@ def test_monoresidualconfig_requires_activation() -> None:
 
     with pytest.raises(TypeError):
         MonoResidualConfig(units=8)  # type: ignore[call-arg]
+
+
+def test_mono_config_rejects_bad_mode() -> None:
+    with pytest.raises(ValueError, match="mode must be"):
+        MonoConfig(units=4, mode="bogus")  # type: ignore[arg-type]
+
+
+def test_mono_residual_config_rejects_bad_units_and_mode() -> None:
+    with pytest.raises(ValueError, match="units must be positive"):
+        MonoResidualConfig(units=0, activation=ActivationSpec("relu"))
+    with pytest.raises(ValueError, match="mode must be"):
+        MonoResidualConfig(units=4, mode="bogus", activation=ActivationSpec("relu"))  # type: ignore[arg-type]

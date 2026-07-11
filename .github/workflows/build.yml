@@ -95,13 +95,42 @@ jobs:
         env:
           MONONET_TEST_BACKEND: ${{ matrix.backend }}
           KERAS_BACKEND: jax
-        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/test_top_level_imports.py -v
+        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/test_top_level_imports.py --no-cov -v
+
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v8.3.1
+      - name: Install dependencies
+        run: uv pip install --system -e ".[all-cpu]" --group=dev
+      - name: Run combined-backend coverage
+        env:
+          KERAS_BACKEND: jax
+        run: |
+          coverage erase
+          MONONET_TEST_BACKEND=torch pytest tests/core tests/torch tests/equivalence tests/examples tests/test_top_level_imports.py
+          MONONET_TEST_BACKEND=jax   pytest tests/jax   tests/equivalence
+          MONONET_TEST_BACKEND=keras pytest tests/keras tests/equivalence
+          coverage report --show-missing --fail-under=100
+          coverage xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: true
 
   check:
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [static-analysis, pre-commit, docs-smoke, test]
+    needs: [static-analysis, pre-commit, docs-smoke, test, coverage]
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1 # nosemgrep
