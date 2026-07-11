@@ -142,7 +142,7 @@ IQM Δ vs N) would test the hypothesis that **deep monotone stacks win once the
 dataset is large enough** — the cross-dataset evidence here (deep wins only on
 the largest set) is consistent but confounded by how much signal each dataset
 routes through the monotone path (e.g. `blog` sends only 9 of 276 features
-through it). Tracked as a follow-up PR.
+through it). See [Loan size-ladder](loan-size-ladder.md) for that experiment.
 
 ## Reproduce
 
