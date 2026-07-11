@@ -29,3 +29,4 @@ def test_devcontainer_installs_git_lfs() -> None:
     script = (REPO / ".devcontainer/shared/install_common_tools.sh").read_text()
     assert "git-lfs" in script
     assert "git lfs install" in script
+    assert "git lfs pull" in script

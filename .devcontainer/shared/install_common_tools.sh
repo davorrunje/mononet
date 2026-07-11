@@ -31,6 +31,7 @@ if ! command -v git-lfs >/dev/null 2>&1; then
   sudo apt-get update && sudo apt-get install -y git-lfs
 fi
 git lfs install --skip-repo
+git lfs pull || echo -e "\033[1;33mWARNING: git lfs pull failed (repo may not be committed yet).\033[0m"
 
 # Install uv only when missing.
 if command -v uv >/dev/null 2>&1; then
