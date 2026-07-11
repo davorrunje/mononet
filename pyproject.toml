@@ -102,9 +102,10 @@ default-groups = ["dev", "docs", "lint"]
 override-dependencies = [
     "click>=8.2.1",  # semgrep pins <8.2, but typer 0.24+ requires >=8.2.1
 ]
-# torch-cpu (cpu index) cannot co-resolve with torch / torch-gpu (both PyPI).
-# torch and torch-gpu share the PyPI source and do not clash, but one 3-way
-# mutually-exclusive group is harmless and keeps the single lockfile resolvable.
+# cpu-index torch carriers (torch-cpu, all-cpu) cannot co-resolve with the PyPI
+# torch carriers (torch, torch-gpu, all). One mutually-exclusive group over all
+# torch-bearing extras is harmless (nobody combines them) and keeps the single
+# lockfile resolvable.
 conflicts = [
     [
         { extra = "torch-cpu" }, { extra = "all-cpu" },
