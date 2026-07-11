@@ -38,7 +38,7 @@ uses the single-backend `*-gpu` extras (see the GPU devcontainer flavors).
 ## CPU-only torch: the uv-vs-pip caveat
 
 There is no way to express "CPU torch" in extras metadata that **pip** honors —
-plain `torch` on PyPI is the CUDA wheel. `mononet` provides `torch-cpu` /
+plain `torch` on PyPI is the CUDA wheel on linux-x86_64. `mononet` provides `torch-cpu` /
 `all-cpu`, which redirect torch to the [PyTorch CPU wheel
 index](https://download.pytorch.org/whl/cpu). This redirect is a **uv-only**
 mechanism (`[tool.uv.sources]`), so:
