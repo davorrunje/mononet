@@ -30,7 +30,7 @@ jobs:
       - uses: astral-sh/setup-uv@v8.3.1
 
       - name: Install dependencies
-        run: uv sync --group docs --extra all
+        run: uv sync --group docs --extra all-cpu
 
       - name: Ensure local main ref exists
         # sphinx-polyversion 2.0 enumerates only local refs; on tag-push or

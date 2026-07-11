@@ -15,11 +15,11 @@ Reference implementation of:
 ## Install
 
 ```
-pip install "mononet[torch]"      # PyTorch
-pip install "mononet[jax]"        # JAX + Flax NNX
-pip install "mononet[keras]"      # Keras 3
-pip install "mononet[all]"        # all three
+pip install "mononet[torch]"      # or [jax], [keras], [all]
 ```
+
+See [Installation](installation.md) for the full extras reference, GPU extras,
+and the CPU-torch (uv vs pip) caveat.
 
 ## Citation
 
@@ -47,6 +47,7 @@ If you use `mononet` in academic work, please cite the reference paper:
 ```{toctree}
 :hidden:
 
+installation
 guides/index
 concepts/index
 benchmarks/index

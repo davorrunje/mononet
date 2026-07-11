@@ -25,6 +25,12 @@ First-class support for **PyTorch**, **JAX** (Flax NNX), and **Keras 3**.
     pip install "mononet[keras]"      # Keras 3
     pip install "mononet[all]"        # all three
 
+> **CPU-only torch:** on linux the `torch`/`all` extras pull PyTorch's default
+> CUDA wheel. Under **uv**, use the `all-cpu` (or `torch-cpu`) extra for a
+> CUDA-free install. Plain `pip` cannot force CPU torch via an extra — see the
+> [installation docs](https://davorrunje.github.io/mononet/installation.html).
+> The `default` devcontainer already uses `all-cpu`.
+
 ## Quick start
 
 `mononet` ships **layers**, not composed models — stack them with your
