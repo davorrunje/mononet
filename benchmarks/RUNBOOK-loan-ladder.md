@@ -26,7 +26,11 @@ on a subsample) and gets expensive as N grows — only the **top 1–2 rungs**
 `loan` run from PR #72's deep-residual-accuracy benchmark, so budget
 accordingly.
 
-## 2. Generate the plot
+## 2. Generate the plot (PNG for docs + vector PDF for the paper)
+
+`render_plot` writes both `loan-size-ladder.png` (embedded in the docs page) and
+a sibling `loan-size-ladder.pdf` (vector — drop into a LaTeX paper with
+`\includegraphics{loan-size-ladder.pdf}`). Commit both.
 
 ```bash
 uv run --group bench python -c "
@@ -35,7 +39,7 @@ from pathlib import Path
 from benchmarks._common.size_ladder_report import render_plot
 
 records = json.load(open('benchmarks/results/size-ladder/loan.json'))
-render_plot(records, Path('docs/_static/loan-size-ladder.png'))
+render_plot(records, Path('docs/_static/loan-size-ladder.png'))  # writes .png AND .pdf
 "
 ```
 

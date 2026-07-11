@@ -29,8 +29,8 @@ def test_delta_by_n_pairs_arms_and_signs_delta() -> None:
     assert by_n[400]["delta_lo"] <= by_n[400]["delta"] <= by_n[400]["delta_hi"]
 
 
-def test_render_plot_writes_png(tmp_path: Path) -> None:
-    """render_plot writes a PNG without raising (error bars clipped to >= 0)."""
+def test_render_plot_writes_png_and_pdf(tmp_path: Path) -> None:
+    """render_plot writes both a PNG (docs) and a vector PDF (LaTeX), no raise."""
     pytest.importorskip("matplotlib")
     from benchmarks._common.size_ladder_report import render_plot
 
@@ -40,7 +40,8 @@ def test_render_plot_writes_png(tmp_path: Path) -> None:
         _rec(400, "shallow", 0.60, [0.60, 0.60]),
         _rec(400, "deep", 0.66, [0.65, 0.67]),
     ]
-    out = tmp_path / "plot.png"
-    render_plot(records, out)
-    assert out.exists()
-    assert out.stat().st_size > 0
+    render_plot(records, tmp_path / "loan-size-ladder.png")
+    for suffix in (".png", ".pdf"):
+        out = (tmp_path / "loan-size-ladder").with_suffix(suffix)
+        assert out.exists()
+        assert out.stat().st_size > 0

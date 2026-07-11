@@ -55,7 +55,17 @@ def delta_by_n(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def render_plot(records: list[dict[str, Any]], out_path: Path) -> None:
-    """Render Δ-vs-N (log-N x-axis) with the bootstrap band to `out_path` (PNG)."""
+    r"""Render the Δ-vs-N figure next to `out_path`, as both PNG and PDF.
+
+    Writes ``out_path`` with a ``.png`` suffix (for the Sphinx/MD docs) and a
+    ``.pdf`` suffix (vector, for ``\includegraphics`` in a LaTeX paper) from a
+    single publication-styled render. Labels use matplotlib mathtext, so no
+    LaTeX toolchain is required. No title is drawn — supply the docs heading /
+    LaTeX caption instead.
+
+    :param records: Size-ladder result records (see :func:`delta_by_n`).
+    :param out_path: Base output path; the suffix is replaced with png/pdf.
+    """
     import matplotlib
 
     matplotlib.use("Agg")
@@ -68,13 +78,14 @@ def render_plot(records: list[dict[str, Any]], out_path: Path) -> None:
     # bootstrap band, which would make matplotlib reject a negative error length.
     lo = np.clip([r["delta"] - r["delta_lo"] for r in rows], 0.0, None)
     hi = np.clip([r["delta_hi"] - r["delta"] for r in rows], 0.0, None)
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.axhline(0.0, color="0.7", lw=1)
-    ax.errorbar(ns, delta, yerr=[lo, hi], marker="o", capsize=3)
+    fig, ax = plt.subplots(figsize=(5.0, 3.2))
+    ax.axhline(0.0, color="0.6", lw=1.0, ls="--")
+    ax.errorbar(ns, delta, yerr=[lo, hi], marker="o", capsize=3, color="#0072B2")
     ax.set_xscale("log")
-    ax.set_xlabel("train size N (log)")
-    ax.set_ylabel("Δ IQM  (deep - shallow)")
-    ax.set_title("loan: deep-vs-shallow accuracy gap vs training size")
+    ax.set_xlabel(r"training-set size $N$", fontsize=12)
+    ax.set_ylabel(r"$\Delta$ IQM accuracy (deep $-$ shallow)", fontsize=12)
+    ax.tick_params(labelsize=10)
     fig.tight_layout()
-    fig.savefig(out_path, dpi=120)
+    for suffix in (".png", ".pdf"):
+        fig.savefig(out_path.with_suffix(suffix), dpi=150, bbox_inches="tight")
     plt.close(fig)
