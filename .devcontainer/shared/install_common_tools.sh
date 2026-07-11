@@ -25,14 +25,12 @@ for _vol in "${CLAUDE_CONFIG_DIR:-}" /workspaces/mononet/.venv; do
 done
 unset _vol
 
-# Conditionally install git-lfs if .gitattributes has LFS entries
-REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-if [ -f "$REPO_ROOT/.gitattributes" ] && grep -qE '^[[:space:]]*[^#[:space:]].*filter=lfs' "$REPO_ROOT/.gitattributes"; then
-  echo "[setup.sh] Installing git-lfs..."
-  git lfs install --force
-  git lfs pull || echo -e "\033[1;33mWARNING: git lfs pull failed (repo may not be committed yet).\033[0m"
-  echo -e "\033[32mGit LFS has been installed and artifacts pulled.\033[0m"
+# git-lfs — required to pull committed benchmark datasets under benchmarks/data/
+if ! command -v git-lfs >/dev/null 2>&1; then
+  echo -e "\033[32mInstalling git-lfs...\033[0m"
+  sudo apt-get update && sudo apt-get install -y git-lfs
 fi
+git lfs install --skip-repo
 
 # Install uv only when missing.
 if command -v uv >/dev/null 2>&1; then
