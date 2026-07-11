@@ -15,8 +15,12 @@ _DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
 class DataSource:
     """Where a dataset's preprocessed CSVs come from.
 
+    :param name: Identifier for the dataset (used as a key in SOURCES and in
+        filenames).
     :param hosting: ``lfs`` (committed under ``benchmarks/data/<name>/``) or
         ``script`` (user regenerates into the local cache from restricted raw).
+    :param license: License identifier or human-readable licensing info.
+    :param url: URL to the dataset source or documentation.
     :param prep_hint: One-line instruction shown when a script-only dataset is
         missing locally.
     """
@@ -40,7 +44,11 @@ SOURCES: dict[str, DataSource] = {
 
 
 def resolve_dir(name: str) -> Path:
-    """Directory that should contain ``train_<name>.csv[.gz]`` for *name*."""
+    """Directory that should contain ``train_<name>.csv[.gz]`` for *name*.
+
+    :param name: Dataset identifier.
+    :returns: Path to the directory expected to contain dataset CSV files.
+    """
     src = SOURCES[name]
     return _DATA_ROOT / name if src.hosting == "lfs" else default_dest()
 
@@ -48,6 +56,8 @@ def resolve_dir(name: str) -> Path:
 def require_dataset(name: str) -> Path:
     """Resolve *name*'s data dir, asserting the train file is present.
 
+    :param name: Dataset identifier.
+    :returns: Path to the dataset directory if the train file exists.
     :raises FileNotFoundError: If no ``train_<name>.csv[.gz]`` is found, with a
         message pointing at the prep step / ``git lfs pull``.
     """

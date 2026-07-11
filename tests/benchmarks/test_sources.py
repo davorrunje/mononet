@@ -24,12 +24,16 @@ def test_require_dataset_missing_script_source_raises_actionable(
 ) -> None:
     """A script-only dataset with no local file raises with prep instructions."""
     monkeypatch.setenv("MONONET_DATA_DIR", str(tmp_path))
-    SOURCES["_fake_script"] = DataSource(
-        name="_fake_script",
-        hosting="script",
-        license="Kaggle ToS",
-        url="https://kaggle.com/x",
-        prep_hint="run prepare/_fake_script.py",
+    monkeypatch.setitem(
+        SOURCES,
+        "_fake_script",
+        DataSource(
+            name="_fake_script",
+            hosting="script",
+            license="Kaggle ToS",
+            url="https://kaggle.com/x",
+            prep_hint="run prepare/_fake_script.py",
+        ),
     )
     with pytest.raises(FileNotFoundError, match=r"prepare/_fake_script\.py"):
         require_dataset("_fake_script")
