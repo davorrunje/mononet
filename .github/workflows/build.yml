@@ -117,7 +117,7 @@ jobs:
           MONONET_TEST_BACKEND=torch pytest tests/core tests/torch tests/equivalence tests/examples tests/test_top_level_imports.py
           MONONET_TEST_BACKEND=jax   pytest tests/jax   tests/equivalence
           MONONET_TEST_BACKEND=keras pytest tests/keras tests/equivalence
-          coverage report --show-missing
+          coverage report --show-missing --fail-under=100
           coverage xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -130,7 +130,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [static-analysis, pre-commit, docs-smoke, test]
+    needs: [static-analysis, pre-commit, docs-smoke, test, coverage]
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1 # nosemgrep
