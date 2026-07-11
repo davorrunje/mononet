@@ -60,4 +60,11 @@ DATASETS_SPEC: dict[str, DatasetSpec] = {
         tuple(f"feature_{i}" for i in (50, 51, 52, 53, 55, 56, 57, 58, 59)),
         (),
     ),
+    "adult": DatasetSpec(
+        "adult",
+        "binary_classification",
+        "ground_truth",
+        ("education_num", "hours_per_week", "capital_gain"),
+        (),
+    ),
 }
