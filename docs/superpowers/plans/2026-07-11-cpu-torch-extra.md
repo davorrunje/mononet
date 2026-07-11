@@ -41,10 +41,17 @@ torch-cpu   = ["torch>=2.4"]  # uv redirects to the PyTorch CPU wheel index (see
 jax         = ["jax>=0.4.30", "flax>=0.10"]
 keras       = ["keras>=3.5", "jax>=0.4.30"]
 all         = ["mononet[torch,jax,keras]"]
-all-cpu     = ["mononet[torch-cpu,jax,keras]"]
+all-cpu     = ["mononet[jax,keras]", "torch>=2.4"]  # torch DIRECT (not via mononet[torch-cpu]) so the cpu-index source activates
 ```
 
 Leave the GPU block (`torch-gpu`, `jax-gpu`, `keras-gpu`) untouched.
+
+> **Why `all-cpu` lists torch directly:** uv does **not** propagate a
+> `[tool.uv.sources]` `extra =` condition through a self-referential composite
+> extra. If `all-cpu = mononet[torch-cpu,jax,keras]`, a bare
+> `uv sync --extra all-cpu` silently resolves the CUDA wheel. Carrying `torch`
+> directly in `all-cpu` (and adding an `all-cpu` source entry in Step 2) is the
+> uv-idiomatic non-composite pattern and makes `all-cpu` work standalone.
 
 - [ ] **Step 2: Add uv conflicts, index, and source**
 
@@ -56,11 +63,15 @@ default-groups = ["dev", "docs", "lint"]
 override-dependencies = [
     "click>=8.2.1",  # semgrep pins <8.2, but typer 0.24+ requires >=8.2.1
 ]
-# torch-cpu (cpu index) cannot co-resolve with torch / torch-gpu (both PyPI).
-# torch and torch-gpu share the PyPI source and do not clash, but one 3-way
-# mutually-exclusive group is harmless and keeps the single lockfile resolvable.
+# cpu-index torch carriers (torch-cpu, all-cpu) cannot co-resolve with PyPI
+# torch carriers (torch, torch-gpu, all). One mutually-exclusive group over all
+# torch-bearing extras is harmless (nobody combines them) and keeps the single
+# lockfile resolvable.
 conflicts = [
-    [{ extra = "torch-cpu" }, { extra = "torch" }, { extra = "torch-gpu" }],
+    [
+        { extra = "torch-cpu" }, { extra = "all-cpu" },
+        { extra = "torch" }, { extra = "torch-gpu" }, { extra = "all" },
+    ],
 ]
 
 [[tool.uv.index]]
@@ -69,7 +80,10 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true  # only used when a source explicitly points here
 
 [tool.uv.sources]
-torch = [{ index = "pytorch-cpu", extra = "torch-cpu" }]
+torch = [
+    { index = "pytorch-cpu", extra = "torch-cpu" },
+    { index = "pytorch-cpu", extra = "all-cpu" },
+]
 ```
 
 - [ ] **Step 3: Regenerate the lockfile**
