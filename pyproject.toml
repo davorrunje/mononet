@@ -38,9 +38,11 @@ Paper         = "https://arxiv.org/abs/2205.11775"
 [project.optional-dependencies]
 # CPU backends
 torch       = ["torch>=2.4"]
+torch-cpu   = ["torch>=2.4"]  # uv redirects to the PyTorch CPU wheel index (see [tool.uv.sources])
 jax         = ["jax>=0.4.30", "flax>=0.10"]
 keras       = ["keras>=3.5", "jax>=0.4.30"]
 all         = ["mononet[torch,jax,keras]"]
+all-cpu     = ["mononet[torch-cpu,jax,keras]"]
 
 # GPU backends — modern torch/jax wheels bundle their own CUDA toolkit
 # (torch 2.12 -> CUDA 13, jax[cuda12] -> CUDA 12.9), including Blackwell
@@ -100,6 +102,20 @@ default-groups = ["dev", "docs", "lint"]
 override-dependencies = [
     "click>=8.2.1",  # semgrep pins <8.2, but typer 0.24+ requires >=8.2.1
 ]
+# torch-cpu (cpu index) cannot co-resolve with torch / torch-gpu (both PyPI).
+# torch and torch-gpu share the PyPI source and do not clash, but one 3-way
+# mutually-exclusive group is harmless and keeps the single lockfile resolvable.
+conflicts = [
+    [{ extra = "torch-cpu" }, { extra = "torch" }, { extra = "torch-gpu" }],
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true  # only used when a source explicitly points here
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", extra = "torch-cpu" }]
 
 [tool.hatch.build.targets.sdist]
 include = ["mononet"]
