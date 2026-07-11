@@ -128,8 +128,12 @@ robustness table are in the
 |  | absolute | residual | 4 | **0.173** | 0.173 ± 0.001 | · |
 
 `residual` collapses the better of the residual/deep depth bands (by CV);
-`L = 2·blocks + 2` effective monotone layers. Depth helps only on `loan` (the
-largest dataset, 14 layers); elsewhere ≤ 4 layers is best. `absolute` wins 4 of 5
+`L = 2·blocks + 2` effective monotone layers. Deep `absolute residual` is
+nominally best on `loan` (the largest dataset) above, but a controlled
+[size-ladder study](https://davorrunje.github.io/mononet/benchmarks/loan-size-ladder.html)
+— deep vs shallow *residual*, tuned independently at each training-set size —
+finds that edge is within noise and does not grow with scale, so **depth is
+neutral even on `loan`**; elsewhere ≤ 4 layers is best. `absolute` wins 4 of 5
 datasets; the `⚠` instabilities are all shallow `switch`.
 
 ## License
