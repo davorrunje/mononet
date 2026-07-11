@@ -67,8 +67,12 @@ def run_ladder(
     final_seeds: Iterable[int] = range(10),
     epochs: int = 50,
     n_splits: int = 1,
+    n_jobs: int = 1,
 ) -> list[dict[str, Any]]:
-    """Run the size-ladder for `bundle`; return one record per (n, arm)."""
+    """Run the size-ladder for `bundle`; return one record per (n, arm).
+
+    :param n_jobs: Optuna trial parallelism within each arm's search (threaded).
+    """
     seeds = list(final_seeds)
     base_rate = max(float(np.mean(bundle.y_test)), 1.0 - float(np.mean(bundle.y_test)))
     records: list[dict[str, Any]] = []
@@ -86,6 +90,7 @@ def run_ladder(
                 epochs=epochs,
                 n_splits=n_splits,
                 search_seeds=search_seeds,
+                n_jobs=n_jobs,
             )
             values = _ladder_eval(
                 bundle,
@@ -122,17 +127,51 @@ def run_ladder(
     return records
 
 
+_DEFAULT_OUT = Path(__file__).resolve().parent / "results" / "size-ladder" / "loan.json"
+
+
 def main() -> None:
-    """Load loan, run the full ladder, write the committed results JSON."""
+    """CLI: run a (subset of the) ladder and write records JSON.
+
+    With no arguments, runs the full ladder to the canonical results path. The
+    ``--ns``/``--arms``/``--out`` options let a launcher run one cell per
+    process (each pinned to a GPU via ``$MONONET_TORCH_DEVICE``) into a partial
+    file, to be merged afterwards.
+    """
+    import argparse
+
+    ap = argparse.ArgumentParser(description="loan size-ladder run")
+    ap.add_argument(
+        "--ns",
+        default=",".join(str(n) for n in _NS),
+        help="comma-separated train sizes (use 1000000000 for the full split)",
+    )
+    ap.add_argument("--arms", default=",".join(_ARMS), help="comma-separated arms")
+    ap.add_argument("--n-trials", type=int, default=25)
+    ap.add_argument("--search-seeds", type=int, default=3)
+    ap.add_argument("--final-seeds", type=int, default=10)
+    ap.add_argument("--epochs", type=int, default=50)
+    ap.add_argument("--n-jobs", type=int, default=1)
+    ap.add_argument("--out", type=Path, default=_DEFAULT_OUT)
+    args = ap.parse_args()
+
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
 
     bundle = load("loan", data_dir=default_dest())
-    records = run_ladder(bundle)
-    out = Path(__file__).resolve().parent / "results" / "size-ladder" / "loan.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(records, indent=2) + "\n")
-    print(f"wrote {out} ({len(records)} records)")  # noqa: T201
+    records = run_ladder(
+        bundle,
+        ns=tuple(int(x) for x in args.ns.split(",")),
+        arms=tuple(args.arms.split(",")),
+        n_trials=args.n_trials,
+        search_seeds=args.search_seeds,
+        final_seeds=range(args.final_seeds),
+        epochs=args.epochs,
+        n_jobs=args.n_jobs,
+    )
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(records, indent=2) + "\n")
+    print(f"wrote {args.out} ({len(records)} records)")  # noqa: T201
 
 
 if __name__ == "__main__":
