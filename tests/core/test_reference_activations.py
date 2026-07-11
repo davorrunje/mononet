@@ -50,3 +50,18 @@ def test_gates_are_strictly_positive(token: str) -> None:
     # requires raw > ~-0.74; use a modest negative bound to stay well clear.
     x = np.linspace(-0.5, 5, 100)
     assert np.all(ref.apply_gate(token, x) > 0.0)
+
+
+def test_identity_activation_is_passthrough() -> None:
+    x = np.array([-2.0, 0.0, 3.0])
+    np.testing.assert_allclose(ref.base_activation("identity", x), x)
+
+
+def test_unknown_activation_raises() -> None:
+    with pytest.raises(ValueError, match="unknown activation"):
+        ref.base_activation("bogus", np.zeros(3))  # type: ignore[arg-type]
+
+
+def test_unknown_gate_token_raises() -> None:
+    with pytest.raises(ValueError, match="unknown gate token"):
+        ref.apply_gate("bogus", np.zeros(3))
