@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Default (CPU) devcontainer: install all backends + dev dependencies.
+# Default (CPU) devcontainer: all backends, CPU-only torch (via the cpu wheel
+# index) + dev dependencies. No CUDA/nvidia wheels.
 set -euo pipefail
 
-export MONONET_EXTRAS="all"
+export MONONET_EXTRAS="all-cpu"
 bash .devcontainer/shared/install_dependencies.sh
