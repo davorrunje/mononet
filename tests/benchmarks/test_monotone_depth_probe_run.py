@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+pytest.importorskip("optuna")
 pytest.importorskip("torch")
 
 from benchmarks.monotone_depth_probe_run import probe_dataset

@@ -35,10 +35,11 @@ controllable complexity knob `c ∈ {1, 2, 4, 8}`. Three target families:
   piecewise-linear. Depth must not help — anchors the null.
 
 - **Teacher-depth sweep** (the acid test): the target *is* a random **monotone
-  teacher network** of depth `c`, built from the reference construction
-  (non-negative weights + convex/concave activation split). Guarantees the
-  target is monotone *and* representable by a deep student of matching size —
-  so persistent deep-student error cleanly isolates **(O)** from **(E)**.
+  teacher network** of depth `c`, built as a seeded monotone MLP
+  (non-negative weights + softplus activation). The target is monotone by
+  construction; a deep student of matching size is a universal monotone
+  approximator and can approximately represent it — so persistent deep-student
+  error approximately isolates **(O)** from **(E)**.
 
 - **Max/min-lattice teacher** (most depth-favoring): f = nested max/min of
   monotone terms, `c` = nesting depth. Max/min composition builds piecewise
