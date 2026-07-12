@@ -22,9 +22,32 @@ uv run pytest tests/applications -q      # unit + smoke suite
 - **Heavy Optuna search + sweeps:** `gpu-jax` devcontainer (primary GPU backend).
 - **Cross-backend equivalence:** needs both backends → an `all-cpu` sync.
 
-## Reproduction (to be completed)
+## Reproduction
 
-- [ ] Optuna search (equal budget per method) — `experiments/search.py`
-- [ ] Forward mechanism-tier sweep — `experiments/sweep.py`
-- [ ] Inverse flagship sparsity × noise sweep — `experiments/sweep.py`
-- [ ] Fill manuscript results + render notebook
+Run on `gpu-jax` (JAX GPU). Each panel tunes every method with an identical
+Optuna budget (once, seed 0), then evaluates the best config over 10 seeds and
+reports the **IQM** with a 95 % bootstrap band. ~30–40 min each on a modern GPU.
+
+```bash
+# Inverse flagship (traffic state estimation) — the headline table
+uv run python -m applications.pinn.experiments.headline \
+    --problem lwr_riemann --tier inverse \
+    --out applications/pinn/results/inverse-headline.json
+
+# Forward mechanism tier (Burgers shock) — the contrast panel
+uv run python -m applications.pinn.experiments.headline \
+    --problem burgers_riemann --tier forward \
+    --out applications/pinn/results/forward-mechanism.json
+```
+
+Both write per-method best params + per-seed metrics + IQM/band to the JSON.
+The `§6` tables in `paper/paper.md` are filled from these artifacts.
+
+### Still to do (need a different environment / more compute)
+
+- [ ] **Cross-backend equivalence** (JAX vs PyTorch): needs both backends — run on
+      the `default` (`all-cpu`) devcontainer; `gpu-jax` has no Torch.
+- [ ] **Figures** (TV(t) curves, shock profiles, reconstructed field, sparsity ×
+      noise sweep): `core/plotting.py` exists; generation + the sweep are not yet
+      wired into a committed script.
+- [ ] **Notebook** render into Sphinx docs.
