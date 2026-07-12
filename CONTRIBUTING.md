@@ -132,7 +132,7 @@ re-execute them before a release, see "Release process" below.
 
 The full maintainer runbook — one-time Trusted-Publishing setup, the Bump
 Version action, TestPyPI rehearsal, and the GitHub-Release-triggered publish —
-lives in [`docs/releasing.md`](https://github.com/davorrunje/mononet/blob/main/docs/about/releasing.md).
+lives in [`docs/about/releasing.md`](https://github.com/davorrunje/mononet/blob/main/docs/about/releasing.md).
 
 ## Commit messages
 
