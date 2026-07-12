@@ -3,6 +3,47 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — Inverse/traffic: residual DESTABILISES the constrained field
+
+Ran the inverse flagship — reconstruct LWR density from 80 sparse noisy
+observations (residual + data loss, no IC/BC), 8000 steps:
+
+| method | L1 | L2 | viol | overshoot |
+|---|---|---|---|---|
+| vanilla | 3.85 | 0.66 | 0.16 | 0.03 |
+| soft | 3.46 | 0.64 | 0.05 | 0.04 |
+| weight_clip | 38.4 | 2.85 | 0 | 0.07 |
+| **hard_monotone** | **124** | 9.3 | 0 | **2.34** |
+
+`hard_monotone` did **not** improve on the inverse problem — it *blows up*
+(predicts values far outside the density range). My "inverse favours the
+constraint" hypothesis is **not confirmed.**
+
+**Characterisation (hard_monotone, inverse):**
+
+| config | L1 | pred [min,max] | final loss |
+|---|---|---|---|
+| data-only (res 0), lr 5e-3 | 32.9 | [-0.15, 1.19] | 0.29 (stable) |
+| data+res, lr 1e-3 | 336 | [-6.5, 10.0] | **1892 (diverged)** |
+| data-heavy (res 0.1, data 50), lr 1e-3 | 137 | [-3.5, 5.0] | 43.7 (diverging) |
+
+(ref density ∈ [0.2, 0.8].) **The PDE residual term causes training divergence
+for the constrained field** — with residual on, the loss *grows* and predictions
+run away to ±10; data-only is stable but mediocre (L1 33). Vanilla trains fine
+with the *same* residual+data setup, so this is specific to the mononet field:
+a runaway feedback (u grows → `flux_prime(u)·u_x` grows → residual grows). Likely
+an ill-conditioned residual-gradient / step-size interaction with the
+`absolute`-mode field, **plausibly fixable** with standard stabilisation
+(gradient clipping, lr schedule/lower lr, residual loss balancing / normalisation,
+or a weak-form residual) — but currently an open blocker for the constrained PINN.
+
+**State:** the constrained field can be *fit* (direct supervised: mean|err| ~0.1)
+but cannot yet be *trained through the PDE residual* without diverging. This — not
+mononet, architecture, normalization, or expressivity — is the real blocker for
+both tiers. Next decision: which stabilisation to try.
+
+---
+
 ## 2026-07-12 — Forward-tier gap diagnosed: strong-form residual smears the shock
 
 Loss-weight sweep, `hard_monotone`, `burgers_riemann`, 8000 steps lr 5e-3
