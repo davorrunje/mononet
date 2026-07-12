@@ -2,8 +2,11 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/mononet)](https://pypi.org/project/mononet/)
 [![Python versions](https://img.shields.io/pypi/pyversions/mononet)](https://pypi.org/project/mononet/)
-[![Docs](https://img.shields.io/badge/docs-mononet-blue)](https://davorrunje.github.io/mononet/)
+[![License](https://img.shields.io/pypi/l/mononet)](https://github.com/davorrunje/mononet/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/davorrunje/mononet/graph/badge.svg)](https://codecov.io/gh/davorrunje/mononet)
 [![Build](https://github.com/davorrunje/mononet/actions/workflows/build.yml/badge.svg)](https://github.com/davorrunje/mononet/actions/workflows/build.yml)
+[![Docs](https://img.shields.io/badge/docs-mononet-blue)](https://davorrunje.github.io/mononet/)
+[![arXiv](https://img.shields.io/badge/arXiv-2205.11775-b31b1b.svg)](https://arxiv.org/abs/2205.11775)
 
 Multi-backend implementation of the constrained monotonic neural network
 construction from:
