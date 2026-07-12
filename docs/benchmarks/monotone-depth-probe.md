@@ -29,17 +29,29 @@ empirical null leaves three possible causes:
    *advantage*.
 
 This probe **separates them** using synthetic *monotone* targets with a
-controllable complexity knob `c ∈ {1, 2, 4, 8}`. Three target families:
+controllable complexity knob `c ∈ {1, 2, 4, 8}`. Four target families:
 
 - **Additive control** (`c` ignored): f = Σᵢ gᵢ(xᵢ), gᵢ random monotone
   piecewise-linear. Depth must not help — anchors the null.
 
-- **Teacher-depth sweep** (the acid test): the target *is* a random **monotone
-  teacher network** of depth `c`, built as a seeded monotone MLP
-  (non-negative weights + softplus activation). The target is monotone by
-  construction; a deep student of matching size is a universal monotone
-  approximator and can approximately represent it — so persistent deep-student
-  error approximately isolates **(O)** from **(E)**.
+- **Teacher-depth sweep** (the acid test, two variants): the target *is* a
+  random **monotone teacher network** of depth `c` — an equal-width (width 8)
+  residual MLP with non-negative weight matrices and a non-negative residual
+  skip per layer (`h = act(h @ M_l + b_l) + h @ S_l`, `M_l, S_l ≥ 0`). The
+  non-negative skip guarantees every unit keeps a live gradient path to the
+  input regardless of depth, so units cannot go dead and collapse the target
+  toward a near-constant function — without this guard a collapsing teacher
+  would fake a depth effect by making shallow and deep targets equally
+  trivial. Two activation variants isolate different regimes:
+  - `teacher_relu` — ReLU, sharp piecewise-linear, the depth-separation
+    regime classical ReLU depth-separation results rely on.
+  - `teacher_elu` — ELU(α=1), the student's own activation family, so the
+    target is closer to exactly representable by the CMNN construction.
+
+  The target is monotone by construction in both cases; a deep student of
+  matching size is a universal monotone approximator and can approximately
+  represent it — so persistent deep-student error approximately isolates
+  **(O)** from **(E)**.
 
 - **Max/min-lattice teacher** (most depth-favoring): f = nested max/min of
   monotone terms, `c` = nesting depth. Max/min composition builds piecewise
@@ -62,7 +74,8 @@ for the full argument and scope.
 ```{note}
 The probe machinery (Task 1–3) is complete and smoke-tested. The real numbers
 below are filled by the GPU session per `benchmarks/RUNBOOK-depth-probe.md`:
-sweep families {additive, teacher, lattice} × c ∈ {1, 2, 4, 8} with the fixed
+sweep families {additive, teacher_relu, teacher_elu, lattice} × c ∈ {1, 2, 4,
+8} with the fixed
 deep/shallow bands (both GPUs, one (kind,c) per slot), then the iso-parameter
 frontier only for families/c showing a signal. The plot and table are
 committed after the GPU run.

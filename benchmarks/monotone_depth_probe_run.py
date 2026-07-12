@@ -64,7 +64,8 @@ def probe_dataset(
 ) -> dict[str, Any]:
     """Run both arms on ``synth_monotone(kind, c)``; return per-arm MSE IQMs + values.
 
-    :param kind: Target family (``"additive"``, ``"teacher"``, or ``"lattice"``).
+    :param kind: Target family (``"additive"``, ``"teacher_relu"``,
+        ``"teacher_elu"``, or ``"lattice"``).
     :param c: Complexity knob passed through to :func:`synth_monotone`.
     :param n_trials: Optuna trial budget per arm.
     :param search_seeds: Seeds-per-fold used inside the search objective.
@@ -108,7 +109,7 @@ def main() -> None:
     import argparse
 
     ap = argparse.ArgumentParser(description="monotone depth probe")
-    ap.add_argument("--kinds", default="additive,teacher,lattice")
+    ap.add_argument("--kinds", default="additive,teacher_relu,teacher_elu,lattice")
     ap.add_argument("--cs", default="1,2,4,8")
     ap.add_argument("--n-trials", type=int, default=15)
     ap.add_argument("--search-seeds", type=int, default=2)

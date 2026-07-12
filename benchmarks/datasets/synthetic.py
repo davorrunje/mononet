@@ -1,12 +1,14 @@
 """Synthetic monotone-regression targets with a complexity knob (depth probe).
 
 Every target is non-decreasing in every input on ``[0,1]^d`` (asserted
-numerically at generation time). Three families: ``additive`` (control — a
+numerically at generation time). Four families: ``additive`` (control — a
 sum of per-feature non-negative-weighted ReLU ramps, monotone by
-construction), ``teacher`` (a seeded monotone MLP of depth ``c`` —
-non-negative weights + a monotone activation, so the composite is monotone),
-``lattice`` (nested element-wise max/min of monotone linear terms, nesting
-depth ``c`` — piecewise complexity without oscillation).
+construction), ``teacher_relu`` / ``teacher_elu`` (a seeded monotone
+equal-width residual MLP of depth ``c`` — non-negative weights, a
+non-negative residual skip, and a monotone activation (ReLU or ELU
+respectively), so the composite is monotone), ``lattice`` (nested
+element-wise max/min of monotone linear terms, nesting depth ``c`` —
+piecewise complexity without oscillation).
 """
 
 from __future__ import annotations
@@ -21,13 +23,23 @@ from benchmarks._common.bundle import DatasetBundle
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-_Kind = Literal["additive", "teacher", "lattice"]
+_Kind = Literal["additive", "teacher_relu", "teacher_elu", "lattice"]
 Array = npt.NDArray[np.floating]
 
+_TEACHER_WIDTH = 8
 
-def _softplus(z: Array) -> Array:
-    """Elementwise softplus, a smooth monotone-increasing activation."""
-    return np.logaddexp(0.0, z)
+
+def _relu(z: Array) -> Array:
+    """Elementwise ReLU, a sharp piecewise-linear monotone-increasing activation."""
+    return np.maximum(0.0, z)
+
+
+def _elu(z: Array) -> Array:
+    """Elementwise ELU (alpha=1), a smooth monotone-increasing activation."""
+    # np.where evaluates both branches eagerly, so clip the expm1 argument to
+    # <= 0 to avoid a spurious overflow warning on the (discarded) branch
+    # where z is large and positive.
+    return np.where(z > 0, z, np.expm1(np.minimum(z, 0.0)))
 
 
 def _additive(d: int, seed: int) -> Callable[[Array], Array]:
@@ -55,28 +67,44 @@ def _additive(d: int, seed: int) -> Callable[[Array], Array]:
     return f
 
 
-def _teacher(d: int, depth: int, seed: int) -> Callable[[Array], Array]:
-    """Build a seeded monotone MLP of depth ``depth``.
+def _teacher(
+    d: int, depth: int, seed: int, act: Callable[[Array], Array]
+) -> Callable[[Array], Array]:
+    """Build a seeded monotone equal-width residual MLP of depth ``depth``.
 
-    Non-negative weights ensure each layer is monotone in its input, and
-    softplus is a monotone-increasing activation, so the composite is
-    monotone non-decreasing in ``x``.
+    Input projection ``h = X @ W_in`` (``W_in >= 0``) lifts to width
+    :data:`_TEACHER_WIDTH`. Each of ``depth`` hidden layers computes ``h =
+    act(h @ M_l + b_l) + h @ S_l``, where ``M_l`` and the residual skip
+    ``S_l`` are elementwise non-negative (``b_l`` is free) and ``act`` is a
+    monotone-increasing activation. The non-negative skip ``S_l`` guarantees
+    every unit keeps a strictly positive gradient path to the input
+    regardless of ``act``, so depth cannot collapse the target into a
+    near-constant function — a real test of whether depth adds usable
+    complexity. Output ``y = h @ W_out`` (``W_out >= 0``).
+
+    Monotone because ``X in [0,1]^d`` is non-negative, every weight matrix is
+    non-negative, ``act`` is monotone-increasing, and the residual skip is
+    non-negative, so every layer (and the output) is non-decreasing in ``X``.
     """
     rng = np.random.default_rng(seed)
-    widths = [d] + [8] * max(1, depth) + [1]
-    ws = [
-        rng.uniform(0.0, 1.0, size=(widths[i], widths[i + 1]))
-        for i in range(len(widths) - 1)
+    w_in = rng.uniform(0.0, 1.0, size=(d, _TEACHER_WIDTH))
+    ms = [
+        rng.uniform(0.0, 1.0, size=(_TEACHER_WIDTH, _TEACHER_WIDTH))
+        for _ in range(depth)
     ]
-    bs = [rng.uniform(-0.5, 0.5, size=widths[i + 1]) for i in range(len(widths) - 1)]
+    ss = [
+        rng.uniform(0.0, 1.0, size=(_TEACHER_WIDTH, _TEACHER_WIDTH))
+        for _ in range(depth)
+    ]
+    bs = [rng.uniform(-0.5, 0.5, size=_TEACHER_WIDTH) for _ in range(depth)]
+    w_out = rng.uniform(0.0, 1.0, size=(_TEACHER_WIDTH, 1))
 
     def f(x: Array) -> Array:
-        h = x
-        for i, (w, bnd) in enumerate(zip(ws, bs, strict=True)):
-            h = h @ w + bnd
-            if i < len(ws) - 1:
-                h = _softplus(h)
-        return h[:, 0]
+        h = x @ w_in
+        for m, s, bnd in zip(ms, ss, bs, strict=True):
+            h = act(h @ m + bnd) + h @ s
+        y = h @ w_out
+        return np.asarray(y[:, 0])
 
     return f
 
@@ -110,8 +138,10 @@ def _target_fn(kind: _Kind, *, c: int, d: int, seed: int) -> Callable[[Array], A
     """Dispatch to the target-family builder named by ``kind``."""
     if kind == "additive":
         return _additive(d, seed)
-    if kind == "teacher":
-        return _teacher(d, c, seed)
+    if kind == "teacher_relu":
+        return _teacher(d, c, seed, _relu)
+    if kind == "teacher_elu":
+        return _teacher(d, c, seed, _elu)
     if kind == "lattice":
         return _lattice(d, c, seed)
     raise ValueError(f"unknown kind {kind!r}")

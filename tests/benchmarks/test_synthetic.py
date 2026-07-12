@@ -9,9 +9,9 @@ import pytest
 from benchmarks.datasets.synthetic import synth_monotone
 
 
-@pytest.mark.parametrize("kind", ["additive", "teacher", "lattice"])
+@pytest.mark.parametrize("kind", ["additive", "teacher_relu", "teacher_elu", "lattice"])
 def test_synth_is_monotone_and_shaped(
-    kind: Literal["additive", "teacher", "lattice"],
+    kind: Literal["additive", "teacher_relu", "teacher_elu", "lattice"],
 ) -> None:
     b = synth_monotone(kind, c=4, d=6, n_train=500, n_test=200, seed=0)
     assert b.task == "regression"
@@ -34,7 +34,9 @@ def test_synth_is_monotone_and_shaped(
 
 
 def test_synth_deterministic_per_seed() -> None:
-    a = synth_monotone("teacher", c=4, seed=0)
-    b = synth_monotone("teacher", c=4, seed=0)
+    a = synth_monotone("teacher_relu", c=4, seed=0)
+    b = synth_monotone("teacher_relu", c=4, seed=0)
     assert np.array_equal(a.y_train, b.y_train)
-    assert not np.array_equal(a.y_train, synth_monotone("teacher", c=4, seed=1).y_train)
+    assert not np.array_equal(
+        a.y_train, synth_monotone("teacher_relu", c=4, seed=1).y_train
+    )
