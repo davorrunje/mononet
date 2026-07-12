@@ -55,18 +55,31 @@ def _predict(model: object, coords: Array, backend: str) -> Array:
 def _train(
     problem: object, model: object, data: TrainingData, cfg: RunConfig
 ) -> object:
-    weights = LossWeights(
-        residual=cfg.residual_weight,
-        ic=cfg.ic_weight,
-        bc=cfg.bc_weight,
-        mono=cfg.soft_penalty if cfg.method == "soft" else 0.0,
-    )
+    mono = cfg.soft_penalty if cfg.method == "soft" else 0.0
+    if cfg.tier == "inverse":
+        # Inverse: fit sparse observations + PDE residual, no IC/BC.
+        weights = LossWeights(
+            residual=cfg.residual_weight,
+            ic=0.0,
+            bc=0.0,
+            data=cfg.data_weight,
+            mono=mono,
+        )
+    else:
+        weights = LossWeights(
+            residual=cfg.residual_weight,
+            ic=cfg.ic_weight,
+            bc=cfg.bc_weight,
+            data=0.0,
+            mono=mono,
+        )
     sign_x = int(problem.admissibility().mask[0])  # type: ignore[attr-defined]
     kwargs: dict[str, Any] = {
         "weights": weights,
         "sign_x": sign_x,
         "lr": cfg.lr,
         "steps": cfg.steps,
+        "grad_clip": cfg.grad_clip,
     }
     if cfg.backend == "torch":
         from applications.pinn.training import torch_trainer
@@ -89,18 +102,33 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
     domain = problem.domain
     model = build(problem, cfg.model, cfg.method, cfg.backend)
 
+    x_values, t_values = sampling.eval_grid(domain, cfg.eval_nx, cfg.eval_nt)
     collocation = sampling.collocation(domain, cfg.n_collocation, seed=cfg.seed)
-    ic_pts = sampling.initial_points(domain, cfg.n_ic, seed=cfg.seed + 1)
-    ic_vals = problem.initial(ic_pts[:, 0])
-    bc_pts = sampling.boundary_points(domain, cfg.n_bc, seed=cfg.seed + 2)
-    bc_vals = _ground_truth(problem, bc_pts[:, 0], bc_pts[:, 1])
-    data = TrainingData(
-        collocation=collocation, ic=(ic_pts, ic_vals), bc=(bc_pts, bc_vals)
-    )
+    if cfg.tier == "inverse":
+        # Reconstruct from sparse noisy observations of the reference field.
+        ref_field = _ground_truth(
+            problem, *(a.ravel() for a in np.meshgrid(x_values, t_values))
+        ).reshape(cfg.eval_nt, cfg.eval_nx)
+        obs_coords, obs_vals = sampling.observations(
+            ref_field,
+            x_values,
+            t_values,
+            n_obs=cfg.n_obs,
+            noise_std=cfg.noise_std,
+            seed=cfg.seed + 3,
+        )
+        data = TrainingData(collocation=collocation, obs=(obs_coords, obs_vals))
+    else:
+        ic_pts = sampling.initial_points(domain, cfg.n_ic, seed=cfg.seed + 1)
+        ic_vals = problem.initial(ic_pts[:, 0])  # type: ignore[attr-defined]
+        bc_pts = sampling.boundary_points(domain, cfg.n_bc, seed=cfg.seed + 2)
+        bc_vals = _ground_truth(problem, bc_pts[:, 0], bc_pts[:, 1])
+        data = TrainingData(
+            collocation=collocation, ic=(ic_pts, ic_vals), bc=(bc_pts, bc_vals)
+        )
 
     trained = _train(problem, model, data, cfg)
 
-    x_values, t_values = sampling.eval_grid(domain, cfg.eval_nx, cfg.eval_nt)
     grid_x, grid_t = np.meshgrid(x_values, t_values)
     coords = np.column_stack([grid_x.ravel(), grid_t.ravel()])
     pred = _predict(trained, coords, cfg.backend).reshape(cfg.eval_nt, cfg.eval_nx)

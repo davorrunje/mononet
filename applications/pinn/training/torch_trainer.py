@@ -33,6 +33,7 @@ def train(
     sign_x: int,
     lr: float = 1e-3,
     steps: int = 200,
+    grad_clip: float = 0.0,
 ) -> tuple[nn.Module, list[float]]:
     """Train ``model`` with Adam on the PINN loss; return it and the loss history.
 
@@ -43,6 +44,8 @@ def train(
     :param sign_x: Desired monotonicity sign in ``x`` (for the soft penalty).
     :param lr: Adam learning rate.
     :param steps: Number of optimisation steps.
+    :param grad_clip: Global-norm gradient clip; ``0`` disables. Mirrors the JAX
+        trainer; stabilises the constrained-field residual.
     :returns: ``(trained_model, loss_history)``.
     """
     xc = _col(data.collocation[:, 0]).requires_grad_(True)
@@ -71,6 +74,8 @@ def train(
         for cx, ct, cv, w in supervised:
             loss = loss + w * (model(cx, ct) - cv).pow(2).mean()
         loss.backward()
+        if grad_clip > 0.0:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
         optimizer.step()
         history.append(float(loss.detach()))
 

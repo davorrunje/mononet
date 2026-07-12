@@ -29,6 +29,7 @@ def train(
     sign_x: int,
     lr: float = 1e-3,
     steps: int = 200,
+    grad_clip: float = 0.0,
 ) -> tuple[nnx.Module, list[float]]:
     """Train ``model`` with optax Adam on the PINN loss; return it and the history.
 
@@ -39,6 +40,9 @@ def train(
     :param sign_x: Desired monotonicity sign in ``x`` (for the soft penalty).
     :param lr: Adam learning rate.
     :param steps: Number of optimisation steps.
+    :param grad_clip: Global-norm gradient clip; ``0`` disables. Stabilises the
+        constrained-field residual, whose ``flux'(u)·u_x`` term can otherwise run
+        away.
     :returns: ``(trained_model, loss_history)``.
     """
     graphdef, params, nontrain = nnx.split(model, nnx.Param, ...)  # type: ignore[misc]
@@ -76,7 +80,11 @@ def train(
             loss += term_weight[name] * jnp.mean((pred - values) ** 2)
         return loss
 
-    optimizer = optax.adam(lr)
+    optimizer = (
+        optax.chain(optax.clip_by_global_norm(grad_clip), optax.adam(lr))
+        if grad_clip > 0.0
+        else optax.adam(lr)
+    )
     opt_state = optimizer.init(params)
 
     @jax.jit

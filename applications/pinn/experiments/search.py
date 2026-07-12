@@ -28,18 +28,36 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
 def _config_from_trial(trial: optuna.Trial, base: RunConfig) -> RunConfig:
-    """Build a RunConfig from a trial's suggested hyperparameters."""
+    """Build a RunConfig from a trial's suggested hyperparameters.
+
+    Shared space across methods: ``lr``, ``width``, ``residual_weight`` (the knob
+    implicated in shock-smearing / residual divergence), and a data-term weight
+    that depends on the tier (``ic_weight`` forward, ``data_weight`` inverse). The
+    ``soft`` method additionally searches its penalty weight.
+    """
     lr = trial.suggest_float("lr", 1e-4, 1e-2, log=True)
     width = trial.suggest_categorical("width", [16, 32, 64])
-    ic_weight = trial.suggest_float("ic_weight", 1.0, 100.0, log=True)
+    residual_weight = trial.suggest_float("residual_weight", 1e-2, 1e1, log=True)
     soft_penalty = (
         trial.suggest_float("soft_penalty", 1e-2, 1e1, log=True)
         if base.method == "soft"
         else base.soft_penalty
     )
+    if base.tier == "inverse":
+        data_weight = trial.suggest_float("data_weight", 1.0, 1e2, log=True)
+        return replace(
+            base,
+            lr=lr,
+            residual_weight=residual_weight,
+            data_weight=data_weight,
+            soft_penalty=soft_penalty,
+            model=replace(base.model, width=width),
+        )
+    ic_weight = trial.suggest_float("ic_weight", 1.0, 100.0, log=True)
     return replace(
         base,
         lr=lr,
+        residual_weight=residual_weight,
         ic_weight=ic_weight,
         soft_penalty=soft_penalty,
         model=replace(base.model, width=width),

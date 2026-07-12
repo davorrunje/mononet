@@ -52,3 +52,13 @@ class RunConfig:
     soft_penalty: float = 1.0
     eval_nx: int = 200
     eval_nt: int = 50
+    #: ``"forward"`` (IC/BC data) or ``"inverse"`` (sparse observations + data-fit).
+    tier: str = "forward"
+    #: Inverse tier: number of sparse observations drawn from the reference field.
+    n_obs: int = 80
+    #: Inverse tier: Gaussian noise std added to observations.
+    noise_std: float = 0.02
+    #: Inverse tier: weight on the observation data-fit term.
+    data_weight: float = 10.0
+    #: Optax global-norm gradient clip (stabilises the constrained-field residual).
+    grad_clip: float = 1.0

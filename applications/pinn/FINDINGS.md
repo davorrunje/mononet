@@ -3,6 +3,28 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — BREAKTHROUGH: gradient clipping fixes the inverse divergence
+
+The inverse divergence was a gradient-scaling issue. Added **global-norm gradient
+clipping** to the trainers (`grad_clip`, optax `clip_by_global_norm`), extended
+`run_one` + `search.py` to the **inverse tier** and added **`residual_weight`**
+(and `data_weight`) to the search space.
+
+Inverse `hard_monotone` on `lwr_riemann` (4000 steps, lr 5e-3, res 1, data 10):
+
+| grad_clip | L1 | L2 | viol | overshoot |
+|---|---|---|---|---|
+| 0.0 | 34.6 | 2.87 | 0 | 0.53 |
+| **1.0** | **4.55** | **0.61** | **0** | **0.05** |
+
+With clipping, `hard_monotone` reconstructs the traffic field **competitively with
+vanilla (L1 3.85) / soft (3.46)** — and is the **only oscillation-free, admissible
+one** (viol 0, overshoot 0.05). This is the regime the thesis targets, and the
+constraint now pays off. Next: the equal-budget **inverse** Optuna search across
+all methods to confirm fairly.
+
+---
+
 ## 2026-07-12 — Optuna HP search (forward tier): helps, gap remains
 
 First actual HP search (all prior runs were hand-picked). Equal-budget Optuna,
