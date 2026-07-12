@@ -3,6 +3,34 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — CORRECTION (supersedes conclusions below)
+
+**mononet is NOT the limitation.** Per the author + the Lean UAP proof
+(<https://davorrunje.github.io/neural-network-proofs/>), mononet approximates the
+Heaviside/step function and is a universal approximator of monotone functions
+with ~4 layers. Therefore:
+
+- The "bare mononet can't sharpen a step" result below is an artefact of a
+  **broken ad-hoc test harness** (the tell: softplus and elu gave *byte-identical*
+  MSE/slope — the activation wasn't engaging), **not** a mononet property.
+  **Retracted.**
+- What remains genuinely observed (via the real `run.py`/`jax_trainer` pipeline):
+  `hard_monotone` fits `burgers_riemann` far worse than `vanilla` and renders a
+  near-linear ramp. Since mononet *can* represent the target, this is a
+  **usage/setup bug in the PINN app or my measurement**, to be found — leading
+  candidates: **unnormalised inputs** (raw `x∈[-2,3]`, `t∈[0,1.5]` fed straight to
+  the `absolute`-mode stack; the repo's benchmarks standardise inputs), the
+  `HardMonoField` wiring, or the loss/metric scaling.
+- **Next step (disciplined):** reproduce monotone fitting through a *known-good*
+  path (repo benchmark trainer / a documented example that fits a monotone target)
+  and compare against the PINN app's usage — input scaling first. Do **not** draw
+  architecture conclusions from bespoke harnesses again.
+
+The section below is kept for the record but its mononet-implicating conclusions
+are superseded by this correction.
+
+---
+
 ## 2026-07-12 — Rediscovered: hard-monotone (MonoResidual) underfits the shock
 
 **Setup.** `burgers_riemann` (forward tier, exact ground truth), JAX/GPU, seed 0,
