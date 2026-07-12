@@ -42,22 +42,21 @@ Claude session dir, doing `rm -rf` + re-link on every start. Two clones ⇒ the
 last container to start wins, and both containers bind-mount that one path — so
 this project's transcripts/memory can still cross concurrent clones.
 
-**Proposed fix (needs rebuild testing; do not ship untested — the file warns
-that a missing `SESSION_LINK` blocks container start):**
-- Pass a per-clone key into `host-init.sh`, e.g. `initializeCommand`:
-  `bash .devcontainer/shared/host-init.sh ${devcontainerId}`.
-- In `host-init.sh`, use `SESSION_LINK=${SECRETS_DIR}/claude-session-${1}` (per
-  clone) with the same safe symlink/fallback logic.
-- Update each flavor's bind source to
-  `…/claude-session-${devcontainerId}` so host and container agree on the key.
-- **Open question:** confirm `${devcontainerId}` is substituted in
-  `initializeCommand` (host-side, pre-create) on the target devcontainer CLI /
-  editor; if not, derive the key from the host workspace path slug in
-  `host-init.sh` and expose it to the mount another way.
+**Fix (implemented — second follow-up branch):**
+- `initializeCommand` now passes the key: `bash .devcontainer/shared/host-init.sh ${devcontainerId}`.
+- `host-init.sh` keys the session dir by it:
+  `SESSION_LINK=${SECRETS_DIR}/claude-session${devcontainer_id:+-${devcontainer_id}}`
+  (same safe symlink-to-host-session / fallback-dir logic).
+- Each flavor's bind source is `…/claude-session-${devcontainerId}`.
+- **Resolved open question:** `${devcontainerId}` *is* substituted in
+  `initializeCommand`, `mounts`, and `containerEnv`/`remoteEnv` per the Dev
+  Container spec (containers.dev json reference), so host-init (via the arg) and
+  the mount source agree on the same key → the bound session dir always exists,
+  no container-start failure.
 
 **Acceptance:** rebuild two clones concurrently; verify each has its own
 `.venv`, its own `~/.claude` volume, and its own project session dir, with no
-cross-writes.
+cross-writes. (Takes effect on rebuild.)
 
 ## Related
 
