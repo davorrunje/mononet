@@ -3,6 +3,40 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — Applied fixes + remaining gap (latest)
+
+**Done:** (1) `HardMonoField` rebuilt from a plain `MonoLinear` stack (the
+`MonoResidual` gate-collapse is a separate mononet-core follow-up); (2) **input
+normalization to `[-1,1]` added to all JAX fields** (inside the model, so the PINN
+residual's autodiff chains through it). mononet's `absolute` init assumes
+~unit-scale inputs — recorded as a docs follow-up
+(`2026-07-12-mononet-input-normalization-docs-idea.md`).
+
+**Head-to-head (normalized, 10k, lr1e-2), stationary step, direct fit:** plain
+`MonoLinear` mean|err| **0.0195** vs `MonoResidual` **0.2157** — confirms the
+collapse is `MonoResidual`-specific, not normalization/training. Hypothesis "same
+problem" **refuted**.
+
+**PINN comparison, `burgers_riemann`, 8000 steps, lr 5e-3 (normalized):**
+
+| method | L1 | L2 | viol | overshoot |
+|---|---|---|---|---|
+| vanilla | 3.96 | 0.94 | 0.20 | 0.12 |
+| soft | 4.75 | 1.29 | 0.05 | 0.015 |
+| weight_clip | 49.6 | 4.20 | 0 | 0.28 |
+| **hard_monotone** | 52.9 | 4.20 | 0 | 0.21 |
+
+Normalization + training **fixed the baselines** (vanilla/soft L1 ~10→~4) but
+**`hard_monotone` is still stuck (~53)** — yet *direct supervised fit* of the same
+normalized field reaches mean|err| 0.02. **So the remaining `hard_monotone` gap is
+PINN training** (residual + soft IC/BC), NOT representation and NOT the field: the
+constrained field *can* fit the solution, but the PINN loss/optimisation doesn't
+drive it there. Next: diagnose the PINN-training gap for the constrained field
+(loss weighting, IC/BC handling, moving-front residual) — the constraint likely
+interacts badly with the current soft-IC/BC objective.
+
+---
+
 ## 2026-07-12 — VERIFIED ROOT CAUSE + fix (supersedes everything below)
 
 Established the correct baseline first (per author guidance): a **4-layer

@@ -16,12 +16,33 @@ import numpy as np
 from flax import nnx
 
 from mononet.core.types import ActivationSpec, MonotonicityMask
-from mononet.jax import MonoInput, MonoLinear, MonoResidual
+from mononet.jax import MonoInput, MonoLinear
 
 if TYPE_CHECKING:
     from applications.pinn.models.protocol import Method, ModelConfig
 
 _ACTS = {"tanh": jnp.tanh, "elu": jax.nn.elu, "softplus": jax.nn.softplus}
+
+Bounds = tuple[float, float, float, float]
+
+
+def _bounds(domain: tuple[tuple[float, float], tuple[float, float]]) -> Bounds:
+    """Flatten a ``((x0,x1),(t0,t1))`` domain into ``(x0,x1,t0,t1)`` floats."""
+    (x0, x1), (t0, t1) = domain
+    return (float(x0), float(x1), float(t0), float(t1))
+
+
+def _normalize(
+    x: jax.Array, t: jax.Array, bounds: Bounds
+) -> tuple[jax.Array, jax.Array]:
+    """Affine-map ``x``, ``t`` from the problem domain to ``[-1, 1]``.
+
+    Done *inside* the model so it is a function of the raw ``(x, t)``; autodiff for
+    the PINN residual (``u_x``, ``u_t``) chains through this transparently. The map
+    is increasing in ``x``, so monotonicity direction is preserved.
+    """
+    x0, x1, t0, t1 = bounds
+    return 2.0 * (x - x0) / (x1 - x0) - 1.0, 2.0 * (t - t0) / (t1 - t0) - 1.0
 
 
 class _PlainMLP(nnx.Module):
@@ -59,20 +80,25 @@ class _ClampedLinear(nnx.Module):
 class VanillaMLP(nnx.Module):
     """Unconstrained MLP over ``[x, t]`` (also the ``soft`` architecture)."""
 
-    def __init__(self, cfg: ModelConfig, *, rngs: nnx.Rngs) -> None:
+    def __init__(self, cfg: ModelConfig, bounds: Bounds, *, rngs: nnx.Rngs) -> None:
         """Build the unconstrained MLP."""
+        self.bounds = bounds
         self.net = _PlainMLP(2, cfg.width, 1, cfg.plain_activation, rngs=rngs)
 
     def __call__(self, x: jax.Array, t: jax.Array) -> jax.Array:
         """Return ``u(x, t)``."""
+        x, t = _normalize(x, t, self.bounds)
         return self.net(jnp.concatenate([x, t], axis=-1))
 
 
 class WeightClipMono(nnx.Module):
     """Monotone-in-``x`` net via non-negative weights (inexpressive baseline)."""
 
-    def __init__(self, cfg: ModelConfig, sign_x: int, *, rngs: nnx.Rngs) -> None:
+    def __init__(
+        self, cfg: ModelConfig, sign_x: int, bounds: Bounds, *, rngs: nnx.Rngs
+    ) -> None:
         """Build the clamped-weight monotone stack and the ``t`` embedding."""
+        self.bounds = bounds
         self.sign_x = float(sign_x)
         self.t_embed = _PlainMLP(
             1, cfg.t_embed_width, cfg.t_embed_dim, cfg.plain_activation, rngs=rngs
@@ -84,6 +110,7 @@ class WeightClipMono(nnx.Module):
 
     def __call__(self, x: jax.Array, t: jax.Array) -> jax.Array:
         """Return ``u(x, t)`` (monotone in ``x`` via non-negative weights)."""
+        x, t = _normalize(x, t, self.bounds)
         z = jnp.concatenate([self.sign_x * x, self.t_embed(t)], axis=-1)
         z = jax.nn.softplus(self.c1(z))
         z = jax.nn.softplus(self.c2(z))
@@ -93,8 +120,11 @@ class WeightClipMono(nnx.Module):
 class HardMonoField(nnx.Module):
     """Expressive hard-monotone-in-``x`` field built from ``mononet`` layers."""
 
-    def __init__(self, cfg: ModelConfig, sign_x: int, *, rngs: nnx.Rngs) -> None:
+    def __init__(
+        self, cfg: ModelConfig, sign_x: int, bounds: Bounds, *, rngs: nnx.Rngs
+    ) -> None:
         """Build the mononet monotone stack and the unconstrained ``t`` embedding."""
+        self.bounds = bounds
         self.t_embed = _PlainMLP(
             1, cfg.t_embed_width, cfg.t_embed_dim, cfg.plain_activation, rngs=rngs
         )
@@ -104,21 +134,22 @@ class HardMonoField(nnx.Module):
         )
         self.mono_input = MonoInput(mask)
         act = ActivationSpec(cfg.mono_activation)  # type: ignore[arg-type]
-        self.n_blocks = cfg.n_blocks
-        # nnx tracks Module-valued attributes; a plain list is not a pytree node,
-        # so register each block under its own attribute name.
-        self.block0 = MonoResidual(
-            in_dim,
-            cfg.width,
-            mode=cfg.mode,
-            activation=act,
-            rngs=rngs,  # type: ignore[arg-type]
-        )
-        for i in range(1, cfg.n_blocks):
+        # Plain MonoLinear stack (NOT MonoResidual): the dual-gated residual block
+        # trains to a near-linear collapse in this sharp-feature regime (see
+        # applications/pinn/FINDINGS.md and the MonoResidual gate-collapse
+        # follow-up). A plain absolute-mode MonoLinear stack fits sharp monotone
+        # targets (verified on the 1-D Heaviside; softplus keeps u differentiable
+        # for the PINN residual). ``n_blocks`` hidden layers + an identity head
+        # give ~4 layers total at the default.
+        self.n_layers = max(2, cfg.n_blocks + 1)
+        self.layer0 = MonoLinear(
+            in_dim, cfg.width, mode=cfg.mode, activation=act, rngs=rngs
+        )  # type: ignore[arg-type]
+        for i in range(1, self.n_layers):
             setattr(
                 self,
-                f"block{i}",
-                MonoResidual(
+                f"layer{i}",
+                MonoLinear(
                     cfg.width, cfg.width, mode=cfg.mode, activation=act, rngs=rngs
                 ),  # type: ignore[arg-type]
             )
@@ -128,10 +159,11 @@ class HardMonoField(nnx.Module):
 
     def __call__(self, x: jax.Array, t: jax.Array) -> jax.Array:
         """Return ``u(x, t)`` (monotone in ``x`` by construction)."""
+        x, t = _normalize(x, t, self.bounds)
         z = jnp.concatenate([x, self.t_embed(t)], axis=-1)
         z = self.mono_input(z)
-        for i in range(self.n_blocks):
-            z = getattr(self, f"block{i}")(z)
+        for i in range(self.n_layers):
+            z = getattr(self, f"layer{i}")(z)
         return self.head(z)
 
 
@@ -146,10 +178,11 @@ def build_jax(problem: object, cfg: ModelConfig, method: Method) -> nnx.Module:
     """
     rngs = nnx.Rngs(cfg.seed)
     sign_x = int(problem.admissibility().mask[0])  # type: ignore[attr-defined]
+    bounds = _bounds(problem.domain)  # type: ignore[attr-defined]
     if method in ("vanilla", "soft"):
-        return VanillaMLP(cfg, rngs=rngs)
+        return VanillaMLP(cfg, bounds, rngs=rngs)
     if method == "weight_clip":
-        return WeightClipMono(cfg, sign_x, rngs=rngs)
+        return WeightClipMono(cfg, sign_x, bounds, rngs=rngs)
     if method == "hard_monotone":
-        return HardMonoField(cfg, sign_x, rngs=rngs)
+        return HardMonoField(cfg, sign_x, bounds, rngs=rngs)
     raise ValueError(f"unknown method {method!r}")
