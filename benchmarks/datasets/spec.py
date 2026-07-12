@@ -82,4 +82,11 @@ DATASETS_SPEC: dict[str, DatasetSpec] = {
             "PAY_AMT6",
         ),
     ),
+    "polish": DatasetSpec(
+        "polish",
+        "binary_classification",
+        "ground_truth",
+        ("Attr2",),
+        ("Attr1", "Attr4", "Attr17", "Attr23", "Attr35"),
+    ),
 }

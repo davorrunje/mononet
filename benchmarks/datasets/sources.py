@@ -47,6 +47,13 @@ SOURCES: dict[str, DataSource] = {
         url="https://archive.ics.uci.edu/static/public/350/default+of+credit+card+clients.zip",
         prep_hint="committed via LFS; regenerate with prepare/taiwan.py",
     ),
+    "polish": DataSource(
+        name="polish",
+        hosting="lfs",
+        license="CC-BY-4.0 (UCI)",
+        url="https://archive.ics.uci.edu/static/public/365/polish+companies+bankruptcy+data.zip",
+        prep_hint="committed via LFS; regenerate with prepare/polish.py",
+    ),
 }
 
 
