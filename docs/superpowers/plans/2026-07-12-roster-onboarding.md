@@ -24,7 +24,7 @@ Mirror `benchmarks/datasets/prepare/adult.py`:
 1. `prepare_<name>(raw: pd.DataFrame) -> tuple[train, test]` — recode target to `ground_truth` (0/1); one-hot all non-monotone categoricals on the FULL frame before splitting (column alignment); keep monotone ordinals raw & numeric; return numeric train/test.
 2. Add `SOURCES["<name>"] = DataSource(...)` (hosting `lfs`, real URL + license).
 3. Add the `DatasetSpec` to `DATASETS_SPEC`.
-4. Add a `_BUDGET` entry `(25, range(10), 1)` (1-fold, screen uses run_ladder defaults anyway; the entry is for future standard-roster use).
+4. Add a `_BUDGET` entry: `(25, range(10), 5)` for the small adult-scale datasets (taiwan/polish/german); `(25, range(10), 1)` for the large LC (like loan/blog). Only used by the future standard-roster path; the screen uses run_ladder defaults.
 5. TDD test on a SYNTHETIC raw sample (no network): asserts `ground_truth` 0/1, all-numeric output, monotone columns present, split sizes/no train/test overlap, class ratio preserved.
 6. Materialize the real data (download → prep → `.csv.gz`) and commit via LFS; `git lfs ls-files | grep <name>` must show pointers.
 
