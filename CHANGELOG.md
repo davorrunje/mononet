@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Public package skeleton with `mononet.core`, `mononet.torch`,
-  `mononet.jax`, `mononet.keras` (stub layers raising
-  `NotImplementedError` — algorithm implementation in follow-up plan).
-- `MonotonicityMask`, `ActivationSpec`, `InitSpec`, `MonoLinearConfig`
+  `mononet.jax`, `mononet.keras` layers implementing the constrained
+  monotonic construction.
+- `MonotonicityMask`, `ActivationSpec`, `InitSpec`, `MonoConfig`
   framework-agnostic value objects in `mononet.core`.
 - NumPy reference function signatures pinned by tests.
 - Cross-backend equivalence test directory (`tests/equivalence/`)
@@ -21,9 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI matrix: 3 Python versions × 3 backends on Ubuntu + Python 3.13 on
   macOS and Windows.
 - PyPI trusted publishing (OIDC) workflow.
-- MkDocs site rewrite with guides, concepts, benchmarks, and about
-  sections; `mike` versioning; `mkdocs-jupyter` for benchmark notebooks
-  (execute: false — outputs committed).
+- Sphinx (myst-nb) site rewrite with guides, concepts, benchmarks, and
+  about sections; benchmark notebooks committed with their outputs.
 - `NOTICE.md` with patent reservation + commercial-license contact.
 - `tools/execute-benchmarks.sh` for manual notebook re-runs before
   releases.
@@ -75,9 +74,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic package structure with Python 3.11+ support
 - Development toolchain with uv, pytest, and pre-commit hooks
 - Comprehensive linting and static analysis setup
-- Documentation framework with MkDocs Material
+- Documentation framework with Sphinx
 - CI/CD pipeline with GitHub Actions
 - Automated version management and publishing
 
-[Unreleased]: https://github.com/davorrunje/mononet/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/davorrunje/mononet/releases/tag/v0.1.0
+[Unreleased]: https://github.com/davorrunje/mononet/commits/main
+[0.1.0]: https://github.com/davorrunje/mononet/commits/main

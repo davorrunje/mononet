@@ -20,9 +20,9 @@ This project uses **[Dev Containers](https://code.visualstudio.com/docs/devconta
 * **[Docker](https://www.docker.com/)** installed.
 * An editor supporting Dev Containers, such as **[VS Code](https://code.visualstudio.com/)** with the Dev Containers extension (recommended).
 
-!!! note
-
-    The instructions provided here assume you are using **VS Code**. If you're using another editor, please consider contributing setup instructions specific to your editor.
+```{note}
+The instructions provided here assume you are using **VS Code**. If you're using another editor, please consider contributing setup instructions specific to your editor.
+```
 
 ### Setting Up Your Environment
 
