@@ -3,6 +3,32 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — Optuna HP search (forward tier): helps, gap remains
+
+First actual HP search (all prior runs were hand-picked). Equal-budget Optuna,
+`burgers_riemann` forward, 20 trials, 5000-step template:
+
+| method | best lr | width | ic_wt | L2 | L1 | viol |
+|---|---|---|---|---|---|---|
+| vanilla | 9.1e-3 | 16 | 1.7 | 1.02 | 6.03 | 0.23 |
+| soft | 5.1e-3 | 32 | 4.8 | 0.90 | 4.45 | 0.27 |
+| hard_monotone | 9.9e-3 | 16 | 43 | 2.78 | 25.9 | 0 |
+
+Tuning **helped** (`hard_monotone` L1 52→26) and did **not** diverge on the
+forward tier. But `hard_monotone` stays ~4–6× less accurate than vanilla/soft
+while being the only admissible model (viol 0). On the forward tier this is a
+genuine structure-vs-accuracy trade (and the forward tier is only a mechanism
+check).
+
+**Caveats on this search:** (1) `search.py` is **forward-only** (`run_one` builds
+IC/BC) — the **inverse/traffic flagship was not searched**; (2) the space is
+`lr`/`width`/`ic_weight` only — it does **not** tune `residual_weight` or `steps`,
+the knobs implicated in forward shock-smearing and the inverse divergence.
+**Next:** extend the search to the inverse tier and to `residual_weight` (and add
+stabilisation), then re-judge the flagship.
+
+---
+
 ## 2026-07-12 — Inverse/traffic: residual DESTABILISES the constrained field
 
 Ran the inverse flagship — reconstruct LWR density from 80 sparse noisy
