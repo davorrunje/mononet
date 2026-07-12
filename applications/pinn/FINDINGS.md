@@ -17,21 +17,28 @@ a genuine sharp step. mononet is a UA here, as expected (Lean proof).
 | plain `MonoLinear` × 4 | MSE 3.5e-4, slope 96 | MSE 3.0e-3, slope 17 ✅ |
 | `MonoResidual` × 2 + head (app-style) | MSE 6.25e-2, slope 0.75 | MSE 6.25e-2, slope 0.75 ❌ |
 
-The app's `MonoResidual`-based field **collapses to a near-linear map**
-(MSE 0.0625 — the *same* degenerate value the PINN app plateaued at; `relu` and
-`softplus` byte-identical ⇒ the block bypasses its activation). A plain
-`MonoLinear` stack does not.
+In training, the app's `MonoResidual`-based field **stays at a near-linear map**
+(MSE 0.0625 — the *same* value the PINN app plateaued at; `relu` and `softplus`
+byte-identical). A plain `MonoLinear` stack does not.
 
-**Conclusion:** the disappointing PINN result is **not** mononet, **not** the
-activation, and **not** PINN training — it is that `HardMonoField` is built from
-`MonoResidual` blocks, which degenerate to ~linear in this narrow/step-fitting
-regime. (MonoResidual works elsewhere — tabular benchmarks — so this is a
-regime/usage interaction, worth a separate look, but not a blocker.)
+**Interpretation (corrected — per author).** `MonoResidual` has **trainable
+gates** and can recover the plain `MonoLinear` path, so it is **at least as
+expressive** as `MonoLinear`. The failure is therefore **optimization /
+initialization**, not expressivity: the gates initialise in (and stay stuck in)
+the skip/near-linear regime and training doesn't drive them into the dense path.
+The `relu`≡`softplus` byte-identity is the signature — on the collapsed skip path
+the activation is inert. So mononet, the activation, and PINN training are all
+fine; the issue is the `MonoResidual` **gate optimisation** in this regime.
 
-**Fix:** rebuild `HardMonoField` (and the `weight_clip` baseline analogously) from
-a **plain `MonoLinear` stack** (~4 layers, `absolute`, `softplus` for smooth PINN
-derivatives), keeping the free-`t` embedding. Re-validate by direct fit to the
-Burgers solution, then re-run the method comparison.
+**Open fork (needs a decision):**
+1. **Diagnose/fix the gate optimisation** — inspect `MonoResidual` gate init
+   (`alpha_gate`/`beta_gate`) and why gradients don't move them here; make the
+   dense path active at init. Preserves the residual architecture the spec chose.
+2. **Pragmatic:** build `HardMonoField` from a plain `MonoLinear` stack (verified
+   to fit sharply with softplus) and revisit residual blocks later.
+
+Re-validate whichever path by direct fit to the Burgers solution, then re-run the
+method comparison.
 
 ---
 
