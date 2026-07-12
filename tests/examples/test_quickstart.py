@@ -7,6 +7,9 @@ import os
 
 import pytest
 
+# Keras defaults to the JAX backend across this suite; set before any keras import.
+os.environ.setdefault("KERAS_BACKEND", "jax")
+
 from tests.examples._loader import load_example
 
 
@@ -24,7 +27,6 @@ def test_quickstart_jax() -> None:
 
 
 def test_quickstart_keras() -> None:
-    os.environ.setdefault("KERAS_BACKEND", "jax")
     pytest.importorskip("keras")
     mod = load_example("quickstart_keras.py")
     assert tuple(mod.y.shape) == (8, 1)
