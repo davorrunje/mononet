@@ -88,3 +88,32 @@ def godunov(
             current += dt
         snapshots.append(u.copy())
     return np.asarray(snapshots)
+
+
+def interpolate(
+    field: Array,
+    x_values: Array,
+    t_values: Array,
+    x_query: Array,
+    t_query: Array,
+) -> Array:
+    """Bilinearly interpolate a reference ``field`` at scattered query points.
+
+    :param field: Field of shape ``(len(t_values), len(x_values))``.
+    :param x_values: Ascending spatial grid axis.
+    :param t_values: Ascending temporal grid axis.
+    :param x_query: Query x-coordinates.
+    :param t_query: Query t-coordinates (same shape as ``x_query``).
+    :returns: Interpolated values, shape of ``x_query``.
+    """
+    xq = np.asarray(x_query, dtype=float)
+    tq = np.asarray(t_query, dtype=float)
+    ix = np.clip(np.searchsorted(x_values, xq) - 1, 0, len(x_values) - 2)
+    it = np.clip(np.searchsorted(t_values, tq) - 1, 0, len(t_values) - 2)
+    x0, x1 = x_values[ix], x_values[ix + 1]
+    t0, t1 = t_values[it], t_values[it + 1]
+    wx = np.clip((xq - x0) / (x1 - x0), 0.0, 1.0)
+    wt = np.clip((tq - t0) / (t1 - t0), 0.0, 1.0)
+    top = field[it, ix] * (1 - wx) + field[it, ix + 1] * wx
+    bot = field[it + 1, ix] * (1 - wx) + field[it + 1, ix + 1] * wx
+    return top * (1 - wt) + bot * wt
