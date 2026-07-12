@@ -31,8 +31,7 @@
     "updateContentCommand": "bash .devcontainer/proofs/setup.sh",
     "initializeCommand": "bash .devcontainer/shared/host-init.sh",
     "mounts": [
-        "source=mononet-venv,target=/workspaces/mononet/.venv,type=volume",
-        "source=mononet-claude-config,target=/home/vscode/.claude,type=volume",
+        "source=mononet-claude-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
         "source=${localEnv:HOME}/.config/mononet-devcontainer/claude-session,target=/home/vscode/.claude/projects/-workspaces-mononet,type=bind",
         "source=${localEnv:HOME}/.config/mononet-devcontainer,target=/var/run/devcontainer-host-secrets,type=bind,readonly"
     ],
