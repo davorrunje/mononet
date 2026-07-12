@@ -4,7 +4,7 @@ hide-toc: false
 
 # mononet
 
-**Unconstrained monotonic neural networks** with first-class support for
+**Constrained monotonic neural networks** with first-class support for
 **PyTorch**, **JAX** (Flax NNX), and **Keras 3**.
 
 Reference implementation of:

@@ -1,0 +1,567 @@
+=== linkcheck (internal + external URLs) ===
+Running Sphinx v9.1.0
+loading translations [en]... done
+making output directory... done
+myst v5.1.0: MdParserConfig(commonmark_only=False, gfm_only=False, enable_extensions={'tasklist', 'substitution', 'linkify', 'amsmath', 'dollarmath', 'deflist', 'fieldlist', 'colon_fence'}, disable_syntax=[], all_links_external=False, links_external_new_tab=False, url_schemes=('http', 'https', 'mailto', 'ftp'), ref_domains=None, fence_as_directive=set(), number_code_blocks=[], title_to_header=False, heading_anchors=3, heading_slug_func=None, html_meta={}, footnote_sort=True, footnote_transition=True, words_per_minute=200, substitutions={}, linkify_fuzzy_links=True, dmath_allow_labels=True, dmath_allow_space=True, dmath_allow_digits=True, dmath_double_inline=False, update_mathjax=True, mathjax_classes='tex2jax_process|mathjax_process|math|output_area', enable_checkboxes=False, strikethrough_single_tilde=False, colon_fence_exact_match=False, suppress_warnings=[], highlight_code_blocks=True)
+myst-nb v1.4.0: NbParserConfig(custom_formats={}, metadata_key='mystnb', cell_metadata_key='mystnb', kernel_rgx_aliases={}, eval_name_regex='^[a-zA-Z_][a-zA-Z0-9_]*$', execution_mode='off', execution_cache_path='', execution_excludepatterns=(), execution_timeout=30, execution_in_temp=False, execution_allow_errors=False, execution_raise_on_error=False, execution_show_tb=False, merge_streams=False, render_plugin='default', remove_code_source=False, remove_code_outputs=False, scroll_outputs=False, code_prompt_show='Show code cell {type}', code_prompt_hide='Hide code cell {type}', number_source_lines=False, output_stderr='show', render_text_lexer='myst-ansi', render_error_lexer='ipythontb', render_image_options={}, render_figure_options={}, render_markdown_format='commonmark', output_folder='build', append_css=True, metadata_to_fm=False)
+Using jupyter-cache at: /workspaces/mononet/docs/_build/.jupyter_cache
+[Autodoc2] Analysing package...[  6%] mononet.__init__
+[Autodoc2] Analysing package...[ 12%] mononet.keras.__init__
+[Autodoc2] Analysing package...[ 19%] mononet.keras._kernels
+[Autodoc2] Analysing package...[ 25%] mononet.keras.layers
+[Autodoc2] Analysing package...[ 31%] mononet.core.config
+[Autodoc2] Analysing package...[ 38%] mononet.core.__init__
+[Autodoc2] Analysing package...[ 44%] mononet.core.types
+[Autodoc2] Analysing package...[ 50%] mononet.core.reference
+[Autodoc2] Analysing package...[ 56%] mononet.core.init
+[Autodoc2] Analysing package...[ 62%] mononet.core.numerics
+[Autodoc2] Analysing package...[ 69%] mononet.torch.__init__
+[Autodoc2] Analysing package...[ 75%] mononet.torch._kernels
+[Autodoc2] Analysing package...[ 81%] mononet.torch.layers
+[Autodoc2] Analysing package...[ 88%] mononet.jax.__init__
+[Autodoc2] Analysing package...[ 94%] mononet.jax._kernels
+[Autodoc2] Analysing package...[100%] mononet.jax.layers
+
+[Autodoc2] Determining files to write ...
+[Autodoc2] Writing modules...[  6%] mononet
+[Autodoc2] Writing modules...[ 12%] mononet.jax
+[Autodoc2] Writing modules...[ 19%] mononet.jax.layers
+[Autodoc2] Writing modules...[ 25%] mononet.jax._kernels
+[Autodoc2] Writing modules...[ 31%] mononet.torch
+[Autodoc2] Writing modules...[ 38%] mononet.torch.layers
+[Autodoc2] Writing modules...[ 44%] mononet.torch._kernels
+[Autodoc2] Writing modules...[ 50%] mononet.core
+[Autodoc2] Writing modules...[ 56%] mononet.core.numerics
+[Autodoc2] Writing modules...[ 62%] mononet.core.init
+[Autodoc2] Writing modules...[ 69%] mononet.core.reference
+[Autodoc2] Writing modules...[ 75%] mononet.core.types
+[Autodoc2] Writing modules...[ 81%] mononet.core.config
+[Autodoc2] Writing modules...[ 88%] mononet.keras
+[Autodoc2] Writing modules...[ 94%] mononet.keras.layers
+[Autodoc2] Writing modules...[100%] mononet.keras._kernels
+
+loading intersphinx inventory 'python' from https://docs.python.org/3/objects.inv ...
+loading intersphinx inventory 'torch' from https://docs.pytorch.org/docs/stable/objects.inv ...
+loading intersphinx inventory 'jax' from https://docs.jax.dev/en/latest/objects.inv ...
+loading intersphinx inventory 'numpy' from https://numpy.org/doc/stable/objects.inv ...
+building [mo]: targets for 0 po files that are out of date
+writing output...
+building [linkcheck]: targets for 48 source files that are out of date
+updating environment: [new config] 48 added, 0 changed, 0 removed
+reading sources... [  2%] about/changelog
+reading sources... [  4%] about/contributing
+reading sources... [  6%] about/index
+reading sources... [  8%] about/license
+reading sources... [ 10%] apidocs/mononet/mononet
+reading sources... [ 12%] apidocs/mononet/mononet.core
+reading sources... [ 15%] apidocs/mononet/mononet.core.config
+reading sources... [ 17%] apidocs/mononet/mononet.core.init
+reading sources... [ 19%] apidocs/mononet/mononet.core.numerics
+reading sources... [ 21%] apidocs/mononet/mononet.core.reference
+reading sources... [ 23%] apidocs/mononet/mononet.core.types
+reading sources... [ 25%] apidocs/mononet/mononet.jax
+reading sources... [ 27%] apidocs/mononet/mononet.jax._kernels
+reading sources... [ 29%] apidocs/mononet/mononet.jax.layers
+reading sources... [ 31%] apidocs/mononet/mononet.keras
+reading sources... [ 33%] apidocs/mononet/mononet.keras._kernels
+reading sources... [ 35%] apidocs/mononet/mononet.keras.layers
+reading sources... [ 38%] apidocs/mononet/mononet.torch
+reading sources... [ 40%] apidocs/mononet/mononet.torch._kernels
+reading sources... [ 42%] apidocs/mononet/mononet.torch.layers
+reading sources... [ 44%] benchmarks/00-overview
+reading sources... [ 46%] benchmarks/deep-init
+reading sources... [ 48%] benchmarks/deep-residual-accuracy
+reading sources... [ 50%] benchmarks/flavor-comparison
+reading sources... [ 52%] benchmarks/index
+reading sources... [ 54%] benchmarks/large-dataset-screen
+reading sources... [ 56%] benchmarks/loan-size-ladder
+reading sources... [ 58%] benchmarks/paper-reproduction/auto-mpg
+reading sources... [ 60%] benchmarks/paper-reproduction/blog-feedback
+reading sources... [ 62%] benchmarks/paper-reproduction/compas
+reading sources... [ 65%] benchmarks/paper-reproduction/heart-disease
+reading sources... [ 67%] benchmarks/paper-reproduction/index
+reading sources... [ 69%] benchmarks/paper-reproduction/loan-defaulter
+reading sources... [ 71%] benchmarks/paper-reproduction/tables
+reading sources... [ 73%] benchmarks/protocol
+reading sources... [ 75%] concepts/index
+reading sources... [ 77%] concepts/layers
+reading sources... [ 79%] concepts/monotonic-residual
+reading sources... [ 81%] concepts/monotonicity
+reading sources... [ 83%] concepts/proofs
+reading sources... [ 85%] guides/index
+reading sources... [ 88%] guides/jax
+reading sources... [ 90%] guides/keras
+reading sources... [ 92%] guides/pytorch
+reading sources... [ 94%] index
+reading sources... [ 96%] installation
+reading sources... [ 98%] reference
+reading sources... [100%] releasing
+
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... done
+preparing documents... done
+copying assets...
+copying assets: done
+writing output... [  2%] about/changelog
+writing output... [  4%] about/contributing
+writing output... [  6%] about/index
+writing output... [  8%] about/license
+writing output... [ 10%] apidocs/mononet/mononet
+writing output... [ 12%] apidocs/mononet/mononet.core
+writing output... [ 15%] apidocs/mononet/mononet.core.config
+writing output... [ 17%] apidocs/mononet/mononet.core.init
+writing output... [ 19%] apidocs/mononet/mononet.core.numerics
+writing output... [ 21%] apidocs/mononet/mononet.core.reference
+writing output... [ 23%] apidocs/mononet/mononet.core.types
+writing output... [ 25%] apidocs/mononet/mononet.jax
+writing output... [ 27%] apidocs/mononet/mononet.jax._kernels
+writing output... [ 29%] apidocs/mononet/mononet.jax.layers
+writing output... [ 31%] apidocs/mononet/mononet.keras
+writing output... [ 33%] apidocs/mononet/mononet.keras._kernels
+writing output... [ 35%] apidocs/mononet/mononet.keras.layers
+writing output... [ 38%] apidocs/mononet/mononet.torch
+writing output... [ 40%] apidocs/mononet/mononet.torch._kernels
+writing output... [ 42%] apidocs/mononet/mononet.torch.layers
+writing output... [ 44%] benchmarks/00-overview
+writing output... [ 46%] benchmarks/deep-init
+writing output... [ 48%] benchmarks/deep-residual-accuracy
+writing output... [ 50%] benchmarks/flavor-comparison
+writing output... [ 52%] benchmarks/index
+writing output... [ 54%] benchmarks/large-dataset-screen
+writing output... [ 56%] benchmarks/loan-size-ladder
+writing output... [ 58%] benchmarks/paper-reproduction/auto-mpg
+writing output... [ 60%] benchmarks/paper-reproduction/blog-feedback
+writing output... [ 62%] benchmarks/paper-reproduction/compas
+writing output... [ 65%] benchmarks/paper-reproduction/heart-disease
+writing output... [ 67%] benchmarks/paper-reproduction/index
+writing output... [ 69%] benchmarks/paper-reproduction/loan-defaulter
+writing output... [ 71%] benchmarks/paper-reproduction/tables
+writing output... [ 73%] benchmarks/protocol
+writing output... [ 75%] concepts/index
+writing output... [ 77%] concepts/layers
+writing output... [ 79%] concepts/monotonic-residual
+writing output... [ 81%] concepts/monotonicity
+writing output... [ 83%] concepts/proofs
+writing output... [ 85%] guides/index
+writing output... [ 88%] guides/jax
+writing output... [ 90%] guides/keras
+writing output... [ 92%] guides/pytorch
+writing output... [ 94%] index
+writing output... [ 96%] installation
+writing output... [ 98%] reference
+writing output... [100%] releasing
+
+
+(apidocs/mononet/mononet.torch._kernels: line    3) broken    http://layers.py - HTTPConnectionPool(host='layers.py', port=80): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPConnection(host='layers.py', port=80): Failed to resolve 'layers.py' ([Errno -2] Name or service not known)"))
+(apidocs/mononet/mononet.torch._kernels: line    3) broken    http://models.py - HTTPConnectionPool(host='models.py', port=80): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPConnection(host='models.py', port=80): Failed to resolve 'models.py' ([Errno -2] Name or service not known)"))
+(apidocs/mononet/mononet: line    3) ok        https://arxiv.org/abs/2205.11775
+(apidocs/mononet/mononet.core.reference: line    3) ok        https://arxiv.org/abs/2505.02537
+(      guides/jax: line    3) ok        https://docs.jax.dev/en/latest/_autosummary/jax.grad.html#jax.grad
+(about/contributing: line   18) ok        https://code.visualstudio.com/docs/devcontainers/containers
+(apidocs/mononet/mononet.jax.layers: line   91) ok        https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable
+(apidocs/mononet/mononet.keras.layers: line  529) ok        https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator
+(      guides/jax: line    3) ok        https://docs.jax.dev/en/latest/_autosummary/jax.jit.html#jax.jit
+(apidocs/mononet/mononet.keras.layers: line  524) ok        https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping
+(apidocs/mononet/mononet.core.reference: line   80) ok        https://docs.python.org/3/library/constants.html#None
+(apidocs/mononet/mononet.core.init: line   31) ok        https://docs.python.org/3/library/exceptions.html#ValueError
+(apidocs/mononet/mononet.core.config: line  125) ok        https://docs.python.org/3/library/functions.html#bool
+(about/contributing: line   21) ok        https://code.visualstudio.com/
+(apidocs/mononet/mononet.core.config: line  101) ok        https://docs.python.org/3/library/functions.html#float
+(apidocs/mononet/mononet.core.config: line   65) ok        https://docs.python.org/3/library/functions.html#int
+(apidocs/mononet/mononet.core.config: line  137) ok        https://docs.python.org/3/library/stdtypes.html#dict
+(apidocs/mononet/mononet.jax.layers: line   55) ok        https://docs.python.org/3/library/functions.html#type
+(apidocs/mononet/mononet.keras.layers: line 1174) ok        https://docs.python.org/3/library/stdtypes.html#list
+(apidocs/mononet/mononet.keras.layers: line  559) ok        https://docs.python.org/3/library/stdtypes.html#set
+(apidocs/mononet/mononet.core.init: line   28) ok        https://docs.python.org/3/library/stdtypes.html#tuple
+(apidocs/mononet/mononet.core.config: line  137) ok        https://docs.python.org/3/library/stdtypes.html#str
+(apidocs/mononet/mononet.core.config: line  137) ok        https://docs.python.org/3/library/typing.html#typing.Any
+(apidocs/mononet/mononet.jax.layers: line   55) ok        https://docs.python.org/3/library/typing.html#typing.Callable
+(apidocs/mononet/mononet.jax.layers: line   65) ok        https://docs.python.org/3/library/typing.html#typing.Iterator
+(  guides/pytorch: line   14) broken    https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html#torch.nn.Linear - Anchor 'torch.nn.Linear' not found
+(apidocs/mononet/mononet.core.types: line  122) ok        https://docs.python.org/3/library/typing.html#typing.Literal
+(apidocs/mononet/mononet.keras.layers: line  362) ok        https://docs.python.org/3/library/typing.html#typing.Optional
+(apidocs/mononet/mononet.keras.layers: line  362) broken    https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module - Anchor 'torch.nn.Module' not found
+(apidocs/mononet/mononet.keras.layers: line  357) broken    https://docs.pytorch.org/docs/stable/generated/torch.nn.parameter.Parameter.html#torch.nn.parameter.Parameter - Anchor 'torch.nn.parameter.Parameter' not found
+(  guides/pytorch: line    3) broken    https://docs.pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential - Anchor 'torch.nn.Sequential' not found
+(apidocs/mononet/mononet.keras.layers: line  432) broken    https://docs.pytorch.org/docs/stable/tensor_attributes.html#torch.dtype - Anchor 'torch.dtype' not found
+(    installation: line   40) ok        https://download.pytorch.org/whl/cpu
+(apidocs/mononet/mononet.keras.layers: line  352) broken    https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor - Anchor 'torch.Tensor' not found
+(benchmarks/deep-residual-accuracy: line  155) ok        https://github.com/davorrunje/mononet/blob/main/benchmarks/RUNBOOK-stage2.md
+(benchmarks/protocol: line   42) ok        https://github.com/airtai/monotonic-nn
+(benchmarks/loan-size-ladder: line   11) ok        https://github.com/davorrunje/mononet/blob/main/docs/superpowers/specs/2026-07-10-loan-size-ladder-design.md
+(benchmarks/large-dataset-screen: line    3) ok        https://github.com/davorrunje/mononet/blob/main/docs/superpowers/specs/2026-07-11-large-dataset-screen-design.md
+( concepts/proofs: line   10) ok        https://github.com/davorrunje/mononet/blob/main/proofs/Mononet/DanielsVelikova.lean
+( about/changelog: line    9) broken    https://github.com/davorrunje/mononet/compare/v0.1.0...HEAD - 404 Client Error: Not Found for url: https://github.com/davorrunje/mononet/compare/v0.1.0...HEAD
+( about/changelog: line   72) broken    https://github.com/davorrunje/mononet/releases/tag/v0.1.0 - 404 Client Error: Not Found for url: https://github.com/davorrunje/mononet/releases/tag/v0.1.0
+(apidocs/mononet/mononet.core.reference: line   48) ok        https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.floating
+( concepts/proofs: line    3) ok        https://github.com/davorrunje/mononet/tree/main/proofs
+( about/changelog: line    6) ok        https://keepachangelog.com/en/1.0.0/
+( about/changelog: line    6) ok        https://semver.org/spec/v2.0.0.html
+(   about/license: line   13) broken    https://patents.justia.com/patent/11551063 - 403 Client Error: Forbidden for url: https://patents.justia.com/patent/11551063
+(   about/license: line    5) ok        https://www.apache.org/licenses/LICENSE-2.0
+(about/contributing: line   42) redirect  https://pydata-sphinx-theme.readthedocs.io/ - with Found to https://pydata-sphinx-theme.readthedocs.io/en/stable/
+(       releasing: line   53) ok        https://test.pypi.org/project/mononet/
+(       releasing: line   19) redirect  https://test.pypi.org/manage/account/publishing/ - with See Other to https://test.pypi.org/account/login/?next=%2Fmanage%2Faccount%2Fpublishing%2F
+(       releasing: line   12) redirect  https://pypi.org/manage/account/publishing/ - with See Other to https://pypi.org/account/login/?next=%2Fmanage%2Faccount%2Fpublishing%2F
+(about/contributing: line   42) redirect  https://www.sphinx-doc.org/ - with Found to https://www.sphinx-doc.org/en/master/
+(about/contributing: line   20) ok        https://www.docker.com/
+(benchmarks/paper-reproduction/index: line    3) ok        https://zenodo.org/records/7968969
+build finished with problems.
+linkcheck exit: 1
+(broken/redirected details: docs/_build/linkcheck/output.txt)
+
+=== nitpicky cross-reference check (warnings only, non-fatal) ===
+myst v5.1.0: MdParserConfig(commonmark_only=False, gfm_only=False, enable_extensions={'dollarmath', 'deflist', 'linkify', 'tasklist', 'colon_fence', 'fieldlist', 'substitution', 'amsmath'}, disable_syntax=[], all_links_external=False, links_external_new_tab=False, url_schemes=('http', 'https', 'mailto', 'ftp'), ref_domains=None, fence_as_directive=set(), number_code_blocks=[], title_to_header=False, heading_anchors=3, heading_slug_func=None, html_meta={}, footnote_sort=True, footnote_transition=True, words_per_minute=200, substitutions={}, linkify_fuzzy_links=True, dmath_allow_labels=True, dmath_allow_space=True, dmath_allow_digits=True, dmath_double_inline=False, update_mathjax=True, mathjax_classes='tex2jax_process|mathjax_process|math|output_area', enable_checkboxes=False, strikethrough_single_tilde=False, colon_fence_exact_match=False, suppress_warnings=[], highlight_code_blocks=True)
+myst-nb v1.4.0: NbParserConfig(custom_formats={}, metadata_key='mystnb', cell_metadata_key='mystnb', kernel_rgx_aliases={}, eval_name_regex='^[a-zA-Z_][a-zA-Z0-9_]*$', execution_mode='off', execution_cache_path='', execution_excludepatterns=(), execution_timeout=30, execution_in_temp=False, execution_allow_errors=False, execution_raise_on_error=False, execution_show_tb=False, merge_streams=False, render_plugin='default', remove_code_source=False, remove_code_outputs=False, scroll_outputs=False, code_prompt_show='Show code cell {type}', code_prompt_hide='Hide code cell {type}', number_source_lines=False, output_stderr='show', render_text_lexer='myst-ansi', render_error_lexer='ipythontb', render_image_options={}, render_figure_options={}, render_markdown_format='commonmark', output_folder='build', append_css=True, metadata_to_fm=False)
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.numerics.md:105: WARNING: py:class reference target not found: numpy.typing.DTypeLike [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.numerics.md:113: WARNING: py:class reference target not found: numpy.typing.DTypeLike [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:48: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:48: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:56: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:56: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:64: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:64: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:72: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:72: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:72: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:72: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:80: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:80: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:80: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:80: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:80: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:80: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.reference.md:80: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.types.md:70: WARNING: py:class reference target not found: numpy.typing.NDArray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.core.types.md:70: WARNING: py:class reference target not found: numpy.int8 [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:52: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:52: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:60: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:60: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:68: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:68: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:76: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:76: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:76: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:76: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:84: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:84: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:84: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:84: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:84: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:84: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax._kernels.md:84: WARNING: py:class reference target not found: jax.numpy.ndarray [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:38: WARNING: py:class reference target not found: flax.nnx.Rngs [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:42: WARNING: py:obj reference target not found: flax.nnx.Module [ref.obj]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:55: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:55: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:55: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:55: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:55: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:55: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:55: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:60: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:65: WARNING: py:class reference target not found: flax.typing.PathParts [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:65: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:70: WARNING: py:class reference target not found: flax.typing.Key [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:70: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:75: WARNING: py:class reference target not found: flax.nnx.filterlib.Filter [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:91: WARNING: py:class reference target not found: flax.nnx.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:91: WARNING: py:class reference target not found: flax.nnx.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:91: WARNING: py:class reference target not found: flax.nnx.Rngs [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:95: WARNING: py:obj reference target not found: flax.nnx.Module [ref.obj]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:108: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:108: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:108: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:108: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:108: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:108: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:108: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:113: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:118: WARNING: py:class reference target not found: flax.typing.PathParts [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:118: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:123: WARNING: py:class reference target not found: flax.typing.Key [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:123: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:128: WARNING: py:class reference target not found: flax.nnx.filterlib.Filter [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:148: WARNING: py:obj reference target not found: flax.nnx.Module [ref.obj]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:161: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:161: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:161: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:161: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:161: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:161: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:161: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:166: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:171: WARNING: py:class reference target not found: flax.typing.PathParts [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:171: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:176: WARNING: py:class reference target not found: flax.typing.Key [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:176: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.jax.layers.md:181: WARNING: py:class reference target not found: flax.nnx.filterlib.Filter [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:42: WARNING: py:obj reference target not found: keras.layers.Layer [ref.obj]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:278: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:278: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:278: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:278: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:278: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:278: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:278: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:283: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:288: WARNING: py:class reference target not found: flax.typing.PathParts [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:288: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:293: WARNING: py:class reference target not found: flax.typing.Key [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:293: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:298: WARNING: py:class reference target not found: flax.nnx.filterlib.Filter [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:402: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:407: WARNING: py:class reference target not found: torch.nn.modules.module.Module.cuda.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:407: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:412: WARNING: py:class reference target not found: torch.nn.modules.module.Module.ipu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:412: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:417: WARNING: py:class reference target not found: torch.nn.modules.module.Module.xpu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:417: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:422: WARNING: py:class reference target not found: torch.nn.modules.module.Module.mtia.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:422: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:427: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:432: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:437: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:442: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:447: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:452: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:457: WARNING: py:class reference target not found: torch._prims_common.DeviceLikeType [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:457: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:467: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:467: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:467: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:472: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:472: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:472: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:472: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:477: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:477: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:477: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:477: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:482: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:482: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:482: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:487: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:487: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:487: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:564: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:574: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:606: WARNING: py:class reference target not found: keras.layers.Layer [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:610: WARNING: py:obj reference target not found: keras.layers.Layer [ref.obj]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:846: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:846: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:846: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:846: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:846: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:846: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:846: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:851: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:856: WARNING: py:class reference target not found: flax.typing.PathParts [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:856: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:861: WARNING: py:class reference target not found: flax.typing.Key [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:861: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:866: WARNING: py:class reference target not found: flax.nnx.filterlib.Filter [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:970: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:975: WARNING: py:class reference target not found: torch.nn.modules.module.Module.cuda.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:975: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:980: WARNING: py:class reference target not found: torch.nn.modules.module.Module.ipu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:980: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:985: WARNING: py:class reference target not found: torch.nn.modules.module.Module.xpu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:985: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:990: WARNING: py:class reference target not found: torch.nn.modules.module.Module.mtia.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:990: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:995: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1000: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1005: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1010: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1015: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1020: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1025: WARNING: py:class reference target not found: torch._prims_common.DeviceLikeType [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1025: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1035: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1035: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1035: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1040: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1040: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1040: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1040: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1045: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1045: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1045: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1045: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1050: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1050: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1050: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1055: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1055: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1055: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1132: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1142: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1178: WARNING: py:obj reference target not found: keras.layers.Layer [ref.obj]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1410: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1410: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1410: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1410: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1410: WARNING: py:class reference target not found: flax.nnx.module.A [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1410: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1410: WARNING: py:class reference target not found: flax.nnx.module.B [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1415: WARNING: py:class reference target not found: flax.nnx.variablelib.Variable [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1420: WARNING: py:class reference target not found: flax.typing.PathParts [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1420: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1425: WARNING: py:class reference target not found: flax.typing.Key [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1425: WARNING: py:class reference target not found: flax.nnx.module.Module [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1430: WARNING: py:class reference target not found: flax.nnx.filterlib.Filter [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1534: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1539: WARNING: py:class reference target not found: torch.nn.modules.module.Module.cuda.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1539: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1544: WARNING: py:class reference target not found: torch.nn.modules.module.Module.ipu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1544: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1549: WARNING: py:class reference target not found: torch.nn.modules.module.Module.xpu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1549: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1554: WARNING: py:class reference target not found: torch.nn.modules.module.Module.mtia.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1554: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1559: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1564: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1569: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1574: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1579: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1584: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1589: WARNING: py:class reference target not found: torch._prims_common.DeviceLikeType [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1589: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1599: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1599: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1599: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1604: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1604: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1604: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1604: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1609: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1609: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1609: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1609: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1614: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1614: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1614: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1619: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1619: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1619: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1696: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.keras.layers.md:1706: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:138: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:143: WARNING: py:class reference target not found: torch.nn.modules.module.Module.cuda.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:143: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:148: WARNING: py:class reference target not found: torch.nn.modules.module.Module.ipu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:148: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:153: WARNING: py:class reference target not found: torch.nn.modules.module.Module.xpu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:153: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:158: WARNING: py:class reference target not found: torch.nn.modules.module.Module.mtia.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:158: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:163: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:168: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:173: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:178: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:183: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:188: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:193: WARNING: py:class reference target not found: torch._prims_common.DeviceLikeType [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:193: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:203: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:203: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:203: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:208: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:208: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:208: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:208: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:213: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:213: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:213: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:213: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:218: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:218: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:218: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:223: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:223: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:223: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:305: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:310: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:315: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:325: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:441: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:446: WARNING: py:class reference target not found: torch.nn.modules.module.Module.cuda.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:446: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:451: WARNING: py:class reference target not found: torch.nn.modules.module.Module.ipu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:451: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:456: WARNING: py:class reference target not found: torch.nn.modules.module.Module.xpu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:456: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:461: WARNING: py:class reference target not found: torch.nn.modules.module.Module.mtia.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:461: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:466: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:471: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:476: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:481: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:486: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:491: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:496: WARNING: py:class reference target not found: torch._prims_common.DeviceLikeType [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:496: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:506: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:506: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:506: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:511: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:511: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:511: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:511: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:516: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:516: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:516: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:516: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:521: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:521: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:521: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:526: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:526: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:526: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:608: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:613: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:618: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:628: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:744: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:749: WARNING: py:class reference target not found: torch.nn.modules.module.Module.cuda.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:749: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:754: WARNING: py:class reference target not found: torch.nn.modules.module.Module.ipu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:754: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:759: WARNING: py:class reference target not found: torch.nn.modules.module.Module.xpu.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:759: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:764: WARNING: py:class reference target not found: torch.nn.modules.module.Module.mtia.device [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:764: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:769: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:774: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:779: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:784: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:789: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:794: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:799: WARNING: py:class reference target not found: torch._prims_common.DeviceLikeType [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:799: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:809: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:809: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:809: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:814: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:814: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:814: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:814: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:819: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:819: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:819: WARNING: py:class reference target not found: torch.nn.modules.module._grad_t [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:819: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:824: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:824: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:824: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:829: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:829: WARNING: py:class reference target not found: torch.nn.modules.module.T [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:829: WARNING: py:class reference target not found: torch.utils.hooks.RemovableHandle [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:911: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:916: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:921: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/apidocs/mononet/mononet.torch.layers.md:931: WARNING: py:class reference target not found: typing_extensions.Self [ref.class]
+/workspaces/mononet/docs/guides/jax.md:36: WARNING: py:class reference target not found: flax.nnx.Rngs [ref.class]
+build succeeded, 350 warnings.
