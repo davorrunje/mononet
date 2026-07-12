@@ -1,14 +1,15 @@
 # Structure-Preserving Physics-Informed Neural Networks: Hard Monotonicity as a Total-Variation-Diminishing Prior for Conservation Laws
 
 **Authors:** Davor Runje (and collaborators — TBD)
-**Status:** Draft scaffold — narrative complete; numerical results are placeholders (`[[…]]`) pending the experimental runs (see `RUNBOOK.md`).
+**Status:** Draft — headline result tables (§6.1 forward, §6.2 inverse) filled from
+committed 10-seed IQM artifacts; **pending:** figures, the sparsity × noise sweep,
+and the cross-backend equivalence check (see `RUNBOOK.md`).
 
-> **Scaffold note (remove before submission).** This manuscript is written
-> *before* the experiments per the project's manuscript-first workflow. Every
-> claim about *what will be shown* is committed here so the implementation only
-> has to fill in numbers. Placeholders are written as `[[NAME]]` and each has a
-> matching planned experiment. If a result contradicts a claim below, the claim
-> is revised to match the evidence — not the other way around.
+> **Note (remove before submission).** Written manuscript-first: claims were
+> committed *before* the runs, then reconciled to the evidence. Notably, the
+> single-seed inverse result initially suggested an accuracy *win*; the 10-seed
+> IQM shows accuracy is a **wash** with the baselines and the real, robust win is
+> **structural admissibility** — the text reflects the latter, honest reading.
 
 ## Abstract
 
@@ -24,14 +25,20 @@ output is monotone in the spatial coordinate **by construction**, so that within
 the monotone-solution class the reconstruction is TVD and entropy-admissible
 with **zero** achievable oscillation — a structural guarantee, not a penalty.
 We first validate the mechanism on forward scalar conservation laws against exact
-and TVD finite-volume ground truth, where the admissibility violation is
-`[[FWD-VIOLATION-HARD]]` for our method versus `[[FWD-VIOLATION-SOFT]]` for a
-tuned soft-penalty baseline. We then apply it where a PINN genuinely beats a
-classical solver — the *inverse* problem of traffic state estimation from sparse,
-noisy observations — and show reconstruction error `[[INV-ERROR-HARD]]` versus
-`[[INV-ERROR-SOFT]]` at `[[OBS-SPARSITY]]` observation coverage, with the
-guarantee holding across backends (JAX and PyTorch agree to `[[XBACKEND-TOL]]`).
-Code and the trained models are released as part of the `mononet` package.
+and TVD finite-volume ground truth (equal-budget hyperparameter tuning, 10-seed
+IQM): the hard-monotone PINN attains **zero** admissibility violation and
+near-zero overshoot (0.003) versus 0.11–0.23 violation and up to 0.13 overshoot
+for tuned unconstrained/soft-penalty baselines — at a modest accuracy cost, since
+the strong-form residual actively smears the discontinuity. We then apply it where
+a PINN genuinely complements a classical solver — the *inverse* problem of traffic
+state estimation from sparse, noisy observations (~0.7 % space-time coverage) —
+where the hard-monotone reconstruction is **competitive in accuracy** with
+unconstrained/soft PINNs (L¹ IQM 3.2 vs 3.9) while being the **only structurally
+admissible, oscillation-free** solution (violation 0 vs 0.08–0.10). A naive,
+inexpressive weight-clipping constraint fails badly (≈7× worse error),
+confirming that it is *expressive* hard monotonicity that matters. JAX and PyTorch
+implementations are provided; a cross-backend equivalence check is left to the
+released artifact. Code and trained models ship with the `mononet` package.
 
 ## 1. Introduction
 
@@ -193,37 +200,64 @@ multi-seed.
 
 ## 6. Results
 
-> All values below are placeholders pending the runs; each has a matching planned
-> experiment in `RUNBOOK.md`.
+Protocol: per method, an identical Optuna budget (20 trials, seed 0) tunes
+`lr`/`width`/`residual_weight` and the tier's data-term weight; the best config is
+then evaluated over 10 seeds and reported as the interquartile mean (IQM) with a
+95 % bootstrap band. JAX backend, 8000 steps, global-norm gradient clipping.
+Artifacts: `results/forward-mechanism.json`, `results/inverse-headline.json`
+(regenerate via `RUNBOOK.md`).
 
-### 6.1 Forward mechanism tier
+### 6.1 Forward mechanism tier (Burgers-Riemann)
 
-`[[TABLE-forward-tier]]` — per problem × method: L¹/L² error, admissibility
-violation, overshoot, shock-speed error. *Expected:* hard-monotone violation and
-overshoot ≈ 0; vanilla/soft show Gibbs overshoot `[[OVERSHOOT-SOFT]]`.
+This tier is the constraint's *worst case* — with no data, the strong-form PDE
+residual must carry the solution, and minimizing it near a discontinuity rewards
+smearing the shock. It is a mechanism check, not a relevance claim (a TVD
+finite-volume scheme dominates forward 1-D problems).
 
-`[[FIG-tv-curve]]` — TV(t) for each method on Burgers-Riemann. *Expected:*
-flat/non-increasing for hard-monotone; bumps for baselines.
+| method | L¹ (IQM [95 %]) | L² | admiss. violation | overshoot |
+|---|---|---|---|---|
+| **hard-monotone (mononet)** | 6.15 [4.41, 8.37] | 1.45 | **0** | **0.003** |
+| vanilla | 5.12 [4.31, 6.31] | 1.06 | 0.232 | 0.127 |
+| soft | 5.50 [5.12, 6.96] | 1.15 | 0.106 | 0.019 |
+| weight-clip (inexpressive) | 46.0 [45.6, 46.3] | 3.79 | 0 | 0.423 |
 
-`[[FIG-profiles]]` — solution profiles at `t = [[T-SNAP]]` near the shock.
-*Expected:* clean monotone ramp (ours) vs ringing (baselines).
+The hard-monotone PINN is the only **oscillation-free** solution (overshoot 0.003
+vs. vanilla's 0.127) with **zero** violation, at a ~20 % L¹/L² cost versus the
+unconstrained baselines — the expected structure-vs-accuracy trade when the
+residual alone must fit a shock.
 
-### 6.2 Inverse flagship — traffic state estimation
+*Pending figures (see RUNBOOK): TV(t) curves; near-shock solution profiles.*
 
-`[[FIG-inverse-sweep]]` — reconstruction L² vs observation sparsity and noise, all
-methods. *Expected:* hard-monotone degrades gracefully; soft/vanilla degrade and
-oscillate as data thins.
+### 6.2 Inverse flagship — traffic state estimation (LWR)
 
-`[[TABLE-inverse]]` — reconstruction error, admissibility violation, front-position
-error at representative (sparsity, noise) operating points.
+Reconstruct the density field `ρ(x,t)` from 80 sparse, noisy observations (~0.7 %
+of the space-time grid) — the data-assimilation regime a mesh solver cannot serve
+(no full initial condition). Here the residual is a light regularizer and the
+observations anchor the field.
 
-`[[FIG-inverse-field]]` — reconstructed `ρ(x,t)` vs reference field with
-observations overlaid, at `[[OBS-SPARSITY]]`.
+| method | L¹ (IQM [95 %]) | L² | admiss. violation | overshoot |
+|---|---|---|---|---|
+| **hard-monotone (mononet)** | 3.17 [2.37, 3.80] | 0.79 | **0** | **0.023** |
+| vanilla | 3.92 [3.34, 4.27] | 0.73 | 0.083 | 0.024 |
+| soft | 3.95 [3.36, 4.37] | 0.72 | 0.104 | 0.040 |
+| weight-clip (inexpressive) | 22.5 [22.0, 23.1] | 2.10 | 0 | 0.297 |
+
+Here accuracy is **competitive** (L¹ bands overlap; L² within noise) while the
+hard-monotone model is the **only structurally admissible** one (violation 0 vs.
+0.08–0.10 for the oscillating baselines). The inexpressive weight-clip baseline
+fails outright (≈7× error), so the effect is due to `mononet`'s *expressive*
+hard monotonicity, not monotonicity per se.
+
+*Pending figures (see RUNBOOK): reconstruction L² vs sparsity × noise sweep;
+reconstructed field with observations overlaid.*
 
 ### 6.3 Cross-backend equivalence
 
-`[[TABLE-xbackend]]` — JAX vs PyTorch hard-monotone agreement (max abs difference
-`[[XBACKEND-TOL]]`) on identical points.
+*Pending:* JAX vs PyTorch hard-monotone agreement on identical points. Requires
+both backends in one environment (the `default` / `all-cpu` devcontainer; the
+GPU-JAX environment used for the tables above has no PyTorch). The construction is
+backend-independent by design; the empirical tolerance will be reported from that
+run.
 
 ## 7. Discussion and limitations
 

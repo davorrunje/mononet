@@ -1,0 +1,550 @@
+{
+  "problem": "burgers_riemann",
+  "tier": "forward",
+  "n_trials": 20,
+  "steps": 8000,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "aggregate": "iqm+bootstrap95",
+  "methods": {
+    "hard_monotone": {
+      "best_params": {
+        "lr": 0.009963908343902693,
+        "width": 32,
+        "residual_weight": 0.045777243590935233,
+        "ic_weight": 6.955685612974608
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 2.8110992271996023,
+          "l2": 1.120372564581256,
+          "admissibility_violation": 1.7881393432617188e-07,
+          "overshoot": 0.001967906951904297
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 3.305682614071285,
+          "l2": 0.9728017472268368,
+          "admissibility_violation": 1.7881393432617188e-07,
+          "overshoot": 0.0006899833679199219
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 5.53164245120844,
+          "l2": 1.5854423106594735,
+          "admissibility_violation": 1.7881393432617188e-07,
+          "overshoot": 0.004907131195068359
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 6.972104316979796,
+          "l2": 1.5399324554174652,
+          "admissibility_violation": 1.1920928955078125e-07,
+          "overshoot": 0.0066890716552734375
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 7.7594104469122,
+          "l2": 1.419283416054102,
+          "admissibility_violation": 5.960464477539063e-08,
+          "overshoot": 0.011627793312072754
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 12.91519236924061,
+          "l2": 1.6625940438654006,
+          "admissibility_violation": 1.1920928955078125e-07,
+          "overshoot": 0.08437395095825195
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 5.467584482089958,
+          "l2": 1.337309190477883,
+          "admissibility_violation": 5.960464477539063e-08,
+          "overshoot": 0.0034559965133666992
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 4.386044647825423,
+          "l2": 1.1661881372717084,
+          "admissibility_violation": 2.384185791015625e-07,
+          "overshoot": 0.0016233325004577637
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 8.645403408375216,
+          "l2": 1.6716823145117203,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.0009549260139465332
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 6.807738818864726,
+          "l2": 1.6276145233620498,
+          "admissibility_violation": 5.960464477539063e-08,
+          "overshoot": 0.0003590583801269531
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 6.154087527313423,
+          "lo": 4.407986204453449,
+          "hi": 8.366675217378527
+        },
+        "l2": {
+          "iqm": 1.4459616722071136,
+          "lo": 1.2216190017063189,
+          "hi": 1.603018305431209
+        },
+        "admissibility_violation": {
+          "iqm": 1.1920928955078125e-07,
+          "lo": 6.953875223795573e-08,
+          "hi": 1.6887982686360678e-07
+        },
+        "overshoot": {
+          "iqm": 0.0032663941383361816,
+          "lo": 0.0012449721495310466,
+          "hi": 0.01908499002456665
+        }
+      }
+    },
+    "vanilla": {
+      "best_params": {
+        "lr": 0.009836530328725267,
+        "width": 16,
+        "residual_weight": 1.5746139456881585,
+        "ic_weight": 94.38709936132418
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 2.9331692873533046,
+          "l2": 0.6621278526197618,
+          "admissibility_violation": 0.18445509672164917,
+          "overshoot": 0.18953371047973633
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 4.693169778390745,
+          "l2": 1.0750652640080278,
+          "admissibility_violation": 0.10115498304367065,
+          "overshoot": 0.049156397581100464
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 6.816166637081596,
+          "l2": 1.6750155211725908,
+          "admissibility_violation": 0.7226476073265076,
+          "overshoot": 0.3899235725402832
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 8.369341299087557,
+          "l2": 1.774892647105852,
+          "admissibility_violation": 0.36022016406059265,
+          "overshoot": 0.0637059211730957
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 4.871060928357905,
+          "l2": 0.8452810065069797,
+          "admissibility_violation": 0.1476837396621704,
+          "overshoot": 0.07750487327575684
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 4.906296653289291,
+          "l2": 1.527330240790977,
+          "admissibility_violation": 0.08266562223434448,
+          "overshoot": 0.046338170766830444
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 4.2880753270495475,
+          "l2": 1.0254578688036173,
+          "admissibility_violation": 0.4647767245769501,
+          "overshoot": 0.3849472999572754
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 4.13404120459928,
+          "l2": 0.8413079045948537,
+          "admissibility_violation": 0.10979697108268738,
+          "overshoot": 0.03853952884674072
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 6.129460913601831,
+          "l2": 0.9484179140557997,
+          "admissibility_violation": 0.34747034311294556,
+          "overshoot": 0.2735629081726074
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 5.802268124929624,
+          "l2": 0.9600101097558577,
+          "admissibility_violation": 0.24073314666748047,
+          "overshoot": 0.10577920079231262
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 5.115055287603158,
+          "lo": 4.310086653585011,
+          "hi": 6.30921738100561
+        },
+        "l2": {
+          "iqm": 1.0635937339868766,
+          "lo": 0.8796054573505331,
+          "hi": 1.409267876922395
+        },
+        "admissibility_violation": {
+          "iqm": 0.23172657688458762,
+          "lo": 0.1287403553724289,
+          "hi": 0.39610438135763004
+        },
+        "overshoot": {
+          "iqm": 0.1265405019124349,
+          "lo": 0.058258152877291046,
+          "hi": 0.2686148136854172
+        }
+      }
+    },
+    "soft": {
+      "best_params": {
+        "lr": 0.0009340455142888762,
+        "width": 16,
+        "residual_weight": 3.5047218447948842,
+        "soft_penalty": 1.8770218613046754,
+        "ic_weight": 37.67462999638991
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 5.228484874619311,
+          "l2": 0.958723653247212,
+          "admissibility_violation": 0.18719381093978882,
+          "overshoot": 0.03188106417655945
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 5.15073751235128,
+          "l2": 1.1326254943073637,
+          "admissibility_violation": 0.10864359140396118,
+          "overshoot": 0.021192312240600586
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 6.410232153370152,
+          "l2": 1.175347028841628,
+          "admissibility_violation": 0.1262834668159485,
+          "overshoot": 0.011174798011779785
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 8.718846155770459,
+          "l2": 1.794540835336716,
+          "admissibility_violation": 0.10130423307418823,
+          "overshoot": 0.009691804647445679
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 5.075995262019598,
+          "l2": 1.2812402355761912,
+          "admissibility_violation": 0.2465113401412964,
+          "overshoot": 0.1050562858581543
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 5.548245981335639,
+          "l2": 1.4455612037229273,
+          "admissibility_violation": 0.068875253200531,
+          "overshoot": 0.02396884560585022
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 5.556785764556434,
+          "l2": 0.9624605199704916,
+          "admissibility_violation": 0.026600509881973267,
+          "overshoot": 0.010100632905960083
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 5.1009000178857065,
+          "l2": 0.9276972622380055,
+          "admissibility_violation": 0.09459713101387024,
+          "overshoot": 0.021645039319992065
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 8.298919447627497,
+          "l2": 1.2819706825068828,
+          "admissibility_violation": 0.11627042293548584,
+          "overshoot": 0.015408635139465332
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 4.932185122415648,
+          "l2": 1.0726661233741028,
+          "admissibility_violation": 0.08875632286071777,
+          "overshoot": 0.021718621253967285
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 5.499231050686421,
+          "lo": 5.122156303163798,
+          "hi": 6.960660040915211
+        },
+        "l2": {
+          "iqm": 1.1510516807627766,
+          "lo": 1.015683996187629,
+          "hi": 1.357524608928305
+        },
+        "admissibility_violation": {
+          "iqm": 0.1059758613506953,
+          "lo": 0.08022990835209687,
+          "hi": 0.15413871631026266
+        },
+        "overshoot": {
+          "iqm": 0.01918470859527588,
+          "lo": 0.013211241737008095,
+          "hi": 0.0375898956010739
+        }
+      }
+    },
+    "weight_clip": {
+      "best_params": {
+        "lr": 0.000782286258578247,
+        "width": 32,
+        "residual_weight": 3.2325155916116017,
+        "ic_weight": 11.376485657163093
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 46.118101841540785,
+          "l2": 3.7962252804961656,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.41657841205596924
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 45.03932361926265,
+          "l2": 3.789754928626564,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.4428812265396118
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 45.941166678565224,
+          "l2": 3.793932637290625,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.3665447235107422
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 46.54117403617456,
+          "l2": 3.7904831036816415,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.43148303031921387
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 45.94427492600589,
+          "l2": 3.7961306282878096,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.3937869071960449
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 46.162378296780226,
+          "l2": 3.7776949717286783,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.44958066940307617
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 45.26414667541657,
+          "l2": 3.7740785588513655,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.4632986783981323
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 46.345670214250454,
+          "l2": 3.81354096606033,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.37746572494506836
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 45.615944306754585,
+          "l2": 3.7930476220892193,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.4011746644973755
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 46.73095593350616,
+          "l2": 3.7952900943145145,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.4631929397583008
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 46.021256043982866,
+          "lo": 45.5777540481158,
+          "hi": 46.33862188996956
+        },
+        "l2": {
+          "iqm": 3.793106502381729,
+          "lo": 3.785709710159121,
+          "hi": 3.7978278273391712
+        },
+        "admissibility_violation": {
+          "iqm": 0.0,
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "overshoot": {
+          "iqm": 0.42258081833521527,
+          "lo": 0.3933763901392619,
+          "hi": 0.4477559308211009
+        }
+      }
+    }
+  }
+}

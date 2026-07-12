@@ -3,6 +3,29 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — Forward mechanism panel (10-seed IQM) + paper §6 filled
+
+Forward `burgers_riemann`, same protocol (`results/forward-mechanism.json`):
+
+| method | L1 IQM [95%] | L2 | violation | overshoot |
+|---|---|---|---|---|
+| hard_monotone | 6.15 [4.41, 8.37] | 1.45 | **0** | **0.003** |
+| vanilla | 5.12 [4.31, 6.31] | 1.06 | 0.232 | 0.127 |
+| soft | 5.50 [5.12, 6.96] | 1.15 | 0.106 | 0.019 |
+| weight_clip | 46.0 | 3.79 | 0 | 0.42 |
+
+Forward is the constraint's **worst case**: hard_monotone costs ~20 % L1/L2 (the
+strong residual smears the shock) but is the only oscillation-free (overshoot
+0.003 vs vanilla 0.127), zero-violation solution. Contrast with the inverse tier
+(below), where accuracy is a wash and admissibility is free — the paper's arc.
+
+`paper/paper.md` §6.1/§6.2 tables filled from the two JSON artifacts; abstract
+reworded to the honest claim (competitive accuracy + sole admissibility, not an
+accuracy win). Pending in the manuscript: figures, sparsity×noise sweep,
+cross-backend check (needs `default` container for Torch).
+
+---
+
 ## 2026-07-12 — FIRMED headline (10-seed IQM): accuracy a wash, admissibility the win
 
 Repo-protocol aggregation: tune once (20 trials), evaluate **10 seeds**, report
