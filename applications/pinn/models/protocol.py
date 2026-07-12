@@ -14,7 +14,10 @@ except the soft baseline's penalty, which lives in the trainer):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from mononet.core.config import Mode
 
 Method = Literal["vanilla", "soft", "weight_clip", "hard_monotone"]
 Backend = Literal["torch", "jax"]
@@ -45,7 +48,7 @@ class ModelConfig:
     t_embed_width: int = 32
     mono_activation: str = "softplus"
     plain_activation: str = "tanh"
-    mode: str = "absolute"
+    mode: Mode = "absolute"
     seed: int = 0
 
 
@@ -62,7 +65,11 @@ def build(
     :raises NotImplementedError: If the backend builder is not yet available.
     """
     if backend == "torch":
-        from applications.pinn.models.torch import builders
+        from applications.pinn.models.torch import builders as torch_builders
 
-        return builders.build_torch(problem, cfg, method)
+        return torch_builders.build_torch(problem, cfg, method)
+    if backend == "jax":
+        from applications.pinn.models.jax import builders as jax_builders
+
+        return jax_builders.build_jax(problem, cfg, method)
     raise NotImplementedError(f"backend {backend!r} builder not yet implemented")
