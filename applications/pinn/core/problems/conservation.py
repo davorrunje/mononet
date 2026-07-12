@@ -54,12 +54,12 @@ class BurgersRiemann:
         return AdmissibilitySpec(mask=(_mono_sign(self.u_l, self.u_r), 0))
 
     def flux(self, u: Array) -> Array:
-        """Burgers flux ``u^2 / 2``."""
+        """Burgers flux ``u^2 / 2`` (backend-polymorphic)."""
         return 0.5 * u**2
 
     def flux_prime(self, u: Array) -> Array:
-        """Characteristic speed ``u``."""
-        return np.asarray(u, dtype=float)
+        """Characteristic speed ``u`` (backend-polymorphic)."""
+        return u
 
     def initial(self, x: Array) -> Array:
         """Return the initial Riemann step."""
@@ -96,12 +96,14 @@ class LinearAdvection:
         return np.asarray(profile, dtype=float)
 
     def flux(self, u: Array) -> Array:
-        """Linear flux ``a * u``."""
-        return np.asarray(self.a * u, dtype=float)
+        """Linear flux ``a * u`` (backend-polymorphic)."""
+        result: Array = self.a * u
+        return result
 
     def flux_prime(self, u: Array) -> Array:
-        """Constant characteristic speed ``a``."""
-        return np.full_like(np.asarray(u, dtype=float), self.a)
+        """Constant characteristic speed ``a`` (backend-polymorphic broadcast)."""
+        result: Array = self.a + 0.0 * u
+        return result
 
     def initial(self, x: Array) -> Array:
         """Monotone-decreasing initial front."""
@@ -141,14 +143,12 @@ class LwrRiemann:
         return AdmissibilitySpec(mask=(_mono_sign(self.rho_l, self.rho_r), 0))
 
     def flux(self, u: Array) -> Array:
-        """Greenshields flux."""
-        arr = np.asarray(u, dtype=float)
-        return exact.greenshields_flux(arr, self.v_max, self.rho_max)
+        """Greenshields flux (backend-polymorphic)."""
+        return exact.greenshields_flux(u, self.v_max, self.rho_max)
 
     def flux_prime(self, u: Array) -> Array:
-        """Greenshields characteristic speed."""
-        arr = np.asarray(u, dtype=float)
-        return exact.greenshields_flux_prime(arr, self.v_max, self.rho_max)
+        """Greenshields characteristic speed (backend-polymorphic)."""
+        return exact.greenshields_flux_prime(u, self.v_max, self.rho_max)
 
     def initial(self, x: Array) -> Array:
         """Return the initial Riemann density step."""
@@ -217,12 +217,12 @@ class BurgersSmoothShock:
         return -np.tanh(self.steepness * np.asarray(x, dtype=float))
 
     def flux(self, u: Array) -> Array:
-        """Burgers flux ``u^2 / 2``."""
+        """Burgers flux ``u^2 / 2`` (backend-polymorphic)."""
         return 0.5 * u**2
 
     def flux_prime(self, u: Array) -> Array:
-        """Characteristic speed ``u``."""
-        return np.asarray(u, dtype=float)
+        """Characteristic speed ``u`` (backend-polymorphic)."""
+        return u
 
     def initial(self, x: Array) -> Array:
         """Smooth monotone-decreasing initial profile."""
