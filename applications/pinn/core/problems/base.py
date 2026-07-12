@@ -9,7 +9,7 @@ imports the concrete classes directly.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from applications.pinn.core.admissibility import AdmissibilitySpec
 
 Array = npt.NDArray[np.floating]
+_T = TypeVar("_T")
 
 
 @runtime_checkable
@@ -54,18 +55,22 @@ class Problem(Protocol):
         """Return the reference solution on ``(x, t)`` if available, else None."""
 
 
-_REGISTRY: dict[str, type[Problem]] = {}
+_REGISTRY: dict[str, type] = {}
 
 
-def register(key: str) -> Callable[[type[Problem]], type[Problem]]:
+def register(key: str) -> Callable[[type[_T]], type[_T]]:
     """Class decorator registering a `Problem` implementation under ``key``.
+
+    Generic in the decorated class so the decorated symbol keeps its concrete
+    type; the registry surfaces entries as `Problem` (the contract implementers
+    are expected to satisfy structurally).
 
     :param key: Unique registry name.
     :returns: The decorator.
     :raises KeyError: If ``key`` is already registered.
     """
 
-    def decorate(cls: type[Problem]) -> type[Problem]:
+    def decorate(cls: type[_T]) -> type[_T]:
         if key in _REGISTRY:
             raise KeyError(f"problem {key!r} already registered")
         _REGISTRY[key] = cls
@@ -83,7 +88,7 @@ def get(key: str) -> type[Problem]:
     """
     if key not in _REGISTRY:
         raise KeyError(f"unknown problem {key!r}; available: {available()}")
-    return _REGISTRY[key]
+    return cast("type[Problem]", _REGISTRY[key])
 
 
 def available() -> list[str]:
