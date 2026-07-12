@@ -101,6 +101,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -119,10 +121,13 @@ jobs:
           MONONET_TEST_BACKEND=keras pytest tests/keras tests/equivalence
           coverage report --show-missing --fail-under=100
           coverage xml
+      # Advisory only: skipped on fork PRs (no token). The hard --fail-under=100
+      # gate above is the real, token-independent enforcement. See PR description.
       - name: Upload coverage to Codecov
+        if: ${{ env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           files: coverage.xml
           fail_ci_if_error: true
 
