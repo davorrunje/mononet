@@ -213,6 +213,7 @@ _BUDGET: dict[str, tuple[int, range, int]] = {
     "compas": (50, range(20), 5),
     "loan": (25, range(10), 1),
     "blog": (25, range(10), 1),
+    "adult": (25, range(10), 5),
 }
 
 
