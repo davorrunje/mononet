@@ -98,7 +98,51 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "torch": ("https://docs.pytorch.org/docs/stable", None),
     "jax": ("https://docs.jax.dev/en/latest", None),
-    # "keras": ("https://keras.io", None),      # TODO: confirm correct inventory URL
+    "flax": ("https://flax.readthedocs.io/en/latest", None),
     "numpy": ("https://numpy.org/doc/stable", None),
+    # keras.io is not a Sphinx site (no objects.inv); keras.* refs are
+    # nitpick-ignored below rather than resolved.
 }
 intersphinx_disabled_reftypes = ["std:doc"]
+
+# -- nitpicky cross-reference checking -------------------------------------
+nitpicky = True
+nitpick_ignore_regex = [
+    # No intersphinx inventory exists for these external namespaces, so their
+    # cross-refs cannot be resolved. Ignore by NAMESPACE (not exact target) so a
+    # dependency version bump cannot turn the strict -W docs gate red.
+    ("py:.*", r"typing_extensions\..*"),  # no published objects.inv
+    ("py:.*", r"keras\..*"),  # keras.io is not a Sphinx site
+    # torch inventory does not publish these private/internal symbols (leading
+    # underscore or bare TypeVars leaked into public signatures by autodoc2):
+    ("py:.*", r"torch\.nn\.modules\.module\.(_grad_t|T)"),
+    ("py:.*", r"torch\._prims_common\..*"),
+    # torch's nn.Module.{cuda,ipu,xpu,mtia} accept a `device` parameter typed
+    # `torch.device`; autodoc2 resolves the bare `device` annotation relative to
+    # the enclosing method instead of qualifying it globally. Known autodoc2
+    # limitation with inherited torch.nn.Module methods, not a mononet docstring.
+    ("py:.*", r"torch\.nn\.modules\.module\.Module\.\w+\.device"),
+    # Not published in torch's objects.inv despite being a real public class.
+    ("py:.*", r"torch\.utils\.hooks\.RemovableHandle"),
+    # flax.nnx generic TypeVars (Module[A, B]) and internal typing aliases are
+    # implementation details, not documented public objects.
+    ("py:.*", r"flax\.nnx\.module\.[AB]"),
+    ("py:.*", r"flax\.nnx\.filterlib\.Filter"),
+    ("py:.*", r"flax\.typing\..*"),
+    # jax.numpy.ndarray is documented as a py:attribute (deprecated alias for
+    # jax.Array), so it never matches the py:class role autodoc2 emits.
+    ("py:class", r"jax\.numpy\.ndarray"),
+    # numpy.typing.{NDArray,DTypeLike} are documented as py:data and
+    # numpy.int8 as py:attribute; autodoc2 always emits py:class for
+    # annotations, so these never match on objtype despite being resolvable.
+    ("py:class", r"numpy\.typing\.(NDArray|DTypeLike)"),
+    ("py:class", r"numpy\.int8"),
+]
+
+# -- linkcheck -------------------------------------------------------------
+linkcheck_ignore = [
+    # Bot-blocked (HTTP 403) but valid in a browser:
+    r"https://patents\.justia\.com/patent/11551063",
+    # pytorch docs use JS-generated anchors linkcheck cannot verify:
+    r"https://docs\.pytorch\.org/docs/stable/.*#torch\..*",
+]
