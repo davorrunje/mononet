@@ -18,7 +18,20 @@ Mode = Literal["switch", "absolute"]
 
 @dataclass(frozen=True, slots=True)
 class MonoConfig:
-    """Hyperparameters for a single monotonic dense layer."""
+    """Hyperparameters for a single monotonic dense layer.
+
+    :param units: Number of output units; must be positive.
+    :param mode: Construction mode — `"absolute"` (the paper's `|W|`
+        construction, default) or `"switch"` (the activation-switch variant).
+    :param activation: Base activation applied by the layer (default
+        `identity`).
+    :param convex_fraction: Fraction of output units with a convex activation
+        (absolute mode); must be in `[0, 1]`.
+    :param init: Weight-initialization spec.
+    :param bias: Whether the layer includes a bias term.
+    :raises ValueError: If `units` is not positive, `mode` is unknown, or
+        `convex_fraction` is outside `[0, 1]`.
+    """
 
     units: int
     mode: Mode = "absolute"
@@ -80,9 +93,16 @@ class MonoResidualConfig:
     Gate fields are string tokens only; a custom callable gate or `F`
     module is not serialized.
 
+    :param units: Number of output units; must be positive.
+    :param mode: Construction mode for the default `F` — `"absolute"`
+        (default) or `"switch"`.
     :param activation: Base activation for the default `F`. Required
         (keyword-only, no default) since a custom `F` is not representable
         here.
+    :param alpha_gate: Gate token for the skip path.
+    :param beta_gate: Gate token for the residual (transform) path.
+    :param init: Weight-initialization spec.
+    :raises ValueError: If `units` is not positive or `mode` is unknown.
     """
 
     units: int
