@@ -3,6 +3,38 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — VERIFIED ROOT CAUSE + fix (supersedes everything below)
+
+Established the correct baseline first (per author guidance): a **4-layer
+`absolute`-mode mononet built from plain `MonoLinear` layers fits the 1-D
+Heaviside** — ReLU MSE 3.5e-4 (slope ~96), and **softplus MSE 3e-3 (slope ~17)**,
+a genuine sharp step. mononet is a UA here, as expected (Lean proof).
+
+**Decisive controlled test (same Heaviside, width 64, 10k steps):**
+
+| construction | relu | softplus |
+|---|---|---|
+| plain `MonoLinear` × 4 | MSE 3.5e-4, slope 96 | MSE 3.0e-3, slope 17 ✅ |
+| `MonoResidual` × 2 + head (app-style) | MSE 6.25e-2, slope 0.75 | MSE 6.25e-2, slope 0.75 ❌ |
+
+The app's `MonoResidual`-based field **collapses to a near-linear map**
+(MSE 0.0625 — the *same* degenerate value the PINN app plateaued at; `relu` and
+`softplus` byte-identical ⇒ the block bypasses its activation). A plain
+`MonoLinear` stack does not.
+
+**Conclusion:** the disappointing PINN result is **not** mononet, **not** the
+activation, and **not** PINN training — it is that `HardMonoField` is built from
+`MonoResidual` blocks, which degenerate to ~linear in this narrow/step-fitting
+regime. (MonoResidual works elsewhere — tabular benchmarks — so this is a
+regime/usage interaction, worth a separate look, but not a blocker.)
+
+**Fix:** rebuild `HardMonoField` (and the `weight_clip` baseline analogously) from
+a **plain `MonoLinear` stack** (~4 layers, `absolute`, `softplus` for smooth PINN
+derivatives), keeping the free-`t` embedding. Re-validate by direct fit to the
+Burgers solution, then re-run the method comparison.
+
+---
+
 ## 2026-07-12 — CORRECTION (supersedes conclusions below)
 
 **mononet is NOT the limitation.** Per the author + the Lean UAP proof
