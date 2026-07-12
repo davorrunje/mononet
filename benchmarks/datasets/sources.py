@@ -40,6 +40,34 @@ SOURCES: dict[str, DataSource] = {
         url="https://archive.ics.uci.edu/dataset/2/adult",
         prep_hint="committed via LFS; regenerate with prepare/adult.py",
     ),
+    "taiwan": DataSource(
+        name="taiwan",
+        hosting="lfs",
+        license="CC-BY-4.0 (UCI)",
+        url="https://archive.ics.uci.edu/static/public/350/default+of+credit+card+clients.zip",
+        prep_hint="committed via LFS; regenerate with prepare/taiwan.py",
+    ),
+    "polish": DataSource(
+        name="polish",
+        hosting="lfs",
+        license="CC-BY-4.0 (UCI)",
+        url="https://archive.ics.uci.edu/static/public/365/polish+companies+bankruptcy+data.zip",
+        prep_hint="committed via LFS; regenerate with prepare/polish.py",
+    ),
+    "german": DataSource(
+        name="german",
+        hosting="lfs",
+        license="CC-BY-4.0 (UCI)",
+        url="https://archive.ics.uci.edu/dataset/144/statlog+german+credit+data",
+        prep_hint="committed via LFS; regenerate with prepare/german.py",
+    ),
+    "lc": DataSource(
+        name="lc",
+        hosting="lfs",
+        license="CC-BY-4.0 (Zenodo)",
+        url="https://zenodo.org/records/11295916",
+        prep_hint="committed via LFS; regenerate with prepare/lc.py",
+    ),
 }
 
 
