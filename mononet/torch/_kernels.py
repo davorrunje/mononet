@@ -2,8 +2,7 @@
 """Private PyTorch kernels for monotonic primitives (stateless).
 
 Stateless functions that take tensors and return tensors. Wrapper
-classes in layers.py / models.py instantiate parameters and delegate
-here.
+classes in `layers.py` instantiate parameters and delegate here.
 """
 
 from __future__ import annotations
