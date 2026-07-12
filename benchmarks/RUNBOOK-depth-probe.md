@@ -15,7 +15,7 @@ For each combination of family and complexity knob:
 ```bash
 MONONET_TORCH_DEVICE=cuda:0 uv run --extra torch-gpu --group bench \
   python -m benchmarks.monotone_depth_probe_run \
-  --kinds additive,teacher,lattice \
+  --kinds additive,teacher_relu,teacher_elu,lattice \
   --cs 1,2,4,8 \
   --out benchmarks/results/depth-probe/probe.json
 ```
