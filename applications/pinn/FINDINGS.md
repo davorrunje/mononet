@@ -3,6 +3,40 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — Forward-tier gap diagnosed: strong-form residual smears the shock
+
+Loss-weight sweep, `hard_monotone`, `burgers_riemann`, 8000 steps lr 5e-3
+(normalized field):
+
+| weights | L1 |
+|---|---|
+| ic-only (res 0, ic 10, bc 1) | **40.0** (best) |
+| ic-heavy (res 1, ic 100, bc 10) | 43.6 |
+| default (res 1, ic 10, bc 1) | 52.9 |
+| balanced (res 1, ic 1, bc 1) | 63.1 |
+| res-heavy (res 10, ic 1, bc 1) | 64.8 (worst) |
+
+**The residual hurts** — more residual weight → worse. And direct-fit of the same
+(fixed, normalized) field reaches mean|err| 0.084 (stationary) / 0.11 (moving),
+so the **field can represent the shock**; moving vs stationary is a minor gap (not
+front-translation). Therefore the forward-tier `hard_monotone` gap is the
+**strong-form PDE residual smearing the near-discontinuity** — minimising
+`u_t + u·u_x` at the shock rewards flattening it. This is a *known, fundamental*
+PINN-for-conservation-laws problem (the classical PDE holds only away from the
+shock; the entropy/weak form is needed — cf. WE-PINN), **not** a mononet, field,
+or normalization issue.
+
+**Important implication for the paper.** The forward tier was always just a
+mechanism check; this confirms it is the *wrong* setting for the constrained field
+(the residual fights the shock). The **inverse flagship (traffic)** should be far
+more favourable: scattered interior *observations* anchor the solution and the
+residual is a lighter regulariser — the regime the paper's thesis actually targets.
+**Next: test hard_monotone on the inverse/traffic problem** (with data), where the
+constraint's oscillation-free guarantee should pay off. Also consider a weak/
+entropy residual for the forward tier (secondary).
+
+---
+
 ## 2026-07-12 — Applied fixes + remaining gap (latest)
 
 **Done:** (1) `HardMonoField` rebuilt from a plain `MonoLinear` stack (the
