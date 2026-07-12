@@ -73,6 +73,7 @@ applications = [
 pinn = [
     {include-group = "applications"},
     "optax>=0.2",
+    "optuna>=4.0",
 ]
 docs = [
     "sphinx==9.0.4; python_version < '3.12'",
@@ -255,6 +256,10 @@ ignore = [
 "tools/**/*.py" = [
     "D103",     # missing docstring in public function (CLI entry points)
     "T20",      # flake8-print (tools use print for user feedback)
+]
+
+"applications/**/experiments/*.py" = [
+    "T201",     # CLI entry points print their JSON artifact to stdout
 ]
 
 "tests/**/*.py" = [

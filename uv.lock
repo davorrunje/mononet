@@ -1970,6 +1970,7 @@ lint = [
 pinn = [
     { name = "matplotlib" },
     { name = "optax" },
+    { name = "optuna" },
 ]
 
 [package.metadata]
@@ -2042,6 +2043,7 @@ lint = [
 pinn = [
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "optax", specifier = ">=0.2" },
+    { name = "optuna", specifier = ">=4.0" },
 ]
 
 [[package]]
