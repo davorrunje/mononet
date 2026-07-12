@@ -40,6 +40,13 @@ SOURCES: dict[str, DataSource] = {
         url="https://archive.ics.uci.edu/dataset/2/adult",
         prep_hint="committed via LFS; regenerate with prepare/adult.py",
     ),
+    "taiwan": DataSource(
+        name="taiwan",
+        hosting="lfs",
+        license="CC-BY-4.0 (UCI)",
+        url="https://archive.ics.uci.edu/static/public/350/default+of+credit+card+clients.zip",
+        prep_hint="committed via LFS; regenerate with prepare/taiwan.py",
+    ),
 }
 
 

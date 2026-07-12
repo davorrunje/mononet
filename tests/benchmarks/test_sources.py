@@ -19,6 +19,13 @@ def test_adult_is_lfs_hosted() -> None:
     assert "uci" in src.url.lower() or "openml" in src.url.lower()
 
 
+def test_taiwan_is_lfs_hosted() -> None:
+    src = SOURCES["taiwan"]
+    assert isinstance(src, DataSource)
+    assert src.hosting == "lfs"
+    assert "uci" in src.url.lower()
+
+
 def test_require_dataset_missing_script_source_raises_actionable(
     tmp_path: Path, monkeypatch: MonkeyPatch
 ) -> None:

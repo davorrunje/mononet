@@ -67,4 +67,19 @@ DATASETS_SPEC: dict[str, DatasetSpec] = {
         ("education_num", "hours_per_week", "capital_gain"),
         (),
     ),
+    "taiwan": DatasetSpec(
+        "taiwan",
+        "binary_classification",
+        "ground_truth",
+        ("PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"),
+        (
+            "LIMIT_BAL",
+            "PAY_AMT1",
+            "PAY_AMT2",
+            "PAY_AMT3",
+            "PAY_AMT4",
+            "PAY_AMT5",
+            "PAY_AMT6",
+        ),
+    ),
 }
