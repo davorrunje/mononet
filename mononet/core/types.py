@@ -24,9 +24,11 @@ ActivationName = Literal["relu", "elu", "selu", "softplus", "identity"]
 class MonotonicityMask:
     """Per-input-feature monotonicity specification.
 
-    Each entry in `values` is one of `{-1, +1}`:
-    - `+1`: output should be monotonically non-decreasing in this input.
-    - `-1`: output should be monotonically non-increasing in this input.
+    :param values: 1-D array of per-feature signs, each `+1` (output
+        non-decreasing in this input) or `-1` (output non-increasing).
+        Coerced to `int8`.
+    :raises ValueError: If `values` is not 1-D or contains a value outside
+        `{-1, +1}`.
     """
 
     values: npt.NDArray[np.int8]
@@ -46,11 +48,17 @@ class MonotonicityMask:
 
     @property
     def shape(self) -> tuple[int, ...]:
-        """Shape of the underlying mask array."""
+        """Shape of the underlying mask array.
+
+        :returns: The shape tuple of the `int8` mask array.
+        """
         return self.values.shape
 
     def __len__(self) -> int:
-        """Return the number of input features covered by this mask."""
+        """Return the number of input features covered by this mask.
+
+        :returns: The number of input features (length of the mask).
+        """
         return int(self.values.shape[0])
 
 
@@ -59,6 +67,10 @@ class ActivationSpec:
     """Backend-agnostic activation specification.
 
     Backends resolve `name` to their own activation function.
+
+    :param name: Activation name — one of `relu`, `elu`, `selu`, `softplus`,
+        `identity`.
+    :raises ValueError: If `name` is not a known activation.
     """
 
     name: ActivationName
@@ -76,6 +88,10 @@ class InitSpec:
     """Weight initialization specification.
 
     Backends resolve `scheme` to their own initializer.
+
+    :param scheme: Initializer scheme — `he_normal` (default),
+        `glorot_uniform`, or `lecun_normal`.
+    :param seed: Optional RNG seed for reproducible initialization.
     """
 
     scheme: Literal["he_normal", "glorot_uniform", "lecun_normal"] = "he_normal"
