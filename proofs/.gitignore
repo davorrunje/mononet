@@ -1,4 +1,0 @@
-.lake/
-build/
-lakefile.olean
-*.olean
