@@ -97,6 +97,25 @@ restructuring information architecture, filling a conceptual gap, authoring a
 migration guide — anything requiring new authored content or navigation
 decisions.
 
+### Explicit quick-win: README badges
+
+The README currently carries PyPI-version, Python-versions, Docs, and Build
+badges. Add, in this pass:
+
+- **Codecov coverage** — `https://codecov.io/gh/davorrunje/mononet` graph badge,
+  now meaningful with the 100% gate live. If the public badge renders blank, use
+  the non-secret graph token from Codecov settings (this is the badge/graph
+  token, **not** the upload `CODECOV_TOKEN`).
+- **License** — Apache-2.0 (the repo emphasizes its license posture; see
+  `NOTICE.md`).
+- **arXiv** — links to arXiv:2205.11775 (the source paper), fitting for a
+  paper-backed package.
+
+Badges are placed in the existing badge block at the top of the README, ordered
+so the most decision-relevant ones for a new adopter come first
+(version/Python/license, then coverage/build/docs, then arXiv). A downloads or
+code-style badge is intentionally omitted to avoid clutter.
+
 ## Deliverable
 
 One audit report at `docs/superpowers/audits/2026-07-12-docs-audit.md`
