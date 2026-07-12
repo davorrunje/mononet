@@ -61,6 +61,9 @@ already a pre-release. From a stable version, bump a release component first
    fast if the tag does not match the `pyproject.toml` version. The `v*.*.*`
    tag created by the release triggers the **Docs** workflow to deploy the
    versioned docs.
+6. After the release is published, confirm the CHANGELOG version/compare footer
+   links resolve — the `v<version>` release-tag link only goes live once the
+   GitHub Release (and its tag) exists.
 
 ## Notes
 
