@@ -131,7 +131,7 @@ include = ["mononet"]
 include = ["mononet"]
 
 [tool.mypy]
-files = ["mononet", "tests", "benchmarks"]
+files = ["mononet", "tests", "benchmarks", "applications"]
 strict = true
 strict_bytes = true
 local_partial_types = true
@@ -193,6 +193,7 @@ include = [
     "docs/**/*.py",
     "tools/**/*.py",
     "benchmarks/**/*.py",
+    "applications/**/*.py",
     "pyproject.toml",
 ]
 exclude = ["docs/docs_src"]
