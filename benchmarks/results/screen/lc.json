@@ -1,0 +1,11 @@
+{
+  "name": "lc",
+  "n_full": 829347,
+  "deep_iqm": 0.7871154179077313,
+  "shallow_iqm": 0.7871154179077313,
+  "delta": 0.0,
+  "delta_lo": -1.109744891758524e-06,
+  "delta_hi": 0.0,
+  "margin": 0.005,
+  "verdict": "standard"
+}

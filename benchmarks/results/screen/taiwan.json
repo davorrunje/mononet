@@ -1,0 +1,11 @@
+{
+  "name": "taiwan",
+  "n_full": 24000,
+  "deep_iqm": 0.7788333333333334,
+  "shallow_iqm": 0.7788333333333334,
+  "delta": 0.0,
+  "delta_lo": 0.0,
+  "delta_hi": 0.0,
+  "margin": 0.005,
+  "verdict": "standard"
+}
