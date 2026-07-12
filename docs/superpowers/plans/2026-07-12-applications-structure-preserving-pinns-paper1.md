@@ -25,6 +25,17 @@
   - **Phases 5–6 (heavy Optuna search + sweeps): `gpu-jax` is the primary GPU backend** (JAX + `jit` for the repeated residual/Hessian). Run the full search/sweep in JAX there.
   - **Cross-backend result = equivalence test + reproducing the JAX-tuned config on Torch** (forward-equivalence + a confirmation run) — cheap, no second HP search. Do the Torch confirmation on `default` (CPU) or a short `gpu-torch` session; do **not** attempt a combined torch+jax GPU venv (CUDA 13 vs 12.9 wheel conflicts).
 - Tests live under `tests/applications/pinn/` mirroring the package.
+- **Dependency strategy (interim + follow-up).** Application deps are opt-in uv
+  **dependency-groups** in the root `pyproject.toml`, mirroring `bench`:
+  `applications` (shared, e.g. matplotlib) and `pinn` (`{include-group =
+  "applications"}` + optax). Backends stay package extras; `dev` stays lean. Work
+  on the PINN app with `uv sync --extra jax --group pinn` (or `jax-gpu`).
+  Application tests `importorskip` matplotlib/optax **and** the backend, so the
+  default dev `uv run pytest` skips them cleanly. **Agreed follow-up:** migrate
+  each application to an *independent* uv project (own `pyproject`/`uv.lock`/`.venv`,
+  `mononet` via editable path source) so apps can't conflict — see the
+  `applications-dependency-strategy` memory. Single-backend venvs mean the
+  cross-backend equivalence test (3.2) runs only in an all-cpu (both-backends) sync.
 
 ---
 

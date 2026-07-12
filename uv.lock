@@ -1920,6 +1920,9 @@ torch-gpu = [
 ]
 
 [package.dev-dependencies]
+applications = [
+    { name = "matplotlib" },
+]
 bench = [
     { name = "matplotlib" },
     { name = "optuna" },
@@ -1964,6 +1967,10 @@ lint = [
     { name = "types-pyyaml" },
     { name = "types-setuptools" },
 ]
+pinn = [
+    { name = "matplotlib" },
+    { name = "optax" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1987,6 +1994,7 @@ requires-dist = [
 provides-extras = ["torch", "torch-cpu", "jax", "keras", "all", "all-cpu", "torch-gpu", "jax-gpu", "keras-gpu"]
 
 [package.metadata.requires-dev]
+applications = [{ name = "matplotlib", specifier = ">=3.8" }]
 bench = [
     { name = "matplotlib", specifier = "==3.11.0" },
     { name = "optuna", specifier = "==4.9.0" },
@@ -2030,6 +2038,10 @@ lint = [
     { name = "semgrep", specifier = "==1.168.0" },
     { name = "types-pyyaml", specifier = "==6.0.12.20260518" },
     { name = "types-setuptools", specifier = "==83.0.0.20260706" },
+]
+pinn = [
+    { name = "matplotlib", specifier = ">=3.8" },
+    { name = "optax", specifier = ">=0.2" },
 ]
 
 [[package]]

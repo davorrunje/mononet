@@ -6,13 +6,21 @@ implementation lands (see the plan:
 
 ## Environment
 
-- **Development / unit + smoke tests:** `default` devcontainer (CPU, all backends).
-- **Heavy Optuna search + sweeps:** `gpu-jax` devcontainer (primary GPU backend).
+Application deps are opt-in uv groups (`pinn` includes shared `applications`);
+backends are package extras. Sync the app env before running anything here:
 
 ```bash
-# unit + smoke suite (fast)
-uv run pytest tests/applications -q
+uv sync --extra jax --group pinn        # CPU JAX + optax + matplotlib (dev/tests)
+uv sync --extra jax-gpu --group pinn     # GPU JAX (heavy search); needs working CUDA
+uv sync --extra all-cpu --group pinn     # both backends (cross-backend equivalence)
+
+uv run pytest tests/applications -q      # unit + smoke suite
 ```
+
+- **Development / unit + smoke tests:** `default` devcontainer (`all-cpu`, both
+  backends) or a single-backend env (the other backend's tests skip).
+- **Heavy Optuna search + sweeps:** `gpu-jax` devcontainer (primary GPU backend).
+- **Cross-backend equivalence:** needs both backends → an `all-cpu` sync.
 
 ## Reproduction (to be completed)
 
