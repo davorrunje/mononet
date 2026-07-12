@@ -18,8 +18,8 @@ RUN apt-get update \
 
 # Create the non-root 'vscode' user (uid/gid 1000) with passwordless
 # sudo, matching the standard devcontainer convention and the
-# mcr.microsoft.com/devcontainers base used by the CPU and proofs
-# flavors. updateRemoteUserUID (default true) remaps this uid to the
+# mcr.microsoft.com/devcontainers base used by the CPU devcontainer.
+# updateRemoteUserUID (default true) remaps this uid to the
 # host user at create time if it differs, keeping bind-mounted files
 # correctly owned.
 ARG USERNAME=vscode
