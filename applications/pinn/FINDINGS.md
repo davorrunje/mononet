@@ -38,46 +38,65 @@ is an **optimization/architecture pathology**, not a tuning gap.
 **Caveats.** Single seed; no Optuna HP search yet; forward tier only (a mechanism
 check, not the inverse flagship); default loss weights (`ic=10, res=1, bc=1`).
 
-### DECISIVE TEST — direct supervised fit (no PDE). Architecture, confirmed.
+### Direct supervised fit (no PDE) — isolates architecture from PINN training
 
-Fit the `hard_monotone` field *directly* to the exact solution (supervised MSE on
-a 128×64 grid, width 64 × 3 blocks, 6000 steps, Adam 2e-3):
+Fit the `hard_monotone` field *directly* to the exact solution (supervised MSE,
+128×64 grid, width 64 × 3 blocks, 6000 steps, Adam 2e-3): L1 67, MSE 0.064 — **no
+better than the PINN.** So it is **not** a PINN-training problem.
+
+### ⚠️ Correction: the "front-translation" hypothesis was FALSIFIED
+
+Direct-fit to a **stationary** shock (`u_l=0.5, u_r=-0.5`, s=0 — a *t-constant*
+monotone step) fits **just as badly** as the moving shock:
 
 ```
-final supervised MSE: 0.0637   DIRECT-FIT L1=6.774e1  L2=4.534e0
+stationary (s=0)   MSE=0.0673  L1=6.96e1   mean|err|=0.216
+moving     (s=0.5) MSE=0.0637  L1=6.77e1   mean|err|=0.216
 ```
 
-Direct fit is **no better than the PINN** (L1 67 vs 52). So the field **cannot
-represent the solution even with the answer in hand** ⇒ **expressivity /
-architecture problem, not PINN training and not optimization.**
+So the problem is **not** about moving the front. The field can't fit even a
+*static* monotone step. (My earlier committed root-cause — front translation —
+was wrong; the stationary test refuted it.)
 
-**Root cause (architecture).** The field is
-`MonoStack(concat[x, h(t)])` where `MonoStack` is monotone in `x` **and** monotone
-in each channel of a free `t`-embedding `h(t)` (mask `[sign_x, +1,…,+1]`; see
-`models/jax/builders.py:HardMonoField`). The Burgers-Riemann solution is a **shock
-front that translates in `x`** as `t` grows (`x_s(t)=s·t`). Making a sharp
-monotone front *move horizontally* requires `x` and `t` to combine so the
-transition location shifts with `t`; the current weak concat→monotone-stack
-coupling saturates at a poor fit and does not improve with capacity/steps. The
-constraint is satisfied (viol≈0) but the front can't move → large L1/L2.
+### Actual finding: an HP-invariant collapse to a near-linear ramp
 
-### Refined next steps
-1. **Confirm the front-translation cause (cheap, decisive).** Run
-   `burgers_riemann` with `uL=-uR` (shock speed `s=0`, **stationary** front). If
-   `hard_monotone` fits the stationary shock well but fails moving ones, the
-   diagnosis is nailed to front-translation coupling.
-2. **Fix the `x`–`t` coupling** so a monotone-in-`x` front can translate:
-   - inject a learnable **monotone shift** of `x` by `t` inside the stack
-     (e.g. feed `sign_x*x + g(t)` where `g` is an unconstrained MLP of `t`), so
-     the transition location moves with `t`; or
-   - condition the monotone-in-`x` stack on `t` more richly (t-modulated
-     weights/bias) rather than a low-dim concatenated embedding.
-3. **Re-evaluate the inductive bias.** "Monotone in `x`, free in `t`" is correct
-   *pointwise per `t`*, but the moving front is the hard part — confirm the fixed
-   field can represent it before running the full sweep or the inverse flagship.
-4. Sanity: confirm grid/normalisation so absolute L1 magnitudes are interpretable.
+Profile at any `t` (stationary step, ref = ±0.5 hard step at `x0`):
 
-**Bottom line:** MonoResidual is not "bad at monotone problems" — the *field
-wiring* can't move a shock. This is a fixable architecture issue, and it should be
-fixed (and re-validated by direct fit) **before** any HP search or the inverse
-flagship.
+```
+x:    -2.0  -1.37  -0.74  -0.11 | 0.52  1.15  1.78  2.41
+pred: +0.61 +0.43 +0.25 +0.07 |-0.11 -0.29 -0.47 -0.65   (near-LINEAR ramp)
+ref:  +0.5  +0.5  +0.5  +0.5  |-0.5  -0.5  -0.5  -0.5    (sharp step)
+```
+
+The field is monotone-decreasing (constraint OK, bounded output) but renders the
+step as an **almost-affine ramp across the whole domain** — it never sharpens.
+And the fit is a **representational fixed point**: MSE=0.0673 / mean|err|=0.2157
+are **identical to 4 dp across** lr ∈ {2e-3, 1e-2, 3e-2}, steps ∈ {6k, 20k},
+width ∈ {64, 128}, blocks ∈ {3, 4}. Capacity and optimizer aggression change
+*nothing* ⇒ not under-training, not optimization — the wired field simply cannot
+(or will not) produce a steep monotone transition.
+
+**Metric-scale note:** the reported `l1`≈9 (vanilla) … 69 (hard) are on an
+inflated scale; the honest quantity is **mean|err|**: ~0.03 (vanilla) vs ~0.22
+(hard) on a range-1 signal. Normalise `metrics.l1/l2` so numbers are
+interpretable.
+
+### Refined next steps (revised)
+1. **Isolate mononet from the app wiring.** Fit a *minimal* `mononet` stack
+   (`MonoInput` + `MonoLinear`/`MonoResidual`, 1-D `x` only, no `t`) to a sharp
+   monotone step. Can *any* config produce a steep transition? Sweep
+   `mode ∈ {absolute, switch}`, `mono_activation`, depth. → tells us whether the
+   ceiling is in **mononet itself** or in `HardMonoField`'s wiring.
+2. **Explain the HP-invariance.** Why byte-identical across capacity? Inspect
+   `HardMonoField`/`MonoResidual` for a collapse (blocks → identity, linear head,
+   activation saturation, init scale). Possible bug or a real construction limit.
+3. **Consequence for the thesis.** If smooth monotone nets *fundamentally* can't
+   render near-discontinuities sharply, that is itself a key paper finding and
+   forces a rethink (sharper activation, coordinate/scale transform, or accepting
+   a quantified ramp width) — resolve **before** HP search or the inverse flagship.
+4. Fix the `metrics.l1/l2` normalisation.
+
+**Bottom line (corrected):** the failure is **not** front-translation and **not**
+training budget. The `hard_monotone` field converges — invariant to capacity and
+LR — to a near-linear monotone ramp and cannot sharpen a step. Next diagnostic
+must isolate whether this ceiling lives in `mononet` or in the app's field wiring.
