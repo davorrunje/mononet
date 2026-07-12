@@ -40,7 +40,7 @@ _(completed in Tasks 3–4 — quick-win findings, each with its commit SHA on `
 - [x] #1 — `docs/index.md:7` "Unconstrained" → "Constrained" — `fa2f6ba`
 - [x] #4 — `mononet/torch/_kernels.py` drop `models.py`, backtick `layers.py` (also removes the broken `http://layers.py` / `http://models.py` linkify autolinks) — `fa2f6ba`
 - [x] #12 — `docs/about/contributing.md` `!!! note` → ```` ```{note} ```` — `fa2f6ba`
-- [x] #8 (partial) — `CHANGELOG.md` footer link-refs: `[Unreleased]` repointed from the nonexistent `compare/v0.1.0...HEAD` to `.../commits/main`. The `[0.1.0]` ref is left as the tag URL (`.../releases/tag/v0.1.0`) — it is a not-yet-created release tag, deferred to follow-ups rather than substituted with a different link (which would mislabel the 0.1.0 snapshot). — `fa2f6ba`, `5f15b6f`
+- [x] #8 (partial) — `CHANGELOG.md` footer link-refs: `[Unreleased]` repointed from the nonexistent `compare/v0.1.0...HEAD` to `.../commits/main`. The `[0.1.0]` ref is left as the tag URL (`.../releases/tag/v0.1.0`) — it is a not-yet-created release tag, deferred to follow-ups rather than substituted with a different link (which would mislabel the 0.1.0 snapshot). — `fa2f6ba`, `1526b56`
 - [x] #9 — `CHANGELOG.md` stale entries: `MonoLinearConfig` → `MonoConfig`, dropped the "stub layers raising `NotImplementedError`" line (algorithm is implemented), "MkDocs site rewrite" / "Documentation framework with MkDocs Material" → Sphinx (myst-nb) — `fa2f6ba`
 
 Validation (all green on `spec/docs-audit` after the fixes above):
