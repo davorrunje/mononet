@@ -24,6 +24,9 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
   the shallow tuned flavors?
 - [Loan size-ladder](loan-size-ladder.md) — does deep monotone residual win
   once the dataset is large enough?
+- [Large-dataset screen](large-dataset-screen.md) — max-size deep vs shallow on
+  the benchmark roster; gates each dataset to a full ladder study or the
+  standard benchmark by the Δ criterion.
 - [Deep-network init](deep-init.ipynb) — the static `absolute` init that fixes moderate-depth
   trainability, and the deep-depth limitation it does not solve.
 
@@ -37,5 +40,6 @@ paper-reproduction/index
 flavor-comparison
 deep-residual-accuracy
 loan-size-ladder
+large-dataset-screen
 deep-init
 ```

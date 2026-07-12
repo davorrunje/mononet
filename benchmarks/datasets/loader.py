@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import csv
+import gzip
+from contextlib import ExitStack
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -16,17 +18,38 @@ if TYPE_CHECKING:
 
 
 def _read_csv(path: Path) -> tuple[list[str], np.ndarray]:
-    """Read a CSV file and return the header and data as a float64 array.
+    """Read a ``.csv`` or ``.csv.gz`` file into a header and float64 array.
 
-    :param path: Path to the CSV file.
+    :param path: Path to the CSV or gzip-compressed CSV file.
     :returns: Tuple of (header_names, data_array).
     :raises ValueError: If the file is empty or has no data rows.
     """
-    with path.open(newline="", encoding="utf-8") as fh:
+    with ExitStack() as stack:
+        if path.suffix == ".gz":
+            fh = stack.enter_context(
+                gzip.open(path, "rt", newline="", encoding="utf-8")
+            )
+        else:
+            fh = stack.enter_context(path.open(newline="", encoding="utf-8"))
         reader = csv.reader(fh)
         header = next(reader)
         rows = [[float(v) for v in r] for r in reader if r]
     return header, np.array(rows, dtype=np.float64)
+
+
+def _find(data_dir: Path, stem: str) -> Path:
+    """Return ``<stem>.csv`` or ``<stem>.csv.gz`` under *data_dir*.
+
+    :param data_dir: Directory to search in.
+    :param stem: File stem (without extension).
+    :returns: Path to the CSV or gzip-compressed CSV file.
+    :raises FileNotFoundError: If neither extension is found.
+    """
+    for ext in (".csv", ".csv.gz"):
+        p = data_dir / f"{stem}{ext}"
+        if p.exists():
+            return p
+    raise FileNotFoundError(f"{stem}.csv[.gz] not found in {data_dir}")
 
 
 def load_spec(spec: DatasetSpec, *, data_dir: Path) -> DatasetBundle:
@@ -43,8 +66,8 @@ def load_spec(spec: DatasetSpec, *, data_dir: Path) -> DatasetBundle:
     :raises KeyError: If *spec.name* is not found in the registry.
     :raises ValueError: If a declared monotone column name is not in the header.
     """
-    header, train = _read_csv(data_dir / f"train_{spec.name}.csv")
-    _, test = _read_csv(data_dir / f"test_{spec.name}.csv")
+    header, train = _read_csv(_find(data_dir, f"train_{spec.name}"))
+    _, test = _read_csv(_find(data_dir, f"test_{spec.name}"))
 
     try:
         tgt = header.index(spec.target)
