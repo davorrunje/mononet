@@ -89,4 +89,11 @@ DATASETS_SPEC: dict[str, DatasetSpec] = {
         ("Attr2",),
         ("Attr1", "Attr4", "Attr17", "Attr23", "Attr35"),
     ),
+    "german": DatasetSpec(
+        "german",
+        "binary_classification",
+        "ground_truth",
+        ("duration", "credit_amount", "installment_rate"),
+        ("age",),
+    ),
 }
