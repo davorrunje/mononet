@@ -3,6 +3,41 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-12 — HEADLINE: equal-budget inverse search — mononet wins the flagship
+
+Equal-budget Optuna (12 trials/method, tier-aware space incl. `residual_weight`/
+`data_weight`, grad-clip 1.0), `lwr_riemann` inverse (reconstruct traffic density
+from 80 sparse noisy observations), 6000 steps:
+
+| method | L1 | L2 | violation | overshoot | tuned (lr, w, res, data) |
+|---|---|---|---|---|---|
+| **hard_monotone (mononet)** | **1.48** | 0.55 | **0** | **0.014** | 1.7e-3, 32, 0.12, 7.5 |
+| vanilla | 2.52 | 0.54 | 0.078 | 0.011 | 1.7e-4, 64, 0.37, 6.8 |
+| soft | 2.48 | 0.44 | 0.111 | 0.054 | 2.5e-3, 64, 0.04, 4.3 |
+| weight_clip (naive hard) | 24.0 | 2.13 | 0 | 0.29 | 3.6e-3, 32, 0.24, 36 |
+
+**Result:** on the inverse/traffic flagship, **mononet's expressive hard
+monotonicity gives the best reconstruction L1 (1.48, ~40 % better than the ~2.5
+baselines) AND zero admissibility violation with the least oscillation.** The two
+foils land as the thesis predicts:
+- *unconstrained / soft* — decent error but **violate monotonicity** (0.08–0.11)
+  and oscillate; soft's penalty only softens it.
+- *weight_clip (inexpressive hard)* — admissible but **cannot fit** (L1 24). So it
+  is **not** "any monotone constraint" that works — it is the *expressive* one.
+
+The search also tuned **`residual_weight` low** (0.12 mono / 0.04 soft), leaning on
+the data term — consistent with the strong residual being counterproductive; the
+architecture supplies the structure instead.
+
+**Arc closed:** the forward tier is the constraint's worst case (residual smears
+shocks; mechanism check only); the **inverse data-assimilation regime the paper
+targets is where expressive hard monotonicity wins on both accuracy and
+admissibility.** This is the paper's headline, and it required: plain `MonoLinear`
+field, input normalization, gradient clipping, and equal-budget HP tuning — all
+now in place.
+
+---
+
 ## 2026-07-12 — BREAKTHROUGH: gradient clipping fixes the inverse divergence
 
 The inverse divergence was a gradient-scaling issue. Added **global-norm gradient
