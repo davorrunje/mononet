@@ -14,7 +14,9 @@ if TYPE_CHECKING:
 # gradient steps/epoch). The models are tiny, so tuning is launch-bound, not
 # capacity-bound; a large-batch band keeps the search tractable without touching
 # any other hyperparameter. Small/medium datasets keep the standard band.
-_LARGE_BATCH_DATASETS = frozenset({"loan", "blog"})
+# The screen roster's large datasets (lc ~829k, adult/taiwan ~24k) join this band
+# for the same reason; small ones (polish ~8k, german ~800) keep the standard band.
+_LARGE_BATCH_DATASETS = frozenset({"loan", "blog", "lc", "adult", "taiwan"})
 _BATCH_SIZES_SMALL = [8, 16, 32, 64, 128, 256]
 _BATCH_SIZES_LARGE = [512, 1024, 2048, 4096]
 
