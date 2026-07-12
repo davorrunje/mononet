@@ -75,7 +75,9 @@ def probe_dataset(
     :returns: Dict with ``kind``, ``c``, ``deep_mse_iqm``, ``shallow_mse_iqm``,
         ``deep_values``, and ``shallow_values`` (raw per-seed MSE lists).
     """
-    bundle = synth_monotone(kind, c)  # type: ignore[arg-type]
+    # Larger, dense synthetic sets so the large-batch band still gets enough
+    # gradient steps per epoch to optimize well (see search_spaces batch band).
+    bundle = synth_monotone(kind, c, n_train=16000, n_test=4000)  # type: ignore[arg-type]
     deep = _arm_mse(
         bundle,
         deep=True,

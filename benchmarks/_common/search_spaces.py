@@ -62,9 +62,10 @@ def suggest_config(
     weight_decay = trial.suggest_float("weight_decay", 0.0, 0.2)
     dropout = trial.suggest_float("dropout", 0.0, 0.5)
     lr_decay = trial.suggest_float("lr_decay", 0.85, 1.0)
-    batch_choices = (
-        _BATCH_SIZES_LARGE if dataset in _LARGE_BATCH_DATASETS else _BATCH_SIZES_SMALL
-    )
+    # Synthetic depth-probe datasets (``synth-*``) are dense/large — small batches
+    # make 50-epoch search intractable, so they join the large-batch band too.
+    large_batch = dataset in _LARGE_BATCH_DATASETS or dataset.startswith("synth")
+    batch_choices = _BATCH_SIZES_LARGE if large_batch else _BATCH_SIZES_SMALL
     batch_size = trial.suggest_categorical("batch_size", batch_choices)
     convex_fraction = (
         trial.suggest_float("convex_fraction", 0.0, 1.0) if mode == "absolute" else 0.5
