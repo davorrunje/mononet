@@ -149,10 +149,11 @@ cite the paper (see [`NOTICE.md`](NOTICE.md)).
 
 ## Formal proofs
 
-Every theorem in the paper is mechanized in Lean 4 + mathlib4 under
-[`proofs/`](proofs/). See
-[the cross-reference page](https://davorrunje.github.io/mononet/concepts/proofs.html)
-for the paper-claim ↔ Lean-theorem ↔ Python-test mapping.
+The theory underpinning `mononet` is mechanized in Lean 4 + mathlib4
+(`sorry`-free) in the companion repo
+**[neural-network-proofs](https://github.com/davorrunje/neural-network-proofs)** —
+browse the proofs, blueprint, and API docs at
+<https://davorrunje.github.io/neural-network-proofs/>.
 
 ## Documentation
 
