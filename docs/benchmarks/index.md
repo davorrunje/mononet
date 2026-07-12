@@ -27,6 +27,9 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 - [Large-dataset screen](large-dataset-screen.md) — max-size deep vs shallow on
   the benchmark roster; gates each dataset to a full ladder study or the
   standard benchmark by the Δ criterion.
+- [Synthetic monotone-depth probe](monotone-depth-probe.md) — does depth help
+  constrained monotone nets? Synthetic targets with a controllable complexity
+  knob separate expressivity/data/optimization causes.
 - [Deep-network init](deep-init.ipynb) — the static `absolute` init that fixes moderate-depth
   trainability, and the deep-depth limitation it does not solve.
 
@@ -41,5 +44,6 @@ flavor-comparison
 deep-residual-accuracy
 loan-size-ladder
 large-dataset-screen
+monotone-depth-probe
 deep-init
 ```
