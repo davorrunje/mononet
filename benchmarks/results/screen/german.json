@@ -1,0 +1,11 @@
+{
+  "name": "german",
+  "n_full": 800,
+  "deep_iqm": 0.7075,
+  "shallow_iqm": 0.71,
+  "delta": -0.0024999999999999467,
+  "delta_lo": -0.006249999999999978,
+  "delta_hi": 0.0,
+  "margin": 0.005,
+  "verdict": "standard"
+}

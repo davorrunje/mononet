@@ -1,0 +1,57 @@
+[
+  {
+    "name": "adult",
+    "n_full": 24129,
+    "deep_iqm": 0.7857616442897397,
+    "shallow_iqm": 0.7809133101276313,
+    "delta": 0.004848334162108392,
+    "delta_lo": -0.00041542350406099097,
+    "delta_hi": 0.010484004641140302,
+    "margin": 0.005,
+    "verdict": "standard"
+  },
+  {
+    "name": "german",
+    "n_full": 800,
+    "deep_iqm": 0.7075,
+    "shallow_iqm": 0.71,
+    "delta": -0.0024999999999999467,
+    "delta_lo": -0.006249999999999978,
+    "delta_hi": 0.0,
+    "margin": 0.005,
+    "verdict": "standard"
+  },
+  {
+    "name": "lc",
+    "n_full": 829347,
+    "deep_iqm": 0.7871154179077313,
+    "shallow_iqm": 0.7871154179077313,
+    "delta": 0.0,
+    "delta_lo": -1.109744891758524e-06,
+    "delta_hi": 0.0,
+    "margin": 0.005,
+    "verdict": "standard"
+  },
+  {
+    "name": "polish",
+    "n_full": 8402,
+    "deep_iqm": 0.9528795811518325,
+    "shallow_iqm": 0.9521656354117087,
+    "delta": 0.0007139457401237337,
+    "delta_lo": 0.0002379819133746519,
+    "delta_hi": 0.0028557829604949347,
+    "margin": 0.005,
+    "verdict": "standard"
+  },
+  {
+    "name": "taiwan",
+    "n_full": 24000,
+    "deep_iqm": 0.7788333333333334,
+    "shallow_iqm": 0.7788333333333334,
+    "delta": 0.0,
+    "delta_lo": 0.0,
+    "delta_hi": 0.0,
+    "margin": 0.005,
+    "verdict": "standard"
+  }
+]
