@@ -96,4 +96,11 @@ DATASETS_SPEC: dict[str, DatasetSpec] = {
         ("duration", "credit_amount", "installment_rate"),
         ("age",),
     ),
+    "lc": DatasetSpec(
+        "lc",
+        "binary_classification",
+        "ground_truth",
+        ("dti_n",),
+        ("fico_n", "revenue"),
+    ),
 }

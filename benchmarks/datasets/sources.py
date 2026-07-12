@@ -61,6 +61,13 @@ SOURCES: dict[str, DataSource] = {
         url="https://archive.ics.uci.edu/dataset/144/statlog+german+credit+data",
         prep_hint="committed via LFS; regenerate with prepare/german.py",
     ),
+    "lc": DataSource(
+        name="lc",
+        hosting="lfs",
+        license="CC-BY-4.0 (Zenodo)",
+        url="https://zenodo.org/records/11295916",
+        prep_hint="committed via LFS; regenerate with prepare/lc.py",
+    ),
 }
 
 

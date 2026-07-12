@@ -17,7 +17,7 @@ def test_auto_loader_shapes_and_monotonicity() -> None:
     assert b.X_test.shape[1] == b.X_train.shape[1]
 
 
-def test_registry_lists_nine_datasets() -> None:
+def test_registry_lists_ten_datasets() -> None:
     assert set(DATASETS) == {
         "adult",
         "auto",
@@ -28,4 +28,5 @@ def test_registry_lists_nine_datasets() -> None:
         "taiwan",
         "polish",
         "german",
+        "lc",
     }

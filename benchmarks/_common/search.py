@@ -217,6 +217,7 @@ _BUDGET: dict[str, tuple[int, range, int]] = {
     "taiwan": (25, range(10), 5),
     "polish": (25, range(10), 5),
     "german": (25, range(10), 5),
+    "lc": (25, range(10), 1),
 }
 
 
