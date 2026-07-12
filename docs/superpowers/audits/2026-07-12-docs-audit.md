@@ -34,23 +34,28 @@ highest audience within a severity tier.
 
 ## Fixed in this pass
 
-_(completed in Tasks 3–4 — quick-win findings, each with its commit SHA)_
+_(completed in Tasks 3–4 — quick-win findings, each with its commit SHA on `spec/docs-audit`)_
 
-- [ ] #1 — `docs/index.md` "Unconstrained" → "Constrained"
-- [ ] #4 — `mononet/torch/_kernels.py` drop `models.py`, backtick `layers.py`
-- [ ] #7 — README Apache-2.0 license badge (Task 3)
-- [ ] #8 — `CHANGELOG.md` footer link-refs (compare/tag)
-- [ ] #9 — `CHANGELOG.md` stale `MonoLinearConfig` / MkDocs references
-- [ ] #12 — `docs/about/contributing.md` `!!! note` → ```` ```{note} ````
+- [x] #7 — README Apache-2.0 (+ codecov, arXiv) badges — `df161f0`
+- [x] #1 — `docs/index.md:7` "Unconstrained" → "Constrained" — `fa2f6ba`
+- [x] #4 — `mononet/torch/_kernels.py` drop `models.py`, backtick `layers.py` (also removes the broken `http://layers.py` / `http://models.py` linkify autolinks) — `fa2f6ba`
+- [x] #12 — `docs/about/contributing.md` `!!! note` → ```` ```{note} ```` — `fa2f6ba`
+- [x] #8 — `CHANGELOG.md` footer link-refs: both `[Unreleased]` and `[0.1.0]` now point at `.../commits/main` (no `v0.1.0` tag exists yet) instead of 404ing on a nonexistent compare/tag — `fa2f6ba`
+- [x] #9 — `CHANGELOG.md` stale entries: `MonoLinearConfig` → `MonoConfig`, dropped the "stub layers raising `NotImplementedError`" line (algorithm is implemented), "MkDocs site rewrite" / "Documentation framework with MkDocs Material" → Sphinx (myst-nb) — `fa2f6ba`
+
+Validation (all green on `spec/docs-audit` after the fixes above):
+- `./tools/build-docs.sh` → `build succeeded`.
+- `./tools/check-docs.sh` → the `http://layers.py` / `http://models.py` linkify breaks are gone; all remaining `linkcheck` failures are external (pytorch-docs anchors #5, `patents.justia.com` 403 #11) — no internal link/xref regressions.
+- `uv run pytest tests/examples -q` → `4 passed`.
 
 ## Recommended follow-ups
 
-_(follow-up findings, ordered so the next spec is obvious to pick)_
+_(every open finding, ordered by severity then audience — new-adopter/practitioner first — so the top row is the obvious next spec)_
 
-1. **#2 Landing quickstart + start-here routing** — highest-audience gap; a short authored quickstart on `docs/index.md` (mirror the README block or `literalinclude`) plus persona pointers.
-2. **#3 Upgrade/migration note** — small authored "Upgrading" section covering the three breaking default changes; pairs naturally with #2.
-3. **#5 Intersphinx / autodoc2 cleanup** — config-level: add flax/keras inventories, map `numpy.typing`, refresh torch, suppress inherited base-class members, add targeted `nitpick_ignore`; clears the 350-warning backlog and the guide anchor breaks together.
-4. **#6 Reconcile `about/contributing.md` with `CONTRIBUTING.md`** — mirror/`{include}` the canonical dev-workflow doc (or rewrite the docs page to match) so contributors see the real workflow.
-5. **#13 Move `releasing.md` under `about/`** — one-page IA fix; can ride along with #6 since both touch the About section.
-6. **#10 Field-list docstrings on core dataclasses** — bring `MonoConfig`/`types.py` in line with the MyST spec and `MonoResidualConfig`.
-7. **#11 `linkcheck_ignore` for the patents.justia 403** — after manual confirmation it is a bot block.
+1. **#2 Landing quickstart + start-here routing** (structure, new-adopter/practitioner, med) — a short authored quickstart on `docs/index.md` (mirror the README block or `literalinclude`) plus persona pointers. Needs authored content/IA judgment → not a quick-win.
+2. **#3 Upgrade/migration note** (completeness, practitioner/researcher, med) — small authored "Upgrading" section covering the three breaking default changes (`mode`, `activation`, mandatory `MonoResidual` activation); pairs naturally with #2. Needs authored content → not a quick-win.
+3. **#5 Intersphinx / autodoc2 cleanup** (build-health/api-reference, researcher/contributor, med) — add flax/keras intersphinx inventories, map `numpy.typing`, refresh the torch inventory, suppress inherited base-class members, add targeted `nitpick_ignore`; clears the ~350-warning backlog and the `torch.nn.Linear`/`torch.nn.Sequential`/`torch.nn.Module`/`torch.dtype`/`torch.Tensor`/`torch.nn.parameter.Parameter` anchor breaks still present in `check-docs.sh` output together. Config-level design work → not a quick-win.
+4. **#6 Reconcile `about/contributing.md` with `CONTRIBUTING.md`** (consistency/accuracy, contributor, med) — mirror/`{include}` the canonical dev-workflow doc (or rewrite the docs page to match) so contributors see the real five-devcontainer-flavor/`uv sync`/pre-commit-gate workflow. Content rewrite/IA decision → not a quick-win.
+5. **#13 Move `releasing.md` under `about/`** (structure, contributor, low) — one-page IA fix; can ride along with #6 since both touch the About section.
+6. **#10 Field-list docstrings on core dataclasses** (api-reference, researcher, low) — bring `MonoConfig`/`types.py` in line with the MyST field-list spec and `MonoResidualConfig`. Authoring → not a quick-win.
+7. **#11 `linkcheck_ignore` for the `patents.justia.com` 403** (build-health, researcher, low) — confirmed still 403ing under `check-docs.sh` in this pass (loads fine in a browser); after manual confirmation it's a bot block, add it to `linkcheck_ignore` rather than removing the citation.
