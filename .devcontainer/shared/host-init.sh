@@ -36,7 +36,11 @@ fi
 # fall back to a plain dir so the mount source always exists (sessions then
 # persist there but aren't shared with a pre-existing host session dir).
 CLAUDE_PROJECTS="${HOME}/.claude/projects"
-SESSION_LINK="${SECRETS_DIR}/claude-session"
+# Per-clone key (devcontainer id, passed as $1 from initializeCommand). Keying
+# the session dir by it means two clones on one machine get distinct session
+# binds instead of overwriting a single shared "claude-session" link.
+devcontainer_id="${1:-}"
+SESSION_LINK="${SECRETS_DIR}/claude-session${devcontainer_id:+-${devcontainer_id}}"
 host_slug="$(printf '%s' "${PWD}" | sed 's#/#-#g')"
 rm -rf "${SESSION_LINK}" 2>/dev/null || true
 if mkdir -p "${CLAUDE_PROJECTS}/${host_slug}" 2>/dev/null \
