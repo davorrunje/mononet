@@ -3,7 +3,34 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
-## 2026-07-12 — HEADLINE: equal-budget inverse search — mononet wins the flagship
+## 2026-07-12 — FIRMED headline (10-seed IQM): accuracy a wash, admissibility the win
+
+Repo-protocol aggregation: tune once (20 trials), evaluate **10 seeds**, report
+**IQM** (trim `n//4`) with a **95 % bootstrap band**. Inverse `lwr_riemann`,
+8000 steps, grad-clip. `results/inverse-headline.json`.
+
+| method | L1 IQM [95%] | L2 IQM | violation | overshoot |
+|---|---|---|---|---|
+| **hard_monotone** | **3.17 [2.37, 3.80]** | 0.79 | **0** | 0.023 |
+| vanilla | 3.92 [3.34, 4.27] | 0.73 | 0.083 | 0.024 |
+| soft | 3.95 [3.36, 4.37] | 0.72 | 0.104 | 0.040 |
+| weight_clip | 22.5 [22.0, 23.1] | 2.10 | 0 | 0.30 |
+
+**Honest correction to the single-seed run** (which showed L1 1.48 — optimistic).
+Over 10 seeds: `hard_monotone` L1 is lowest but its band **overlaps** the
+baselines, and its L2 is **marginally worse**. So **accuracy is a wash** with
+unconstrained/soft. The **decisive, non-overlapping result is admissibility**:
+violation **0** vs 0.08–0.10 (baselines oscillate), and `weight_clip` (L1 22.5)
+confirms it is the *expressive* constraint that matters, not any monotone one.
+
+**Defensible claim:** *on the inverse/traffic problem, expressive hard
+monotonicity gives reconstruction accuracy competitive with unconstrained/soft
+PINNs while being the only structurally admissible, oscillation-free solution
+(zero monotonicity violation by construction).* Do NOT claim it beats on accuracy.
+
+---
+
+## 2026-07-12 — HEADLINE: equal-budget inverse search — mononet wins the flagship (single-seed; superseded)
 
 Equal-budget Optuna (12 trials/method, tier-aware space incl. `residual_weight`/
 `data_weight`, grad-clip 1.0), `lwr_riemann` inverse (reconstruct traffic density
