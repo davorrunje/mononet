@@ -223,6 +223,22 @@ _BUDGET: dict[str, tuple[int, range, int]] = {
     "german": (25, range(10), 5),
     "lc": (25, range(10), 1),
 }
+# Cheap budget for every generator-backed `synth_*` depth-probe dataset
+# (#99): small trial/seed counts since generation (and eval) is fast and
+# these are ablations, not headline results.
+_SYNTH_BUDGET: tuple[int, range, int] = (25, range(5), 1)
+
+
+def _budget_for(dataset: str) -> tuple[int, range, int]:
+    """Resolve the ``(n_trials, final_seeds, n_splits)`` budget for *dataset*.
+
+    :param dataset: Dataset key.
+    :returns: Explicit :data:`_BUDGET` entry; :data:`_SYNTH_BUDGET` for any
+        ``synth_*`` key; else the global default.
+    """
+    if dataset.startswith("synth_"):
+        return _SYNTH_BUDGET
+    return _BUDGET.get(dataset, (50, range(10), 5))
 
 
 def _count_collapses(
@@ -282,7 +298,7 @@ def run_dataset(
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
 
-    b_trials, b_seeds, b_splits = _BUDGET.get(dataset, (50, range(10), 5))
+    b_trials, b_seeds, b_splits = _budget_for(dataset)
     n_trials = b_trials if n_trials is None else n_trials
     final_seeds = b_seeds if final_seeds is None else final_seeds
     n_splits = b_splits if n_splits is None else n_splits
