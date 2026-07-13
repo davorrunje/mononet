@@ -39,7 +39,10 @@ def test_create_type_1_builds_runnable_model() -> None:
 
 def test_create_type_1_accepts_dict_inputs() -> None:
     legacy._WARNED = True
-    inputs = {"a": keras.Input(shape=(1,)), "b": keras.Input(shape=(1,))}
+    inputs = {
+        "a": keras.Input(shape=(1,), name="a"),
+        "b": keras.Input(shape=(1,), name="b"),
+    }
     out = create_type_1(
         inputs,
         units=4,

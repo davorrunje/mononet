@@ -117,7 +117,10 @@ def apply_activations(
     :raises ValueError: If ``activation_weights`` is not length 3 or has a
         negative entry.
     """
-    if convex_activation is None:
+    if convex_activation is None:  # pragma: no cover
+        # Unreachable via the only real call site (MonoDense.call, through
+        # get_activation_functions): keras.activations.get(None) resolves to
+        # the linear activation, never None.
         return x
 
     if is_convex:

@@ -93,9 +93,12 @@ def test_forward_pass_with_use_bias_false() -> None:
     )
     layer.build((None, 2))
 
-    # Assert no bias weight exists (only kernel, no bias)
-    weights = layer.get_weights()
-    assert len(weights) == 1
+    # Assert no bias weight exists (only kernel, no bias). Avoid
+    # layer.get_weights() here: it calls Variable.numpy() -> np.array(self),
+    # which under the JAX backend + NumPy 2.x raises a DeprecationWarning from
+    # inside Keras itself (Variable.__array__ doesn't accept `copy`) — beyond
+    # our control, so we sidestep it rather than trigger it.
+    assert len(layer.weights) == 1
 
     # Set a known kernel
     kernel = np.array([[2.0], [3.0]], dtype="float32")
