@@ -77,7 +77,7 @@ class BenchmarkConfig:
     epochs: int
     early_stopping: EarlyStoppingSpec | None
     seeds: tuple[int, ...]
-    metrics: tuple[Literal["accuracy", "rmse", "mse"], ...]
+    metrics: tuple[Literal["accuracy", "rmse", "mse", "roc_auc"], ...]
 
     def replace(self, **changes: Any) -> BenchmarkConfig:
         """Return a copy with the given fields overridden.
