@@ -40,7 +40,7 @@ def test_mono_residual_config_roundtrip() -> None:
     cfg = MonoResidualConfig(units=16, mode="switch", activation=ActivationSpec("relu"))
     assert MonoResidualConfig.from_json(cfg.to_json()) == cfg
     assert cfg.alpha_gate == "shifted_elu"
-    assert cfg.beta_gate == "scaled_elu"
+    assert cfg.beta_gate == "softplus"
 
 
 def test_monoconfig_default_activation_is_identity() -> None:

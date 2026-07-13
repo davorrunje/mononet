@@ -163,7 +163,7 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         explicit ``F``. A custom ``F`` is not serializable, so
         :meth:`get_config` emits ``activation=None`` in that case.
     :param alpha_gate: Gate token for the skip path (``shifted_elu``).
-    :param beta_gate: Gate token for the dense path (``scaled_elu``).
+    :param beta_gate: Gate token for the dense path (``softplus``).
     :param init: Forwarded to the default ``F``.
     :param sub_depth: Number of :class:`MonoDense` layers in ``F`` (default 2;
         ``1`` = legacy single layer).  Mutually exclusive with ``F``.
@@ -179,7 +179,7 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
-        beta_gate: str = "scaled_elu",
+        beta_gate: str = "softplus",
         init: InitSpec | str | None = None,
         sub_depth: int | None = None,
         **kwargs: Any,

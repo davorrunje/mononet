@@ -131,7 +131,7 @@ def monotonic_residual(
     activation: ActivationSpec,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
-    beta_gate: str = "scaled_elu",
+    beta_gate: str = "softplus",
     skip_weight: npt.NDArray[np.floating] | None = None,
 ) -> npt.NDArray[np.floating]:
     """Dual-gated monotone residual block (NumPy reference).

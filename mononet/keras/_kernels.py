@@ -106,7 +106,7 @@ def monotonic_residual(
     activation_name: str,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
-    beta_gate: str = "scaled_elu",
+    beta_gate: str = "softplus",
     skip_weight: Any | None = None,
 ) -> Any:
     """Keras dual-gated monotone residual kernel.
@@ -122,7 +122,7 @@ def monotonic_residual(
         :func:`monotonic_dense`.
     :param convex_fraction: Convex fraction for ``absolute`` mode.
     :param alpha_gate: Gate token for the skip path (default ``shifted_elu``).
-    :param beta_gate: Gate token for the dense path (default ``scaled_elu``).
+    :param beta_gate: Gate token for the dense path (default ``softplus``).
     :param skip_weight: Optional projection log-weight matrix of shape
         ``(in_features, units)``; when provided the skip path is
         ``x @ exp(skip_weight)``.

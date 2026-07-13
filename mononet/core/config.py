@@ -109,7 +109,7 @@ class MonoResidualConfig:
     mode: Mode = "absolute"
     activation: ActivationSpec = field(kw_only=True)
     alpha_gate: str = "shifted_elu"
-    beta_gate: str = "scaled_elu"
+    beta_gate: str = "softplus"
     init: InitSpec = field(default_factory=InitSpec)
 
     def __post_init__(self) -> None:

@@ -116,7 +116,7 @@ def monotonic_residual(
     activation_name: str,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
-    beta_gate: str = "scaled_elu",
+    beta_gate: str = "softplus",
     skip_weight: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """PyTorch dual-gated monotone residual kernel.

@@ -142,7 +142,7 @@ class MonoResidual(nnx.Module):
         (default ``None``). Required when ``F`` is not provided; mutually
         exclusive with an explicit ``F``.
     :param alpha_gate: Gate token for the skip path; default ``shifted_elu``.
-    :param beta_gate: Gate token for the dense path; default ``scaled_elu``.
+    :param beta_gate: Gate token for the dense path; default ``softplus``.
     :param init: Weight initializer; defaults to ``he_normal``.
     :param sub_depth: Number of :class:`MonoLinear` layers to stack when ``F``
         is ``None``; default ``2``. Pass ``1`` for the legacy single-layer
@@ -161,7 +161,7 @@ class MonoResidual(nnx.Module):
         mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
-        beta_gate: str = "scaled_elu",
+        beta_gate: str = "softplus",
         init: InitSpec | str | None = None,
         sub_depth: int | None = None,
         rngs: nnx.Rngs,

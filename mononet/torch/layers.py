@@ -142,7 +142,7 @@ class MonoResidual(nn.Module):
         mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
-        beta_gate: str = "scaled_elu",
+        beta_gate: str = "softplus",
         init: InitSpec | str | None = None,
         sub_depth: int | None = None,
     ) -> None:

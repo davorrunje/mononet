@@ -28,7 +28,10 @@ def test_mono_residual_warm_start_near_identity() -> None:
     import mononet.torch as t
 
     torch.manual_seed(0)  # deterministic init + input (jax/keras tests already seed)
-    block = t.MonoResidual(4, 4, mode="switch", activation="relu")
+    # near-identity holds only for the eps-gate; pin it explicitly here
+    block = t.MonoResidual(
+        4, 4, mode="switch", activation="relu", beta_gate="scaled_elu"
+    )
     x = torch.randn(3, 4)
     y = block(x)
     assert torch.allclose(y, x, atol=5e-3)

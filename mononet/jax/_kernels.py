@@ -104,7 +104,7 @@ def monotonic_residual(
     activation_name: str,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
-    beta_gate: str = "scaled_elu",
+    beta_gate: str = "softplus",
     skip_weight: jnp.ndarray | None = None,
 ) -> jnp.ndarray:
     """JAX dual-gated monotone residual kernel (pure-functional).
