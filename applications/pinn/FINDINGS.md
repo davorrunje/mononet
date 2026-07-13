@@ -3,6 +3,33 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## SESSION SUMMARY (2026-07-12, overnight autonomous run)
+
+Started from "MonoResidual gives disappointing PINN results." Root-caused a stack
+of *usage/training* issues (mononet itself is fine — Heaviside/UAP), fixed them,
+and firmed up a paper-grade headline.
+
+**Fixed (committed):** (1) `MonoResidual` field collapsed to ~linear → switched to
+a plain `MonoLinear` stack; (2) missing input normalization → added (tied to
+`absolute`-init scale); (3) inverse-tier residual divergence → global-norm
+gradient clipping; (4) forward residual smears shocks (known PINN issue — forward
+is a mechanism check only).
+
+**Headline (10-seed IQM, equal-budget tuned):** on the inverse/traffic flagship,
+expressive hard monotonicity is **accuracy-competitive** with unconstrained/soft
+PINNs (L1 IQM 3.17 vs 3.9; bands overlap, L2 a wash) and the **only structurally
+admissible, oscillation-free** solution (violation 0 vs 0.08–0.10). Inexpressive
+`weight_clip` fails (L1 22.5) → it is the *expressiveness* that matters. Forward
+tier: constraint costs ~20 % accuracy but gives zero oscillation (the worst case).
+
+**Artifacts:** `results/{inverse-headline,forward-mechanism}.json`;
+reproducible `experiments/headline.py` + RUNBOOK; `paper/paper.md` §6 filled +
+abstract reworded to the honest claim. ruff/mypy clean; 68 tests pass.
+
+**Open (need a different env / more work):** cross-backend equivalence (needs
+Torch → `default` container); figures + sparsity×noise sweep; the two mononet-core
+/ docs follow-ups (`MonoResidual` gate-collapse; input-normalization docs).
+
 ## 2026-07-12 — Forward mechanism panel (10-seed IQM) + paper §6 filled
 
 Forward `burgers_riemann`, same protocol (`results/forward-mechanism.json`):
