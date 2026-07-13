@@ -3,6 +3,30 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-13 — L1 vs L2 + 2nd PDE (Burgers): corrected, honest central result
+
+Added L1 to the sweep (was L2-only) and ran the inverse crossover on a 2nd PDE
+(Burgers, convex flux) to complement LWR (concave). Fresh sweeps with both norms.
+
+**Whole-field L1 — the general result:** hard_monotone has lowest L1 in **16/16**
+noisy LWR cells and **15/16** noisy Burgers cells (noise ≥ 0.05, all 4 n_obs),
+margin widening with noise. n_obs=80/noise=0.20: LWR 13.2 vs 17.0/21.5; Burgers
+19.0 vs 20.6/29.3. Admissibility 0 at every one of the 40 cells, both PDEs.
+
+**Front-weighted L2 is PDE-dependent:** clean on LWR (hard best from 0.05), but
+**mixed on Burgers** — its steeper shock lets oscillating baselines match/beat hard
+on L2 at high noise (n_obs=80/0.20: hard 1.90 vs vanilla 1.82, while vanilla
+violates 0.86). L2 is dominated by the sharp front, where a continuous monotone
+ramp can't beat a steep (oscillating) fit; L1 integrates whole-field error where
+the monotone prior wins broadly.
+
+**Correction to my earlier caution:** I predicted "L2 flatters hard, L1 will temper
+it." **Wrong, twice** — L1 *strengthens and generalizes* the win (baselines overfit
+noise everywhere, which L1 captures), and L2 is the front-sensitive metric that's
+PDE-dependent. Paper §6.2.1 + abstract rewritten to report **both norms honestly**:
+general L1 accuracy win + universal admissibility; L2 clean on LWR, wash-to-slight-
+loss at high-noise Burgers. We report both rather than lead with the flattering norm.
+
 ## 2026-07-13 — Non-PINN smoothness baseline: PDE + monotonicity both needed
 
 Classical thin-plate RBF smoother fit directly to the observations (no PDE, no

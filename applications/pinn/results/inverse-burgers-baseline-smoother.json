@@ -1,0 +1,181 @@
+{
+  "problem": "burgers_riemann",
+  "method": "rbf_smoother",
+  "n_obs": [
+    20,
+    40,
+    80,
+    160
+  ],
+  "noise": [
+    0.0,
+    0.05,
+    0.1,
+    0.15,
+    0.2
+  ],
+  "seeds": 4,
+  "aggregate": "iqm",
+  "cells": [
+    {
+      "method": "rbf_smoother",
+      "n_obs": 20,
+      "noise": 0.0,
+      "l2": 3.951967879917748,
+      "admissibility_violation": 0.0784888745018399,
+      "overshoot": 0.25913378700890344
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 20,
+      "noise": 0.05,
+      "l2": 3.964426236988316,
+      "admissibility_violation": 0.05629609406405209,
+      "overshoot": 0.32178477572614794
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 20,
+      "noise": 0.1,
+      "l2": 4.210139911920808,
+      "admissibility_violation": 0.08964924815691858,
+      "overshoot": 0.3181980403575956
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 20,
+      "noise": 0.15,
+      "l2": 4.291472313733388,
+      "admissibility_violation": 0.11882852347293353,
+      "overshoot": 0.37465257119686585
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 20,
+      "noise": 0.2,
+      "l2": 4.393817614360687,
+      "admissibility_violation": 0.07770331387534757,
+      "overshoot": 0.31361118345689215
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 40,
+      "noise": 0.0,
+      "l2": 3.1076499676670206,
+      "admissibility_violation": 0.11593117929071219,
+      "overshoot": 0.1982532649431396
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 40,
+      "noise": 0.05,
+      "l2": 3.162098206362802,
+      "admissibility_violation": 0.17058964043766095,
+      "overshoot": 0.19448968083780788
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 40,
+      "noise": 0.1,
+      "l2": 3.7080846789446396,
+      "admissibility_violation": 0.2575308381011449,
+      "overshoot": 0.22931165155303734
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 40,
+      "noise": 0.15,
+      "l2": 4.000709666202573,
+      "admissibility_violation": 0.36086454996818695,
+      "overshoot": 0.2498328716632356
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 40,
+      "noise": 0.2,
+      "l2": 4.156959483272983,
+      "admissibility_violation": 0.4665277850116306,
+      "overshoot": 0.3176061349114121
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 80,
+      "noise": 0.0,
+      "l2": 2.7460925653020865,
+      "admissibility_violation": 0.14473254322975104,
+      "overshoot": 0.12223118634412755
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 80,
+      "noise": 0.05,
+      "l2": 2.8665927765314443,
+      "admissibility_violation": 0.20617185015676345,
+      "overshoot": 0.12213155114481941
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 80,
+      "noise": 0.1,
+      "l2": 3.037640455760989,
+      "admissibility_violation": 0.30619789710761186,
+      "overshoot": 0.15312468971643214
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 80,
+      "noise": 0.15,
+      "l2": 3.401199339054064,
+      "admissibility_violation": 0.2644138188456093,
+      "overshoot": 0.17982956385191906
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 80,
+      "noise": 0.2,
+      "l2": 3.5646946143679523,
+      "admissibility_violation": 0.23773194068345221,
+      "overshoot": 0.25230393414292884
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 160,
+      "noise": 0.0,
+      "l2": 2.1071275675737153,
+      "admissibility_violation": 0.22175253263003952,
+      "overshoot": 0.1732673468753591
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 160,
+      "noise": 0.05,
+      "l2": 2.1696879064189973,
+      "admissibility_violation": 0.38047343383314314,
+      "overshoot": 0.18254440610305217
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 160,
+      "noise": 0.1,
+      "l2": 2.362211256350616,
+      "admissibility_violation": 0.22875393415465195,
+      "overshoot": 0.1621562077196767
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 160,
+      "noise": 0.15,
+      "l2": 2.535164729863473,
+      "admissibility_violation": 0.31150510170180346,
+      "overshoot": 0.22713687396367638
+    },
+    {
+      "method": "rbf_smoother",
+      "n_obs": 160,
+      "noise": 0.2,
+      "l2": 2.7987455889137602,
+      "admissibility_violation": 0.3959842003507977,
+      "overshoot": 0.293457133873415
+    }
+  ]
+}

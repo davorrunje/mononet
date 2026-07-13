@@ -32,14 +32,16 @@ for tuned unconstrained/soft-penalty baselines — at a modest accuracy cost, si
 the strong-form residual actively smears the discontinuity. We then apply it where
 a PINN genuinely complements a classical solver — the *inverse* problem of traffic
 state estimation from sparse, noisy observations (~0.7 % space-time coverage) —
-where the hard-monotone reconstruction is competitive in accuracy at low noise
-(L¹ IQM 3.5 vs 3.9) and **decisively more accurate as observation noise grows** —
-~20–36 % lower L² at noise 33 % of the signal range — while being the **only
-structurally admissible, oscillation-free** solution (violation 0 vs the
-baselines' 0.9–1.3 at high noise). The monotone prior regularizes the noise the
-unconstrained/soft baselines over-fit. A naive, inexpressive weight-clipping
-constraint fails badly (≈6× worse error), confirming that it is *expressive* hard
-monotonicity that matters. JAX and PyTorch
+where, across two conservation laws (LWR and Burgers) and a sparsity × noise grid,
+the hard-monotone reconstruction has the **lowest whole-field (L¹) error under
+noise** (best in ~31/32 noisy cells, margin widening with noise) **and is the only
+structurally admissible, oscillation-free solution** (violation 0 everywhere vs the
+baselines' 0.9–1.3 at high noise) — the monotone prior regularizes the noise the
+unconstrained/soft baselines over-fit. On the front-weighted L² norm the accuracy
+edge is PDE-dependent (clean on LWR, a wash at high noise on Burgers, whose steeper
+shock lets oscillating baselines match it at the front). A naive, inexpressive
+weight-clipping constraint fails badly (≈6× worse), confirming it is *expressive*
+hard monotonicity that matters. JAX and PyTorch
 implementations are provided; a cross-backend equivalence check is left to the
 released artifact. Code and trained models ship with the `mononet` package.
 
@@ -275,32 +277,42 @@ to `mononet`'s *expressive* hard monotonicity, not monotonicity per se.
 
 #### 6.2.1 Robustness under noise — the key result
 
-Stress-testing each method's tuned config across noise (MonoResidual field,
-`results/inverse-sweep.json`; IQM over seeds), at n_obs = 80:
+Stress-testing each method's tuned config across an observation-count × noise grid
+on **two conservation laws** (LWR, concave flux; Burgers, convex flux), IQM over
+seeds (`results/inverse-sweep.json`, `results/inverse-burgers-sweep.json`).
 
-| noise | L² (hard / van / soft) | violation (hard / van / soft) |
+**Whole-field accuracy (L¹) — the general result.** From noise ≥ 0.05, the
+hard-monotone field has the lowest L¹ reconstruction error in **16/16** noisy LWR
+cells and **15/16** noisy Burgers cells (all four observation counts), with the
+margin widening as noise grows. At n_obs = 80:
+
+| noise | L¹ LWR (hard/van/soft) | L¹ Burgers (hard/van/soft) |
 |---|---|---|
-| 0.00 | 0.70 / 0.68 / **0.63** | **0** / 0.05 / 0.06 |
-| 0.05 | **0.69** / 0.73 / 0.79 | **0** / 0.14 / 0.23 |
-| 0.10 | **0.86** / 0.94 / 1.08 | **0** / 0.37 / 0.51 |
-| 0.15 | **1.14** / 1.26 / 1.47 | **0** / 0.62 / 0.88 |
-| 0.20 | **1.26** / 1.59 / 1.97 | **0** / 0.86 / 1.32 |
+| 0.05 | **4.2** / 5.4 / 6.6 | **6.7** / 9.4 / 9.1 |
+| 0.10 | **7.6** / 9.0 / 11.2 | **11.4** / 12.4 / 16.0 |
+| 0.15 | **9.5** / 13.2 / 15.7 | **14.6** / 16.4 / 22.3 |
+| 0.20 | **13.2** / 17.0 / 21.5 | **19.0** / 20.6 / 29.3 |
 
-There is a clean **crossover**: at zero noise the unconstrained/soft baselines are
-marginally more accurate (nothing to over-fit), but **from noise ≥ 0.05 the
-hard-monotone field is best on L², and the margin widens with noise** — at
-noise 0.20 it is ~20 % better than vanilla and ~36 % better than soft. The
-mechanism is regularization: the baselines fit the observation noise (and
-oscillate — monotonicity violation climbing to 0.9–1.3), while the monotone prior
-cannot, so it both **resists noise (lower error) and stays exactly admissible
-(violation 0)** at every operating point. This is the paper's central result: in
-the realistic sparse-and-noisy data-assimilation regime, expressive hard
-monotonicity delivers *both* better accuracy *and* guaranteed structure, and the
-advantage grows as data degrades. The crossover is **general**: it holds at every
-observation count (20–160; at the sparsest, hard-monotone wins even at zero noise)
-and for both the `MonoResidual` and plain-`MonoLinear` fields — 20 cells with a
-coherent monotone trend, so it reflects the *monotone constraint*, not a single
-operating point or architecture detail.
+The mechanism is regularization: the baselines over-fit the observation noise
+*everywhere* (and oscillate — monotonicity violation climbing to 0.9–1.3), while
+the monotone prior cannot, so it resists noise across the whole field. Meanwhile
+it stays **exactly admissible (violation 0) at every one of the 40 cells**, on both
+PDEs, both fields.
+
+**Front-weighted accuracy (L²) is PDE-dependent.** L² is dominated by the sharp
+front, where a *continuous* monotone ramp cannot beat a baseline that fits the jump
+steeply (at the cost of oscillation). So the L² picture is clean on **LWR**
+(hard best from noise ≥ 0.05: at n_obs=80/0.20, 1.39 vs 1.59/1.97) but **mixed on
+Burgers** (its steeper shock lets the oscillating baselines match/beat hard on L²
+at high noise, e.g. n_obs=80/0.20: 1.90 vs 1.82 — while violating 0.86). The two
+norms tell a consistent story: the constraint improves *whole-field* accuracy
+generally; on the narrow front it trades sharpness for admissibility.
+
+**Honest summary.** The robust, general claims are (i) **lower whole-field (L¹)
+error under noise on both PDEs**, and (ii) **guaranteed admissibility everywhere**.
+The stronger "beats on every metric" reading holds cleanly only for LWR; on
+Burgers the front-weighted L² is a wash-to-slight-loss at the highest noise. We
+report both rather than lead with the more flattering norm.
 
 **Non-PINN / smoothness comparator.** To check the win is not just "any smoother",
 a classical thin-plate-spline RBF fit *directly* to the observations (no PDE, no

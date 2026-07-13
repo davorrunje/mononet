@@ -1,0 +1,592 @@
+{
+  "problem": "burgers_riemann",
+  "tier": "inverse",
+  "backend": "jax",
+  "n_trials": 20,
+  "steps": 8000,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "field": "residual",
+  "aggregate": "iqm+bootstrap95",
+  "methods": {
+    "hard_monotone": {
+      "best_params": {
+        "lr": 0.0016756813861488488,
+        "width": 32,
+        "residual_weight": 0.11981845126013872,
+        "data_weight": 7.482796037620795
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 3.86328188318703,
+          "l2": 0.9982180991742481,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.021803319454193115,
+          "oob_frac": 0.4417
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 9.193377575308233,
+          "l2": 1.9867804843951409,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.02003347873687744,
+          "oob_frac": 0.2945
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 5.679658816298984,
+          "l2": 1.1804014800537448,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.029280662536621094,
+          "oob_frac": 0.4751
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 3.651070282537134,
+          "l2": 0.8197476917033463,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.011566698551177979,
+          "oob_frac": 0.2918
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 6.053914998718841,
+          "l2": 1.4291675343447177,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.021636128425598145,
+          "oob_frac": 0.5041
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 4.507017482315475,
+          "l2": 1.057633688412749,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.02863079309463501,
+          "oob_frac": 0.5177
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 5.735397168140315,
+          "l2": 1.1794019396925093,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.03200584650039673,
+          "oob_frac": 0.5436
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 5.465319313895162,
+          "l2": 1.115600664811583,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.046764373779296875,
+          "oob_frac": 0.5474
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 4.787744022718625,
+          "l2": 1.3738576525245223,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.01775994896888733,
+          "oob_frac": 0.4965
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "hard_monotone",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 5.773569339109425,
+          "l2": 1.3015891404801037,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.018951386213302612,
+          "oob_frac": 0.2954
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 5.324784357079664,
+          "lo": 4.463575077828151,
+          "hi": 6.308842321711948
+        },
+        "l2": {
+          "iqm": 1.2014140943292022,
+          "lo": 1.0580483551334703,
+          "hi": 1.4176078187844074
+        },
+        "admissibility_violation": {
+          "iqm": 0.0,
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "overshoot": {
+          "iqm": 0.023389294743537903,
+          "lo": 0.01889660271505515,
+          "hi": 0.030504260957241045
+        }
+      }
+    },
+    "vanilla": {
+      "best_params": {
+        "lr": 0.000706829102793311,
+        "width": 32,
+        "residual_weight": 2.0224828512134128,
+        "data_weight": 6.948744597934057
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 4.147419688202927,
+          "l2": 0.9203619503936532,
+          "admissibility_violation": 0.2131403088569641,
+          "overshoot": 0.13302147388458252,
+          "oob_frac": 0.3369
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 8.532354603123723,
+          "l2": 1.781655771181063,
+          "admissibility_violation": 0.2154041826725006,
+          "overshoot": 0.07733798027038574,
+          "oob_frac": 0.4078
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 8.73456479036179,
+          "l2": 1.4235314573994597,
+          "admissibility_violation": 0.25749078392982483,
+          "overshoot": 0.049277305603027344,
+          "oob_frac": 0.6086
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 6.29871424792999,
+          "l2": 1.2146857689488164,
+          "admissibility_violation": 0.3485241234302521,
+          "overshoot": 0.02474363148212433,
+          "oob_frac": 0.4041
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 8.031898602918163,
+          "l2": 1.5401406590566475,
+          "admissibility_violation": 0.18625794351100922,
+          "overshoot": 0.016402140259742737,
+          "oob_frac": 0.4604
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 6.529691926573388,
+          "l2": 1.2191090118074164,
+          "admissibility_violation": 0.2865450978279114,
+          "overshoot": 0.04854893684387207,
+          "oob_frac": 0.5317
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 6.193350880364676,
+          "l2": 1.244373330546682,
+          "admissibility_violation": 0.16771304607391357,
+          "overshoot": 0.03928875923156738,
+          "oob_frac": 0.7344
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 3.3809652052183243,
+          "l2": 0.9467728923190079,
+          "admissibility_violation": 0.48471301794052124,
+          "overshoot": 0.27720212936401367,
+          "oob_frac": 0.6682
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 7.486935125748116,
+          "l2": 1.7279283724077545,
+          "admissibility_violation": 0.2918291687965393,
+          "overshoot": 0.030312418937683105,
+          "oob_frac": 0.3642
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "vanilla",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 8.242034864560443,
+          "l2": 1.7214532261361517,
+          "admissibility_violation": 0.1901780366897583,
+          "overshoot": 0.08625231683254242,
+          "oob_frac": 0.2332
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 7.1304376080157965,
+          "lo": 5.546154234005321,
+          "hi": 8.100472388659576
+        },
+        "l2": {
+          "iqm": 1.393882242315862,
+          "lo": 1.1268558910250803,
+          "hi": 1.6138795311151906
+        },
+        "admissibility_violation": {
+          "iqm": 0.2424312631289164,
+          "lo": 0.20072978734970093,
+          "hi": 0.31920499416689074
+        },
+        "overshoot": {
+          "iqm": 0.055169619619846344,
+          "lo": 0.03299163281917572,
+          "hi": 0.11042969195793072
+        }
+      }
+    },
+    "soft": {
+      "best_params": {
+        "lr": 0.005458741343193746,
+        "width": 16,
+        "residual_weight": 0.010005538638344018,
+        "soft_penalty": 0.05981647202893033,
+        "data_weight": 2.298603667450928
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 4.323878557088986,
+          "l2": 0.788609052361552,
+          "admissibility_violation": 0.23973342776298523,
+          "overshoot": 0.15336693823337555,
+          "oob_frac": 0.371
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 8.64419534839877,
+          "l2": 1.8285328838066919,
+          "admissibility_violation": 0.10821431875228882,
+          "overshoot": 0.05554234981536865,
+          "oob_frac": 0.375
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 7.123201286148785,
+          "l2": 1.5503315122468486,
+          "admissibility_violation": 0.1480889916419983,
+          "overshoot": 0.06244856119155884,
+          "oob_frac": 0.3608
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 4.838115200774753,
+          "l2": 1.009646044657414,
+          "admissibility_violation": 0.11119556427001953,
+          "overshoot": 0.04236218333244324,
+          "oob_frac": 0.4028
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 6.480833257936951,
+          "l2": 1.412868356711276,
+          "admissibility_violation": 0.09076233208179474,
+          "overshoot": 0.048091769218444824,
+          "oob_frac": 0.3731
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 4.36958208717593,
+          "l2": 1.1690293951797783,
+          "admissibility_violation": 0.14972317218780518,
+          "overshoot": 0.05752384662628174,
+          "oob_frac": 0.5342
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 5.79046589664029,
+          "l2": 1.168836881058608,
+          "admissibility_violation": 0.09878909587860107,
+          "overshoot": 0.04558122158050537,
+          "oob_frac": 0.5627
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 3.999778750404041,
+          "l2": 0.7677382530914023,
+          "admissibility_violation": 0.17615287005901337,
+          "overshoot": 0.10358646512031555,
+          "oob_frac": 0.4453
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 6.823240757063405,
+          "l2": 1.6444225647545294,
+          "admissibility_violation": 0.08186741173267365,
+          "overshoot": 0.052871182560920715,
+          "oob_frac": 0.5666
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "soft",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 8.75395119190216,
+          "l2": 2.128554318849522,
+          "admissibility_violation": 0.1892818808555603,
+          "overshoot": 0.14171603322029114,
+          "oob_frac": 0.3259
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 5.904239747623353,
+          "lo": 4.739486319789042,
+          "hi": 7.52119314425954
+        },
+        "l2": {
+          "iqm": 1.3258557924347423,
+          "lo": 1.0123264161742531,
+          "hi": 1.6687163672379035
+        },
+        "admissibility_violation": {
+          "iqm": 0.13202733546495438,
+          "lo": 0.10230709450940291,
+          "hi": 0.17045637418826418
+        },
+        "overshoot": {
+          "iqm": 0.06334402908881505,
+          "lo": 0.04971014180531104,
+          "hi": 0.10338272502024964
+        }
+      }
+    },
+    "weight_clip": {
+      "best_params": {
+        "lr": 0.00248463381689824,
+        "width": 64,
+        "residual_weight": 0.0427708304996207,
+        "data_weight": 1.8107254066631076
+      },
+      "per_seed": [
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 0,
+          "l1": 43.95515870059555,
+          "l2": 3.7535509129306406,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.47852957248687744,
+          "oob_frac": 0.3584
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 1,
+          "l1": 44.63898652462504,
+          "l2": 3.7830651234782504,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.4827934503555298,
+          "oob_frac": 0.2847
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 2,
+          "l1": 45.621222455297875,
+          "l2": 3.773965553646664,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.3446011543273926,
+          "oob_frac": 0.3702
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 3,
+          "l1": 49.74203111987617,
+          "l2": 3.9699142128555613,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.5281498432159424,
+          "oob_frac": 0.2649
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 4,
+          "l1": 44.34035148902154,
+          "l2": 3.750722364841598,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.5160026550292969,
+          "oob_frac": 0.3743
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 5,
+          "l1": 43.015446513142415,
+          "l2": 3.7561203694246927,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.6276543140411377,
+          "oob_frac": 0.4405
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 6,
+          "l1": 44.26180579554495,
+          "l2": 3.8265508550441134,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.5391918420791626,
+          "oob_frac": 0.4199
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 7,
+          "l1": 44.51867160785138,
+          "l2": 3.74336437523802,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.38679051399230957,
+          "oob_frac": 0.3516
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 8,
+          "l1": 42.757941909770864,
+          "l2": 3.78723652898155,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.44867467880249023,
+          "oob_frac": 0.3797
+        },
+        {
+          "problem": "burgers_riemann",
+          "method": "weight_clip",
+          "backend": "jax",
+          "seed": 9,
+          "l1": 43.02945861115527,
+          "l2": 3.771641051415231,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.5512545108795166,
+          "oob_frac": 0.2658
+        }
+      ],
+      "agg": {
+        "l1": {
+          "iqm": 44.12407212146562,
+          "lo": 43.395218056699925,
+          "hi": 45.55031710388871
+        },
+        "l2": {
+          "iqm": 3.7709299233128384,
+          "lo": 3.7564795721464086,
+          "hi": 3.8204209659904107
+        },
+        "admissibility_violation": {
+          "iqm": 0.0,
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "overshoot": {
+          "iqm": 0.49889034032821655,
+          "lo": 0.43388564387957257,
+          "hi": 0.5428518995642662
+        }
+      }
+    }
+  }
+}
