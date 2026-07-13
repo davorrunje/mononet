@@ -109,7 +109,34 @@ holds (`g_β > 0` for all β).
 has no dead zone on the relevant side, and its skip path is already `x`-dependent; both traps are
 F-path-only.
 
-### 3.3 Default = A + B (per decision 2026-07-13)
+The near-zero scale (`ε`) is a **user-tunable `MonoResidual` parameter**, `near_zero_scale: float
+= _NEAR_ZERO_SCALE` (`= 1e-3`). It defaults to the calibrated value but is overridable — users
+with a non-unit input regime, unusual depth, or a specific warm-start preference can change it
+(smaller → closer to identity/slower engagement; too large → the init blow-up returns).
+
+### 3.3 Input-scale assumption (near-identity warm-start is calibrated for `x ~ O(1)`)
+
+The identity skip propagates input magnitude directly to the block output, and both the near-zero
+warm-start and the `absolute` static init are derived for **unit-scale inputs**. Measured
+sensitivity of the shipped A+B construction (depth-16, `absolute`, target standardized; committed
+`benchmarks/monoresidual_gate_scale.py`):
+
+| inputs | init F-RMS | init block-out RMS | train MSE |
+|---|--:|--:|--:|
+| `x~U(0,0.1)` | 4.7e-3 | 0.17 | 0.003 |
+| `x~U(0,1)` | 2.5e-2 | 1.28 | 0.032 |
+| `x~U(0,10)` | 1.7e-1 | 12.1 | 1.11 (≈ predict-mean) |
+| `x~U(0,100)` | 1.13 | 96.5 | 1092 (broken) |
+
+So **inputs must be standardized to ≈ unit scale.** This is not specific to the fix (identity-skip
+residual nets and standard inits all assume it), and `g_β` still opens at every scale — the
+large-input failure is scaling/conditioning, orthogonal to the two traps. **Requirement:**
+standardize inputs via a fixed **positive**-scale per-feature affine (zero-mean/unit-variance or
+`[0,1]`), which is a non-decreasing map and therefore **monotonicity-preserving**. Do **not** use
+LayerNorm/BatchNorm — they would break monotonicity (also why the block uses gated skips, not
+normalization). The benchmark pipeline and the paper already standardize.
+
+### 3.4 Default = A + B (per decision 2026-07-13)
 
 Both A and B become the out-of-the-box `MonoResidual` behaviour in all three backends. A alone is
 the minimal *safe* fix; A+B is the best measured result and is what ships. `scaled_elu` is
@@ -129,20 +156,28 @@ constraint — we change the defaults outright, no deprecation window or compat 
   only so the trap/ablation experiments can still instantiate the old gate for comparison, not
   for user compatibility.
 - **Default `F` construction** *near-zero*-inits its last layer in all three `MonoResidual`
-  implementations — scale the normal-init weight by `_NEAR_ZERO_SCALE = 1e-3` and zero the bias,
-  so `F(x) ≈ 0` at init but the weights stay trainable (not exact-zero; see §3.1 / Trap 2). A
-  custom user-supplied `F` is untouched (the caller owns its init).
+  implementations — scale the normal-init weight by the warm-start scale and zero the bias, so
+  `F(x) ≈ 0` at init but the weights stay trainable (not exact-zero; see §3.1 / Trap 2). A custom
+  user-supplied `F` is untouched (the caller owns its init).
+- **New user-tunable parameter `near_zero_scale: float = _NEAR_ZERO_SCALE` (`=1e-3`)** on
+  `MonoResidual` in all three backends *and* on `MonoResidualConfig` (mirroring the `beta_gate`
+  field, with JSON round-trip). It is threaded to the default `F`'s last layer; a value of `0.0`
+  reproduces exact-zero (documented as the frozen-weight trap, not recommended). The dense layer
+  (`MonoLinear`/`MonoDense`) grows a private `near_zero_scale: float | None = None` init kwarg
+  (None = normal init; a float = scale weight by it and zero bias) that `MonoResidual` sets on the
+  last default-`F` layer.
 
 ## 5. Components / repo layout
 
 ```
 mononet/core/reference.py              # add "softplus" gate token; default beta_gate -> softplus
-mononet/core/config.py                 # MonoResidualConfig.beta_gate default -> "softplus"
+mononet/core/config.py                 # MonoResidualConfig: beta_gate -> softplus; add near_zero_scale
 mononet/{torch,jax,keras}/_kernels.py  # add "softplus" gate branch; default beta_gate -> softplus
-mononet/{torch,jax,keras}/layers.py    # default beta_gate -> softplus; near-zero-init F's last layer
+mononet/{torch,jax,keras}/layers.py    # beta_gate -> softplus; near_zero_scale param; near-zero-init F
 tests/equivalence/cases/*.json         # regenerate: add softplus-gate cases; refresh gated cases
 tests/{torch,jax,keras}/test_mono_residual_gate.py   # NEW: gate-opens + monotonicity + near-zero F
 benchmarks/monoresidual_gate_ablation.py             # committed A-vs-B reproducer (done)
+benchmarks/monoresidual_gate_scale.py                # NEW: input-scale sensitivity (writes JSON)
 benchmarks/monoresidual_gate_trap.py                 # NEW: committed trap instrumentation (writes JSON)
 benchmarks/results/monoresidual-gate/*.json          # NEW: committed trap + ablation results
 docs/concepts/monotonic-residual.md    # REWRITE gate/skip requirements + design + experiments (see §7)
@@ -165,7 +200,9 @@ committed JSON with a one-line reproduce command, so every number on the page is
    near-zero init against a regression to exact-zero (which would freeze them). Per backend.
 3. **Near-zero init unit test** — default `F`'s last-layer weight is small but **nonzero** at init
    (`0 < ‖W_last‖ ≪ ‖W_last‖_normal`), its bias is zero, and `F(x)` RMS `≈ 0` (block ≈ identity);
-   a custom `F` is untouched. Per backend.
+   a custom `F` is untouched; a user-set `near_zero_scale` rescales accordingly (e.g. `2e-3`
+   doubles `‖W_last‖`, `0.0` gives exact-zero), and `MonoResidualConfig(near_zero_scale=…)`
+   round-trips through JSON. Per backend.
 4. **Monotonicity property test still passes** — perturbing any input upward never decreases any
    output, both size cases and both modes, with softplus gate + near-zero F. The core paper
    guarantee must be preserved.
@@ -188,6 +225,10 @@ is read as "depth works" when it only shows non-divergence. Both must be correct
 by reproducible benchmarks**, not assertion. Required structure:
 
 1. **Requirements for skip connections and gates** (make the constraints explicit and complete):
+   - *Inputs* — must be **standardized to ≈ unit scale** via a fixed **positive**-scale per-feature
+     affine (monotonicity-preserving); the identity-skip warm-start and the `absolute` init assume
+     `x ~ O(1)` (see the §3.3 sensitivity table — the construction degrades by `x~O(10)` and breaks
+     by `x~O(100)`). **Not** LayerNorm/BatchNorm (they break monotonicity).
    - *Skip path* — must be **monotone** (identity when `in==out`; `exp`-parametrized positive
      projection when `in≠out`) and **near-identity at init** (strongest warm start; keeps deep
      stacks forward-stable). Its gate `g_α` must be strictly positive and `=1` at init.
@@ -213,7 +254,10 @@ by reproducible benchmarks**, not assertion. Required structure:
      weights freeze and `F` becomes a constant; near-zero keeps them trainable. Decoupling
      identity-at-init from `g_β` is what lets us use the clean gate — explain that `softplus` was
      previously rejected *because* `softplus(0)≈0.69` broke identity-at-init, and near-zero `F`
-     removes exactly that objection. Note the stable scale band (`≈1e-3`; `≥1e-2` re-blows-up).
+     removes exactly that objection. Note the stable scale band (`≈1e-3`; `≥1e-2` re-blows-up) and
+     that the scale is the user-tunable `near_zero_scale` parameter (default `1e-3`).
+   - *Input normalization* — document the §3.3 requirement + sensitivity table: standardize inputs
+     (positive affine, monotone-safe); the warm-start assumes `x ~ O(1)`.
 3. **Experiments (reproducible under `benchmarks/`)** — replace the "depth works because it
    trains" framing:
    - Keep the skip-K sweep (it correctly establishes skips fix **divergence**), but reframe it as
@@ -224,6 +268,8 @@ by reproducible benchmarks**, not assertion. Required structure:
      the two independent traps, exact-zero freezing `F` (`F-moved 0/16`), `off+softplus`
      divergence, and `nearzero+softplus` as the only config that both opens the gate and trains
      `F`.
+   - **Input-scale sensitivity** (`benchmarks/monoresidual_gate_scale.py`): the §3.3 table, backing
+     the input-standardization requirement and the `near_zero_scale` calibration.
    - **Before/after** (#90 large-dataset screen, #99 synthetic depth probe) re-run on the fixed
      layer — whether usable depth changes the depth-neutral verdict.
    Each renders from committed `benchmarks/results/**` JSON with a one-line `uv run … -m …`
