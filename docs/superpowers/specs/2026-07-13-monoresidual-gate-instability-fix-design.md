@@ -11,93 +11,103 @@ start, *unavailable here* because monotonicity forbids a signed gate); Zhang et 
 — zero-init of the residual branch's last layer, which is fix **A** below).
 
 > **Goal.** Make deep `MonoResidual` stacks actually **use their depth**. The current design is
-> monotone and non-divergent at depth, but its F-path gate `g_β` is trapped near zero from init,
-> so the residual branch `F` never engages and the "deep" stack is effectively shallow — the root
-> cause of the depth-null results (#90, #99). Fix = **(A)** identity-at-init `F` (zero-init its
-> last layer) + **(B)** a dead-zone-free positive gate (`softplus`), shipped as the new default
-> for `MonoResidual` across all three backends, with **paper-grade docs justifying the gate
-> design, backed by the trap instrumentation + the A-vs-B ablation + before/after re-runs**.
+> monotone and non-divergent at depth, but the residual branch `F` never engages, so the "deep"
+> stack is effectively shallow — the root cause of the depth-null results (#90, #99). The ablation
+> shows this is **two independent traps**, needing two fixes: **(A)** *near-zero* init of `F`'s
+> last layer (scale ≈ `1e-3`, not exact-zero) so `F ≈ 0` at init yet its weights stay trainable,
+> and **(B)** a dead-zone-free positive gate (`softplus`) so `g_β` can open. Both ship as the new
+> default for `MonoResidual` across all three backends, with **paper-grade docs justifying the
+> gate/skip design, backed by the trap instrumentation + the A-vs-B ablation + before/after
+> re-runs**.
 
-## 1. Problem: the residual-gate bootstrap trap
+## 1. Problem: two independent traps starve the residual branch
 
 `MonoResidual` computes `y = g_α(α)·skip(x) + g_β(β)·F(x)` with strictly-positive gates
 (monotonicity requires `g_α, g_β ≥ 0`; a signed gate would flip a branch to non-increasing).
-The F-path gate token is `scaled_elu`: `g_β = max(β,0) + ε·exp(min(β,0)/ε)`, `ε=1e-3`, so
-`g_β = ε` at `β=0`.
+The default F-path gate token is `scaled_elu`: `g_β = max(β,0) + ε·exp(min(β,0)/ε)`, `ε=1e-3`.
+The ablation (§2) shows the residual branch `F` fails to engage for **two independent reasons**:
 
-The approved 2026-07-03 spec (§3.1.1) claims the `ε·exp(β/ε)` tail gives "*a small but nonzero
-gradient near the near-zero init, so β can escape 0 and F can come online.*" **This does not
-happen.** The claim tacitly assumes `β` drifts *up* (that engaging `F` helps). But at init `F`
-is **random**, so engaging it *raises* loss ⇒ `∂loss/∂β > 0` ⇒ gradient descent drives `β`
-**down**. On the negative side `scaled_elu`'s gradient is `exp(β/ε)`, which collapses almost
-immediately (at the empirically observed trapped value `β ≈ −0.0076`, gradient `≈ e^{−7.6} ≈
-5e-4`). `β` is pinned negative, `g_β ≈ 0` **forever**, `F` never engages, and a depth-`D` stack
-is really `MonoLinear(in→W) → (scaled identity)×D → head` — a shallow net.
+**Trap 1 — gate dead zone.** The approved 2026-07-03 spec (§3.1.1) claims the `ε·exp(β/ε)` tail
+gives "*a small but nonzero gradient … so β can escape 0 and F can come online.*" **It does not.**
+The claim assumes `β` drifts *up* (engaging `F` helps). At init `F` is random, so engaging it
+*raises* loss ⇒ `∂loss/∂β > 0` ⇒ descent drives `β` **down**; on the negative side `scaled_elu`'s
+gradient `exp(β/ε)` collapses (at the observed trapped `β ≈ −0.0076`, gradient `≈ e^{−7.6}`), so
+`g_β` is pinned at `≈ε` **forever**. Confirmed: with `scaled_elu`, `g_β = 0.000` at any F-init.
 
-**Why this was invisible.** The 2026-07-03 §2 sweep reported depth-32 stacks training to
-MSE ≈ 0.08–0.10 and concluded "residual skips fully fix deep trainability." That measurement is
-correct but answers the wrong question: on a shallow-learnable monotone target the stack trains
-fine **via the skip path** with `F` off. It demonstrated *non-divergence*, never that depth was
-*used*. The gap surfaced only later as the depth-is-neutral null on real data (#90) and the
-teacher-family instability on the synthetic probe (#99).
+**Trap 2 — `|W|` frozen-weight fixed point.** Suppose we sidestep Trap 1 the naive (Fixup) way by
+**exact-zero**-initializing `F`'s last layer. Under the `absolute` construction `F` uses `|W|`,
+and `d|W|/dW` at `W=0` is `sign(0)=0` — a **gradient fixed point**. So the zeroed weights **never
+move**: `F` degenerates to a per-block learned *constant* (only the bias moves), not an
+`x`-dependent depth function. Confirmed: exact-zero → F's last-layer weights move in `0/16` blocks;
+train MSE floors at `0.14` (constants only) vs `0.07` when `F` genuinely trains.
 
-**Sharper framing (feeds the depth-null theory).** With a non-identity `F`, a *closed* gate is
-locally optimal — opening it raises loss — so the trapped network is *correctly* refusing to use
-depth. The problem is not the optimizer; it is the initialization of `F`. See
-`docs/concepts/` and the depth-separation write-up.
+**Why it stayed invisible.** The 2026-07-03 §2 sweep reported depth-32 stacks training to
+MSE ≈ 0.08–0.10 and concluded "residual skips fully fix deep trainability." Correct, but answering
+the wrong question: on a shallow-learnable target the stack trains **via the skip path** with `F`
+off. It showed *non-divergence*, never depth *use*. The gap surfaced later as the depth-neutral
+null on real data (#90) and the teacher-family instability on the probe (#99). Feeds the
+depth-null theory: a closed gate / constant `F` is locally optimal, so the net *correctly* refuses
+depth — the defect is in `F`'s init and gate, not the optimizer.
 
 ## 2. Evidence (committed, reproducible)
 
 Two committed artifacts are the empirical backbone of both this spec and the docs:
 
-- **Trap instrumentation** — a deep `MonoResidual` (real layer, `absolute`, `activation="elu"`)
-  on a monotone teacher target shows `g_β` pinned at `0.000` and `β` trapped at `≈ −0.0076`
-  across training, while `g_α`, block-RMS, and train/test loss confirm the skip path carries the
-  fit. (`benchmarks/` diagnostic; to be committed alongside the sweep.)
-- **A-vs-B ablation** (`benchmarks/monoresidual_gate_ablation.py`, committed `b19b2a9`) — deep-16
-  block stack, monotone teacher target, single deterministic seed. `A` = zero-init `F`'s last
-  layer; `B` = `softplus` gate in place of `scaled_elu`:
+- **Trap instrumentation** (`benchmarks/monoresidual_gate_trap.py`, to be added) — a deep
+  `MonoResidual` (real layer, `absolute`, `activation="elu"`) on a monotone teacher target shows
+  `g_β` pinned at `≈0`, `β` trapped negative, and `g_α`/block-RMS/loss confirming the skip path
+  carries the fit while `F` sits idle.
+- **A-vs-B ablation** (`benchmarks/monoresidual_gate_ablation.py`, committed) — depth-16 stack,
+  monotone teacher, deterministic seed. `A` = F-last-layer init `∈ {off, exactzero,
+  nearzero(×1e-3)}`; `B` = gate `∈ {scaled_elu, softplus}`. `F-moved` = # of 16 blocks whose
+  last-layer weights left their init:
 
-  | config | g_β | train MSE | test MSE | verdict |
-  |---|--:|--:|--:|---|
-  | baseline (neither) | **0.000** | 0.865 | 0.908 | trapped |
-  | **A** only | 0.194 | 0.405 | 0.423 | escapes trap |
-  | **B** only | 0.693 | **≈1e29** | ≈1e29 | **diverges** |
-  | **A + B** | 0.751 | 0.130 | 0.134 | best (6.8× over baseline) |
+  | A (F init) | B (gate) | g_β | train MSE | F-moved | verdict |
+  |---|---|--:|--:|:--:|---|
+  | off | scaled_elu | 0.000 | 0.865 | — | gate dead-zone trap |
+  | exactzero | scaled_elu | 0.194 | 0.405 | 0/16 | F frozen → constant |
+  | nearzero | scaled_elu | 0.000 | 0.994 | 16/16 | still gate-trapped |
+  | off | softplus | 0.693 | **≈1e28** | — | **diverges** (random F engaged) |
+  | exactzero | softplus | 0.753 | 0.136 | 0/16 | gate opens, F still frozen |
+  | **nearzero** | **softplus** | **0.700** | **0.068** | **16/16** | **best (A+B, the fix)** |
 
-  **Reading:** **A is necessary and primary** (the safety property); **B alone is catastrophic**
-  — a dead-zone-free gate starts at `softplus(0)=0.693` and engages a *random* `F` through every
-  block → exponential blow-up. This is exactly why the 2026-07-03 spec rejected `softplus`
-  ("*softplus(0)≈0.69 — no identity at init*"). **A removes that objection:** with `F` zero-init,
-  identity-at-init no longer depends on the gate value, so `softplus` becomes safe *and* supplies
-  the clean, non-vanishing gradient the original design wanted. A+B is the coherent resolution,
-  not two unrelated patches.
+  **Reading.** The two traps are independent and need independent fixes. **`softplus` (B) opens
+  the gate** — with `scaled_elu` the gate stays shut regardless of init (rows 1, 3). **Near-zero
+  init (A) lets `F` learn `x`-dependence** — exact-zero freezes the weights (rows 2, 5: `F-moved
+  0/16`, MSE floored at 0.14), near-zero trains them (row 6: `16/16`, MSE 0.068). Neither lever
+  alone works: `nearzero+scaled_elu` is trapped (0.994), `off+softplus` diverges. Only
+  `nearzero+softplus` both opens the gate **and** trains `F`. This retires the 2026-07-03
+  rejection of `softplus` ("*softplus(0)≈0.69 — no identity at init*"): near-zero `F` makes
+  identity-at-init independent of the gate value, so `softplus` is safe.
 
 ## 3. The fix
 
-### 3.1 (A) Identity-at-init F — the primary, load-bearing change
+### 3.1 (A) Near-zero init of F — frees the weights from the `|W|` fixed point
 
-Zero-initialize the **last layer** of the default residual sub-module `F` (weight and bias). In
-every mode this makes `F(x) ≡ 0` at init (`absolute`: `act(x@|0|+0)=act(0)=0` for both convex
-`act` and concave `−act(−·)`; `switch`: `act(x@0)−act(x@0)=0`), so the block is an **exact
-identity** `y = g_α·skip + g_β·0 = g_α·skip` regardless of the gate value. Intermediate `F`
-layers keep their normal init. This is Fixup/ReZero's zero-init-the-branch, adapted: because the
-branch output is exactly 0, `∂loss/∂β ≈ 0` at init, so `β` is *not* pushed negative, and the
-first useful signal (a perturbation of `F` that lowers loss) pushes `β` **up** — `F` comes online
-as §3.1.1 originally intended.
+Initialize the **last layer** of the default residual sub-module `F` by **scaling its normal-init
+weight by a small factor `_NEAR_ZERO_SCALE = 1e-3`** and zeroing its bias. This keeps `F(x) ≈ 0`
+at init (init F-output RMS ≈ `0.03`; the block starts ≈ identity `y ≈ g_α·skip`, deep-stack-safe)
+while keeping the weights **nonzero**, so `sign(W) ≠ 0` and gradients flow — `F` learns
+`x`-dependence. Intermediate `F` layers keep normal init. This is Fixup's zero-init-the-branch
+**adapted to the `|W|` constraint**: exact-zero is a gradient fixed point here (Trap 2), so we use
+*near*-zero. The scale has a stable band — `1e-3` gives F-RMS ≈ 0.03 and trains; `≥1e-2` lets `F`
+engage too strongly at init and the deep stack blows up (same failure as `off+softplus`). `1e-3`
+is the chosen default.
 
-Monotonicity is untouched: zero weights are a valid point of the `|W|`/`W⁺,W⁻` constraint set;
+Monotonicity is untouched: scaled weights are a valid point of the `|W|`/`W⁺,W⁻` constraint set;
 `F` remains non-decreasing.
 
-### 3.2 (B) Dead-zone-free positive gate — beneficial given (A)
+### 3.2 (B) Dead-zone-free positive gate — opens the gate
 
 Add a `"softplus"` **gate token** (distinct from the existing `softplus` *base activation*) and
 make it the default `beta_gate`: `g_β = softplus(β) = ln(1+e^β)`, smooth, `∈ (0,∞)`, gradient
-`σ(β) ∈ (0,1)` **everywhere** — no dead zone. `g_β = ln2 ≈ 0.693` at init, which is safe *only*
-because (A) makes `F(x)=0` at init. Monotonicity holds (`g_β > 0` for all β).
+`σ(β) ∈ (0,1)` **everywhere** — no dead zone, so `β` can move off init in either direction and the
+gate opens. `g_β = ln2 ≈ 0.693` at init, safe *because* (A) keeps `F(x) ≈ 0` there. Monotonicity
+holds (`g_β > 0` for all β).
 
-`α`/`g_α` (skip gate, `shifted_elu`) is **unchanged** — it already satisfies identity-at-init
-(`g_α=1`) and has no dead zone on the relevant side; the trap is F-path-only.
+`α`/`g_α` (skip gate, `shifted_elu`) is **unchanged** — it satisfies identity-at-init (`g_α=1`),
+has no dead zone on the relevant side, and its skip path is already `x`-dependent; both traps are
+F-path-only.
 
 ### 3.3 Default = A + B (per decision 2026-07-13)
 
@@ -118,9 +128,10 @@ constraint — we change the defaults outright, no deprecation window or compat 
   dispatchers. `shifted_elu` and `scaled_elu` remain selectable tokens — `scaled_elu` is kept
   only so the trap/ablation experiments can still instantiate the old gate for comparison, not
   for user compatibility.
-- **Default `F` construction** zero-inits its last layer in all three `MonoResidual`
-  implementations, so the block is an exact identity at init. A custom user-supplied `F` is
-  untouched (the caller owns its init).
+- **Default `F` construction** *near-zero*-inits its last layer in all three `MonoResidual`
+  implementations — scale the normal-init weight by `_NEAR_ZERO_SCALE = 1e-3` and zero the bias,
+  so `F(x) ≈ 0` at init but the weights stay trainable (not exact-zero; see §3.1 / Trap 2). A
+  custom user-supplied `F` is untouched (the caller owns its init).
 
 ## 5. Components / repo layout
 
@@ -128,10 +139,10 @@ constraint — we change the defaults outright, no deprecation window or compat 
 mononet/core/reference.py              # add "softplus" gate token; default beta_gate -> softplus
 mononet/core/config.py                 # MonoResidualConfig.beta_gate default -> "softplus"
 mononet/{torch,jax,keras}/_kernels.py  # add "softplus" gate branch; default beta_gate -> softplus
-mononet/{torch,jax,keras}/layers.py    # default beta_gate -> softplus; zero-init F's last layer
+mononet/{torch,jax,keras}/layers.py    # default beta_gate -> softplus; near-zero-init F's last layer
 tests/equivalence/cases/*.json         # regenerate: add softplus-gate cases; refresh gated cases
-tests/{torch,jax,keras}/test_mono_residual_gate.py   # NEW: gate-opens + monotonicity + zero-init F
-benchmarks/monoresidual_gate_ablation.py             # committed A-vs-B reproducer (done, b19b2a9)
+tests/{torch,jax,keras}/test_mono_residual_gate.py   # NEW: gate-opens + monotonicity + near-zero F
+benchmarks/monoresidual_gate_ablation.py             # committed A-vs-B reproducer (done)
 benchmarks/monoresidual_gate_trap.py                 # NEW: committed trap instrumentation (writes JSON)
 benchmarks/results/monoresidual-gate/*.json          # NEW: committed trap + ablation results
 docs/concepts/monotonic-residual.md    # REWRITE gate/skip requirements + design + experiments (see §7)
@@ -144,22 +155,27 @@ committed JSON with a one-line reproduce command, so every number on the page is
 
 ## 6. Testing / CI (TDD)
 
-1. **Failing test first — depth is used.** A deep (`sub_depth=2`, ≥12 effective layers)
-   `absolute` stack trained a small budget on a target that *requires* depth must (a) open the
-   gate (`max g_β` over blocks `> 0.1`, vs baseline `≈ ε`) and (b) beat a matched shallow stack by
-   a margin. Fails on `main`, passes after A+B. Per backend (`importorskip`), deterministic seed.
-2. **Monotonicity property test still passes** — perturbing any input upward never decreases any
-   output, for both size cases and both modes, with softplus gate + zero-init F. The core paper
+1. **Depth is used (the headline regression).** A deep (`sub_depth=2`, ≥12 effective layers)
+   `absolute` stack trained a small budget on a target that *requires* depth must open the gate
+   (`max g_β` over blocks `> 0.1`, vs the trap's `≈ ε`) and train below a fixed MSE floor.
+   Decisive guard: `g_β > 0.1` is impossible under either trap (dead-zone pins it at `ε`; the
+   result was verified red on `main`). Torch, deterministic seed.
+2. **F's weights actually train (Trap-2 guard).** After a few steps on the deep default stack,
+   the last-layer weight of every `MonoResidual`'s `F` has moved from its init (`|Δ| > 0`) — pins
+   near-zero init against a regression to exact-zero (which would freeze them). Per backend.
+3. **Near-zero init unit test** — default `F`'s last-layer weight is small but **nonzero** at init
+   (`0 < ‖W_last‖ ≪ ‖W_last‖_normal`), its bias is zero, and `F(x)` RMS `≈ 0` (block ≈ identity);
+   a custom `F` is untouched. Per backend.
+4. **Monotonicity property test still passes** — perturbing any input upward never decreases any
+   output, both size cases and both modes, with softplus gate + near-zero F. The core paper
    guarantee must be preserved.
-3. **Zero-init F unit test** — default `F(x) == 0` at init (all modes), so the block is an exact
-   identity at init; a custom `F` is not zero-inited.
-4. **`softplus` gate token** — reference/kernel parity within tolerance; `g_β > 0`, gradient
+5. **`softplus` gate token** — reference/kernel parity within tolerance; `g_β > 0`, gradient
    nonzero for `β < 0` (dead-zone-free), `g_β(0) ≈ ln2`.
-5. **Equivalence harness** — regenerate committed cases to include `beta_gate="softplus"`; all
+6. **Equivalence harness** — regenerate committed cases to include `beta_gate="softplus"`; all
    backends agree with the NumPy reference within fixed tolerance.
-6. **No-divergence guard** — the A+B deep stack's block-RMS stays `O(1)` at init (guards against
-   the B-alone blow-up regressing if zero-init is ever dropped).
-7. Full green: `pre-commit --all-files`, strict mypy (`--group bench` too), ruff, docs build.
+7. **No-divergence guard** — the A+B deep stack's block-RMS stays `O(1)` at init (guards against
+   the scale-too-large / `off+softplus` blow-up).
+8. Full green: `pre-commit --all-files`, strict mypy (`--group bench` too), ruff, docs build.
 
 ## 7. Docs (the standing requirement — paper-grade, evidence-backed)
 
@@ -176,37 +192,45 @@ by reproducible benchmarks**, not assertion. Required structure:
      projection when `in≠out`) and **near-identity at init** (strongest warm start; keeps deep
      stacks forward-stable). Its gate `g_α` must be strictly positive and `=1` at init.
    - *Residual path `F`* — must be **monotone** (holds by the `|W|`/`switch` construction for
-     *any* weights) and **contribute ≈ 0 at init** so the block starts as an identity and the
-     deep stack does not blow up. Its gate `g_β` must be strictly positive (monotonicity) —
-     which **rules out a signed/ReZero-style gate** — and must be able to **open** (leave its
-     init value) once `F` becomes useful.
+     *any* weights); **contribute ≈ 0 at init** so the block starts as an identity and the deep
+     stack does not blow up; and its **weights must stay trainable** at init (this is the subtle
+     one — exact-zero fails it under `|W|`). Its gate `g_β` must be strictly positive
+     (monotonicity) — which **rules out a signed/ReZero-style gate** — and must be able to
+     **open** (leave its init value) once `F` becomes useful.
    - *Why positivity is non-negotiable* — a negative gate flips a branch to non-increasing;
      monotonicity is enforced at call time via the gate parametrization, so it is a hard
      invariant under free optimization (keep the existing theorem + proof).
-2. **Design choices** — the two independent knobs and how each requirement is met:
+2. **Design choices** — the two independent traps and the one knob each fixes:
    - Skip gate `g_α = elu(α)+1` (unchanged): `=1` at init, unbounded, decays to `0⁺`; why
      `sigmoid`/`exp`/`softplus` fail *for the skip gate*.
-   - "Contribute ≈ 0 at init" is achieved **by initialization of `F` (zero-init its last layer),
-     not by shrinking the gate.** This is the key correction: decoupling identity-at-init from
-     `g_β`'s value frees `g_β` to use a clean gate.
-   - Residual gate `g_β = softplus(β)`: strictly positive, **no dead zone** (gradient `σ(β)∈(0,1)`
-     everywhere), so it can open in either direction. Explain that `softplus` was previously
-     rejected *because* `softplus(0)≈0.69` broke identity-at-init — and why zero-init `F` removes
-     exactly that objection.
+   - **Trap 1 (gate dead zone) → residual gate `g_β = softplus(β)`:** strictly positive, **no dead
+     zone** (gradient `σ(β)∈(0,1)` everywhere), so `β` moves off init and the gate opens. The old
+     `scaled_elu` pinned `g_β` at `ε` because its negative-side gradient vanishes and a random `F`
+     pushes `β` negative.
+   - **Trap 2 (`|W|` frozen-weight fixed point) → near-zero init of `F`'s last layer:** "contribute
+     ≈ 0 at init" is achieved **by near-zero initialization (scale `1e-3`), not exact-zero and not
+     by shrinking the gate.** Exact-zero is a `sign(0)=0` gradient fixed point under `|W|`, so the
+     weights freeze and `F` becomes a constant; near-zero keeps them trainable. Decoupling
+     identity-at-init from `g_β` is what lets us use the clean gate — explain that `softplus` was
+     previously rejected *because* `softplus(0)≈0.69` broke identity-at-init, and near-zero `F`
+     removes exactly that objection. Note the stable scale band (`≈1e-3`; `≥1e-2` re-blows-up).
 3. **Experiments (reproducible under `benchmarks/`)** — replace the "depth works because it
    trains" framing:
    - Keep the skip-K sweep (it correctly establishes skips fix **divergence**), but reframe it as
      *forward stability*, not depth-utilisation.
    - **Trap instrumentation** (`benchmarks/monoresidual_gate_trap.py`): `g_β` pinned at `≈0`, `β`
-     trapped negative, skip path carrying the fit — the evidence that depth went *unused*.
-   - **A-vs-B ablation** (`benchmarks/monoresidual_gate_ablation.py`): the four-row table (§2)
-     with the B-alone divergence, establishing A necessary + primary, B beneficial only with A.
+     trapped negative, skip path carrying the fit — evidence that depth went *unused*.
+   - **A-vs-B ablation** (`benchmarks/monoresidual_gate_ablation.py`): the six-row table (§2) —
+     the two independent traps, exact-zero freezing `F` (`F-moved 0/16`), `off+softplus`
+     divergence, and `nearzero+softplus` as the only config that both opens the gate and trains
+     `F`.
    - **Before/after** (#90 large-dataset screen, #99 synthetic depth probe) re-run on the fixed
      layer — whether usable depth changes the depth-neutral verdict.
    Each renders from committed `benchmarks/results/**` JSON with a one-line `uv run … -m …`
    reproduce command.
-4. **Why A+B** — a short synthesis: A is the necessary safety property (B alone diverges),
-   A+B is best measured, monotonicity preserved throughout.
+4. **Why A+B** — a short synthesis: two independent traps ⇒ two independent fixes; `softplus`
+   opens the gate, near-zero init frees `F` to learn; neither alone suffices (near-zero+scaled_elu
+   is trapped, off+softplus diverges); monotonicity preserved throughout.
 5. **Recommendation** — the shipped defaults (A+B), `sub_depth=2`, monotonicity guarantee intact.
 
 ## 8. Staged plan
@@ -243,14 +267,20 @@ by reproducible benchmarks**, not assertion. Required structure:
   self-regulates `g_β` once A holds; block-RMS is stable. (LayerNorm would also break monotonicity.)
 - No removal of `scaled_elu` (kept as a selectable token so the trap/ablation experiments can
   still instantiate the old gate — not for user compatibility).
-- No change to `MonoLinear`/`MonoInput` or the `switch`/`absolute` math; `g_α`/skip unchanged.
+- No change to `MonoLinear`/`MonoInput` **math** or the `switch`/`absolute` kernels; `g_α`/skip
+  unchanged. (Near-zero init is a post-construction weight rescale in `MonoResidual`, not a kernel
+  change.)
 - Not the depth-separation *theory* write-up itself (separate; this fix unblocks its experiments).
 
 ## 10. Open items
 
-- Confirm zero-init interacts cleanly with the `absolute` static init (Sub-project A): the last
-  layer is overwritten to zero *after* the init runs — verify no init asserts non-zero.
-- Zero-init is **implicit in the default-`F` path only** (a custom `F` opts out by
-  construction); no separate `zero_init_residual` knob — there are no external users to give one
-  to, and a custom `F` already owns its init.
+- Near-zero init is a rescale applied *after* the `absolute` static init runs (Sub-project A) —
+  verify no init path asserts a specific weight norm afterwards.
+- `switch` mode: verify near-zero init also frees the weights there (`W⁺=max(W,0)`, `W⁻=min(W,0)`
+  have the same `sign(0)=0` fixed point) — the ablation covers `absolute`; the property/regression
+  tests must cover `switch` too.
+- Near-zero init is **implicit in the default-`F` path only** (a custom `F` opts out by
+  construction); no separate `zero_init_residual` knob — a custom `F` already owns its init.
+- `_NEAR_ZERO_SCALE = 1e-3` is the shared constant across backends; keep it in one place per
+  backend and document the stable band in the tests' comments.
 - Equivalence-case regeneration must stay deterministic (committed JSON, no live seeds).
