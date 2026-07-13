@@ -33,7 +33,7 @@ the strong-form residual actively smears the discontinuity. We then apply it whe
 a PINN genuinely complements a classical solver — the *inverse* problem of traffic
 state estimation from sparse, noisy observations (~0.7 % space-time coverage) —
 where the hard-monotone reconstruction is **competitive in accuracy** with
-unconstrained/soft PINNs (L¹ IQM 3.2 vs 3.9) while being the **only structurally
+unconstrained/soft PINNs (L¹ IQM 3.5 vs 3.9) while being the **only structurally
 admissible, oscillation-free** solution (violation 0 vs 0.08–0.10). A naive,
 inexpressive weight-clipping constraint fails badly (≈7× worse error),
 confirming that it is *expressive* hard monotonicity that matters. JAX and PyTorch
@@ -221,6 +221,9 @@ finite-volume scheme dominates forward 1-D problems).
 | soft | 5.50 [5.12, 6.96] | 1.15 | 0.106 | 0.019 |
 | weight-clip (inexpressive) | 46.0 [45.6, 46.3] | 3.79 | 0 | 0.423 |
 
+> **Note:** these forward-tier numbers are the plain-`MonoLinear` field; a
+> MonoResidual re-run is in progress and will refresh this table.
+
 The hard-monotone PINN is the only **oscillation-free** solution (overshoot 0.003
 vs. vanilla's 0.127) with **zero** violation, at a ~20 % L¹/L² cost versus the
 unconstrained baselines — the expected structure-vs-accuracy trade when the
@@ -235,23 +238,29 @@ of the space-time grid) — the data-assimilation regime a mesh solver cannot se
 (no full initial condition). Here the residual is a light regularizer and the
 observations anchor the field.
 
+The hard-monotone field is a `MonoResidual` stack (the near-linear gate collapse
+that earlier forced a plain-`MonoLinear` fallback is fixed upstream in PR #100;
+see FINDINGS).
+
 | method | L¹ (IQM [95 %]) | L² | admiss. violation | overshoot |
 |---|---|---|---|---|
-| **hard-monotone (mononet)** | 3.17 [2.37, 3.80] | 0.79 | **0** | **0.023** |
-| vanilla | 3.92 [3.34, 4.27] | 0.73 | 0.083 | 0.024 |
-| soft | 3.95 [3.36, 4.37] | 0.72 | 0.104 | 0.040 |
+| **hard-monotone (mononet)** | **3.52 [2.69, 4.04]** | **0.714** | **0** | **0.023** |
+| vanilla | 3.92 [3.34, 4.27] | 0.731 | 0.083 | 0.024 |
+| soft | 3.95 [3.36, 4.37] | 0.723 | 0.104 | 0.040 |
 | weight-clip (inexpressive) | 22.5 [22.0, 23.1] | 2.10 | 0 | 0.297 |
 
-Here accuracy is **competitive** (L¹ bands overlap; L² within noise) while the
-hard-monotone model is the **only structurally admissible** one (violation 0 vs.
-0.08–0.10 for the oscillating baselines). The inexpressive weight-clip baseline
-fails outright (≈7× error), so the effect is due to `mononet`'s *expressive*
-hard monotonicity, not monotonicity per se.
+The hard-monotone model is **marginally best on both L¹ and L²** *and* the **only
+structurally admissible** one (violation 0 vs. 0.08–0.10 for the oscillating
+baselines) — i.e. guaranteed admissibility at no accuracy cost (L¹ bands still
+overlap, so this is parity-or-better, not a decisive accuracy win). The
+inexpressive weight-clip baseline fails outright (≈6× error), so the effect is due
+to `mononet`'s *expressive* hard monotonicity, not monotonicity per se.
 
 #### 6.2.1 Robustness under sparsity and noise
 
 Stress-testing each method's tuned config across observation count and noise
-(`results/inverse-sweep.json`; IQM over seeds), at n_obs = 80:
+(`results/inverse-sweep.json`; IQM over seeds), at n_obs = 80 (plain-`MonoLinear`
+field; a MonoResidual re-run is pending and will refresh these numbers):
 
 | noise | L² (hard / van / soft) | violation (hard / van / soft) |
 |---|---|---|

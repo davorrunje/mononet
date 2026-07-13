@@ -3,6 +3,24 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-13 — MonoResidual inverse headline (10-seed IQM) — best on L1/L2 + sole admissible
+
+Re-ran the inverse flagship with the MonoResidual field (`inverse-headline.json`):
+
+| method | L1 IQM [95%] | L2 | violation | overshoot |
+|---|---|---|---|---|
+| **hard_monotone** | **3.52 [2.69, 4.04]** | **0.714** | **0** | 0.023 |
+| vanilla | 3.92 [3.34, 4.27] | 0.731 | 0.083 | 0.024 |
+| soft | 3.95 [3.36, 4.37] | 0.723 | 0.104 | 0.040 |
+| weight_clip | 22.5 | 2.10 | 0 | 0.297 |
+
+vs the plain-MonoLinear version (L1 3.17, L2 0.79): MonoResidual improves L2 to
+0.714 → now **marginally best on both L1 and L2** *and* sole admissible (viol 0).
+Honest magnitude: L1 bands still overlap → parity-or-better + guaranteed
+admissibility, not a decisive accuracy win. Forward panel + sparsity×noise sweep
+re-runs with MonoResidual are in progress; paper §6.1/§6.2.1 flagged as pending
+refresh.
+
 ## 2026-07-13 — MonoResidual restored (PR #100 fixes the gate collapse)
 
 PR #100 (near-zero gate init + softplus gate) fixes the `MonoResidual` collapse.

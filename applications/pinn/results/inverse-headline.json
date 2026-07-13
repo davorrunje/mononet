@@ -1,6 +1,7 @@
 {
   "problem": "lwr_riemann",
   "tier": "inverse",
+  "backend": "jax",
   "n_trials": 20,
   "steps": 8000,
   "seeds": [
@@ -19,10 +20,10 @@
   "methods": {
     "hard_monotone": {
       "best_params": {
-        "lr": 0.009963908343902693,
-        "width": 32,
-        "residual_weight": 0.0531523103035049,
-        "data_weight": 3.015190387616343
+        "lr": 0.00248463381689824,
+        "width": 64,
+        "residual_weight": 0.0427708304996207,
+        "data_weight": 1.8107254066631076
       },
       "per_seed": [
         {
@@ -30,122 +31,132 @@
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 0,
-          "l1": 1.2235729092928647,
-          "l2": 0.4547994079585139,
+          "l1": 1.575315841957556,
+          "l2": 0.47947960225797454,
           "admissibility_violation": 0.0,
-          "overshoot": 0.02420414686203004
+          "overshoot": 0.012260150909423784,
+          "oob_frac": 0.8131
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 1,
-          "l1": 3.9603234603776563,
-          "l2": 1.0610035787371133,
+          "l1": 3.5469566434472206,
+          "l2": 0.7440628293680589,
           "admissibility_violation": 0.0,
-          "overshoot": 0.028395247459411577
+          "overshoot": 0.028291356563568126,
+          "oob_frac": 0.5712
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 2,
-          "l1": 2.1651896446793635,
-          "l2": 0.5013005093927562,
-          "admissibility_violation": 2.9802322387695312e-08,
-          "overshoot": 0.013752532005310014
+          "l1": 1.9535739584783902,
+          "l2": 0.4463110404475454,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.013753724098205522,
+          "oob_frac": 0.4214
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 3,
-          "l1": 3.8101762928555534,
-          "l2": 0.964912690337001,
+          "l1": 4.755004573347603,
+          "l2": 1.0325354987713178,
           "admissibility_violation": 0.0,
-          "overshoot": 0.09044713973999019
+          "overshoot": 0.03185335993766786,
+          "oob_frac": 0.4898
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 4,
-          "l1": 3.237012239556833,
-          "l2": 0.7063303935792198,
-          "admissibility_violation": 2.9802322387695312e-08,
-          "overshoot": 0.018516790866851818
+          "l1": 3.363208242217516,
+          "l2": 0.7282176480135755,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.013190311193466198,
+          "oob_frac": 0.4034
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 5,
-          "l1": 2.1797251836738525,
-          "l2": 0.5482159456304564,
+          "l1": 2.9510445558246188,
+          "l2": 0.6675298830219735,
           "admissibility_violation": 0.0,
-          "overshoot": 0.021278452873229936
+          "overshoot": 0.02295054197311397,
+          "oob_frac": 0.4808
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 6,
-          "l1": 2.510998080124218,
-          "l2": 0.7215666225014522,
+          "l1": 3.6346268289652466,
+          "l2": 0.690354647628783,
           "admissibility_violation": 0.0,
-          "overshoot": 0.023484838008880626
+          "overshoot": 0.02147288322448726,
+          "oob_frac": 0.2824
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 7,
-          "l1": 3.8059819457519137,
-          "l2": 0.8576326122027534,
-          "admissibility_violation": 2.9802322387695312e-08,
-          "overshoot": 0.02895898818969722
+          "l1": 3.3528106484581044,
+          "l2": 0.8523101226908345,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.021013957262039196,
+          "oob_frac": 0.4878
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 8,
-          "l1": 3.4823930553455615,
-          "l2": 0.988102432759221,
-          "admissibility_violation": 2.9802322387695312e-08,
-          "overshoot": 0.017529141902923595
+          "l1": 4.2972164932807075,
+          "l2": 0.6604234427075025,
+          "admissibility_violation": 0.0,
+          "overshoot": 0.02932662963867183,
+          "oob_frac": 0.408
         },
         {
           "problem": "lwr_riemann",
           "method": "hard_monotone",
           "backend": "jax",
           "seed": 9,
-          "l1": 4.182661706239151,
-          "l2": 0.9656665026044575,
+          "l1": 4.256969197012091,
+          "l2": 0.793212208519636,
           "admissibility_violation": 0.0,
-          "overshoot": 0.023050975799560502
+          "overshoot": 0.039358121156692516,
+          "oob_frac": 0.584
         }
       ],
       "agg": {
         "l1": {
-          "iqm": 3.171047799551322,
-          "lo": 2.3695122776249256,
-          "hi": 3.8042141698563072
+          "iqm": 3.517602685987466,
+          "lo": 2.6862229160143416,
+          "hi": 4.040451892262196
         },
         "l2": {
-          "iqm": 0.7940541278092234,
-          "lo": 0.6049630159407771,
-          "hi": 0.9510232697629059
+          "iqm": 0.7139667765432548,
+          "lo": 0.5969495490274119,
+          "hi": 0.8075419595966508
         },
         "admissibility_violation": {
-          "iqm": 9.934107462565104e-09,
+          "iqm": 0.0,
           "lo": 0.0,
-          "hi": 2.483526865641276e-08
+          "hi": 0.0
         },
         "overshoot": {
-          "iqm": 0.02315507531166075,
-          "lo": 0.019396805514891917,
-          "hi": 0.03603000417351719
+          "iqm": 0.022801515460014316,
+          "lo": 0.016308761636416102,
+          "hi": 0.029109631354610113
         }
       }
     },
@@ -165,7 +176,8 @@
           "l1": 2.2691236563064447,
           "l2": 0.48065998987052944,
           "admissibility_violation": 0.10786916315555573,
-          "overshoot": 0.03831673860549922
+          "overshoot": 0.03831673860549922,
+          "oob_frac": 0.4593
         },
         {
           "problem": "lwr_riemann",
@@ -175,7 +187,8 @@
           "l1": 4.288979538301744,
           "l2": 0.7861130180361171,
           "admissibility_violation": 0.024776220321655273,
-          "overshoot": 0.023582828044891313
+          "overshoot": 0.023582828044891313,
+          "oob_frac": 0.4471
         },
         {
           "problem": "lwr_riemann",
@@ -185,7 +198,8 @@
           "l1": 3.1922852978634615,
           "l2": 0.608623662998411,
           "admissibility_violation": 0.07514500617980957,
-          "overshoot": 0.024890792369842485
+          "overshoot": 0.024890792369842485,
+          "oob_frac": 0.4967
         },
         {
           "problem": "lwr_riemann",
@@ -195,7 +209,8 @@
           "l1": 4.219644183968798,
           "l2": 0.8804067965527568,
           "admissibility_violation": 0.07241509854793549,
-          "overshoot": 0.06857509613037105
+          "overshoot": 0.06857509613037105,
+          "oob_frac": 0.3671
         },
         {
           "problem": "lwr_riemann",
@@ -205,7 +220,8 @@
           "l1": 4.356205657678655,
           "l2": 0.7741403164541975,
           "admissibility_violation": 0.06560178101062775,
-          "overshoot": 0.016571637988090526
+          "overshoot": 0.016571637988090526,
+          "oob_frac": 0.3425
         },
         {
           "problem": "lwr_riemann",
@@ -215,7 +231,8 @@
           "l1": 3.1920502251716263,
           "l2": 0.5801124156804345,
           "admissibility_violation": 0.10123583674430847,
-          "overshoot": 0.0220597803592682
+          "overshoot": 0.0220597803592682,
+          "oob_frac": 0.3635
         },
         {
           "problem": "lwr_riemann",
@@ -225,7 +242,8 @@
           "l1": 3.6822868653877467,
           "l2": 0.56961939552557,
           "admissibility_violation": 0.12497192621231079,
-          "overshoot": 0.0252935409545898
+          "overshoot": 0.0252935409545898,
+          "oob_frac": 0.2288
         },
         {
           "problem": "lwr_riemann",
@@ -235,7 +253,8 @@
           "l1": 4.046273216949655,
           "l2": 0.8749949838428647,
           "admissibility_violation": 0.07771603763103485,
-          "overshoot": 0.02841862738132478
+          "overshoot": 0.02841862738132478,
+          "oob_frac": 0.5059
         },
         {
           "problem": "lwr_riemann",
@@ -245,7 +264,8 @@
           "l1": 4.066066803824381,
           "l2": 0.7644515427570031,
           "admissibility_violation": 0.10310430824756622,
-          "overshoot": 0.01784522533416749
+          "overshoot": 0.01784522533416749,
+          "oob_frac": 0.4671
         },
         {
           "problem": "lwr_riemann",
@@ -255,7 +275,8 @@
           "l1": 4.487043179878656,
           "l2": 0.8807546663283704,
           "admissibility_violation": 0.06226179003715515,
-          "overshoot": 0.020475995540618852
+          "overshoot": 0.020475995540618852,
+          "oob_frac": 0.5744
         }
       ],
       "agg": {
@@ -298,7 +319,8 @@
           "l1": 2.5789515837952215,
           "l2": 0.419873351088628,
           "admissibility_violation": 0.16020868718624115,
-          "overshoot": 0.043350052833557084
+          "overshoot": 0.043350052833557084,
+          "oob_frac": 0.7022
         },
         {
           "problem": "lwr_riemann",
@@ -308,7 +330,8 @@
           "l1": 4.2949376747836,
           "l2": 0.7755123048950235,
           "admissibility_violation": 0.11079633235931396,
-          "overshoot": 0.04655171632766725
+          "overshoot": 0.04655171632766725,
+          "oob_frac": 0.4732
         },
         {
           "problem": "lwr_riemann",
@@ -318,7 +341,8 @@
           "l1": 3.856778210131982,
           "l2": 0.5757133355444706,
           "admissibility_violation": 0.10511718690395355,
-          "overshoot": 0.042501521110534624
+          "overshoot": 0.042501521110534624,
+          "oob_frac": 0.6955
         },
         {
           "problem": "lwr_riemann",
@@ -328,7 +352,8 @@
           "l1": 4.478433706173365,
           "l2": 0.9163827419110977,
           "admissibility_violation": 0.08962655067443848,
-          "overshoot": 0.06254876852035518
+          "overshoot": 0.06254876852035518,
+          "oob_frac": 0.511
         },
         {
           "problem": "lwr_riemann",
@@ -338,7 +363,8 @@
           "l1": 4.2246078238415565,
           "l2": 0.7521907547580465,
           "admissibility_violation": 0.10647158324718475,
-          "overshoot": 0.02882438600063325
+          "overshoot": 0.02882438600063325,
+          "oob_frac": 0.3042
         },
         {
           "problem": "lwr_riemann",
@@ -348,7 +374,8 @@
           "l1": 3.0027507956303694,
           "l2": 0.5365219737716798,
           "admissibility_violation": 0.09345391392707825,
-          "overshoot": 0.028238606452941906
+          "overshoot": 0.028238606452941906,
+          "oob_frac": 0.3558
         },
         {
           "problem": "lwr_riemann",
@@ -358,7 +385,8 @@
           "l1": 3.360623355007664,
           "l2": 0.5492418780350884,
           "admissibility_violation": 0.14946311712265015,
-          "overshoot": 0.044450995326042186
+          "overshoot": 0.044450995326042186,
+          "oob_frac": 0.4444
         },
         {
           "problem": "lwr_riemann",
@@ -368,7 +396,8 @@
           "l1": 4.807465023251658,
           "l2": 0.9370790047257491,
           "admissibility_violation": 0.10166679322719574,
-          "overshoot": 0.04831380844116212
+          "overshoot": 0.04831380844116212,
+          "oob_frac": 0.3119
         },
         {
           "problem": "lwr_riemann",
@@ -378,7 +407,8 @@
           "l1": 3.573748773366378,
           "l2": 0.8058527224094018,
           "admissibility_violation": 0.1042216420173645,
-          "overshoot": 0.029131066799163774
+          "overshoot": 0.029131066799163774,
+          "oob_frac": 0.59
         },
         {
           "problem": "lwr_riemann",
@@ -388,7 +418,8 @@
           "l1": 4.384895850845337,
           "l2": 0.8807013654642054,
           "admissibility_violation": 0.07025307416915894,
-          "overshoot": 0.03263570070266719
+          "overshoot": 0.03263570070266719,
+          "oob_frac": 0.5681
         }
       ],
       "agg": {
@@ -430,7 +461,8 @@
           "l1": 22.744325944766427,
           "l2": 2.0830645474595593,
           "admissibility_violation": 0.0,
-          "overshoot": 0.28412241935729976
+          "overshoot": 0.28412241935729976,
+          "oob_frac": 0.3568
         },
         {
           "problem": "lwr_riemann",
@@ -440,7 +472,8 @@
           "l1": 21.941318794710647,
           "l2": 2.1052501730806825,
           "admissibility_violation": 0.0,
-          "overshoot": 0.30174417495727535
+          "overshoot": 0.30174417495727535,
+          "oob_frac": 0.319
         },
         {
           "problem": "lwr_riemann",
@@ -450,7 +483,8 @@
           "l1": 22.7943414237632,
           "l2": 2.1577720217304015,
           "admissibility_violation": 0.0,
-          "overshoot": 0.35791928768157955
+          "overshoot": 0.35791928768157955,
+          "oob_frac": 0.3512
         },
         {
           "problem": "lwr_riemann",
@@ -460,7 +494,8 @@
           "l1": 21.436945359551217,
           "l2": 2.0811060388824587,
           "admissibility_violation": 0.0,
-          "overshoot": 0.2722779035568237
+          "overshoot": 0.2722779035568237,
+          "oob_frac": 0.4163
         },
         {
           "problem": "lwr_riemann",
@@ -470,7 +505,8 @@
           "l1": 23.30853250805467,
           "l2": 2.130697385615262,
           "admissibility_violation": 0.0,
-          "overshoot": 0.3842439174652099
+          "overshoot": 0.3842439174652099,
+          "oob_frac": 0.3291
         },
         {
           "problem": "lwr_riemann",
@@ -480,7 +516,8 @@
           "l1": 22.40563339060884,
           "l2": 2.051144801560703,
           "admissibility_violation": 0.0,
-          "overshoot": 0.285245132446289
+          "overshoot": 0.285245132446289,
+          "oob_frac": 0.3892
         },
         {
           "problem": "lwr_riemann",
@@ -490,7 +527,8 @@
           "l1": 23.48702583648462,
           "l2": 2.0733502236367882,
           "admissibility_violation": 0.0,
-          "overshoot": 0.26136357784271236
+          "overshoot": 0.26136357784271236,
+          "oob_frac": 0.3431
         },
         {
           "problem": "lwr_riemann",
@@ -500,7 +538,8 @@
           "l1": 23.242494701860043,
           "l2": 2.364358780698501,
           "admissibility_violation": 0.0,
-          "overshoot": 0.7015034675598144
+          "overshoot": 0.7015034675598144,
+          "oob_frac": 0.4554
         },
         {
           "problem": "lwr_riemann",
@@ -510,7 +549,8 @@
           "l1": 21.763722090625382,
           "l2": 2.103472931895672,
           "admissibility_violation": 0.0,
-          "overshoot": 0.2805392265319824
+          "overshoot": 0.2805392265319824,
+          "oob_frac": 0.3347
         },
         {
           "problem": "lwr_riemann",
@@ -520,7 +560,8 @@
           "l1": 21.938526648372957,
           "l2": 2.0946619113867673,
           "admissibility_violation": 0.0,
-          "overshoot": 0.23560137748718257
+          "overshoot": 0.23560137748718257,
+          "oob_frac": 0.391
         }
       ],
       "agg": {
