@@ -43,7 +43,7 @@ def concave_reflection(name: str, h: jnp.ndarray) -> jnp.ndarray:
 def gate(token: str, raw: jnp.ndarray) -> jnp.ndarray:
     """Resolve and apply a gate token to a raw parameter.
 
-    :param token: Either ``shifted_elu`` or ``scaled_elu``.
+    :param token: Either ``shifted_elu``, ``scaled_elu``, or ``softplus``.
     :param raw: Raw (unconstrained) gate parameter array.
     :returns: Strictly-positive gated value.
     :raises ValueError: If ``token`` is not a supported gate.
@@ -53,6 +53,8 @@ def gate(token: str, raw: jnp.ndarray) -> jnp.ndarray:
     if token == "scaled_elu":
         eps = 1e-3
         return jnp.maximum(raw, 0.0) + eps * jnp.exp(jnp.minimum(raw, 0.0) / eps)
+    if token == "softplus":
+        return jnn.softplus(raw)
     raise ValueError(f"unknown gate token {token!r}")
 
 
