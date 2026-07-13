@@ -4,7 +4,7 @@
 
 **Goal:** Make deep `MonoResidual` stacks actually use their depth by fixing two independent traps — the `scaled_elu` gate dead zone (→ `softplus` gate) and the `|W|` exact-zero gradient fixed point (→ near-zero init of `F`'s last layer) — across all three backends, with reproducible evidence and evidence-backed docs.
 
-**Architecture:** Two orthogonal changes shipped as the new `MonoResidual` default. (B) A new `softplus` gate token added to the NumPy reference and the torch/jax/keras kernels, made the default `beta_gate`. (A) Near-zero initialization (`weight *= 1e-3`, `bias = 0`) of the default `F` sub-module's **last** layer, applied at each backend's weight-creation site via a private `near_zero_out` flag on the dense layer. The stateless kernels are unchanged except for the new gate branch; near-zero init is a layer-construction concern only.
+**Architecture:** Two orthogonal changes shipped as the new `MonoResidual` default. (B) A new `softplus` gate token added to the NumPy reference and the torch/jax/keras kernels, made the default `beta_gate`. (A) Near-zero initialization (`weight *= near_zero_scale`, default `1e-3`; `bias = 0`) of the default `F` sub-module's **last** layer, applied at each backend's weight-creation site via a private `near_zero_scale` init kwarg on the dense layer and exposed as a user-tunable `near_zero_scale` on `MonoResidual`/`MonoResidualConfig`. The stateless kernels are unchanged except for the new gate branch; near-zero init is a layer-construction concern only. The construction assumes standardized (unit-scale) inputs.
 
 **Tech Stack:** Python 3.11+, PyTorch, JAX (Flax NNX), Keras 3, NumPy reference, Optuna (benchmarks), pytest, uv, ruff, mypy (strict), Sphinx + myst-nb.
 
@@ -15,7 +15,8 @@
 - Stdlib `dataclasses` only — **no Pydantic**.
 - Lazy backend imports: never import torch/jax/keras from the top-level `mononet/__init__.py`. Backend tests use `pytest.importorskip`.
 - Monotonicity is a hard invariant: `g_α, g_β ≥ 0` for all parameter values; `F` non-decreasing. No signed/ReZero gate. Every change must preserve the monotonicity property tests.
-- `_NEAR_ZERO_SCALE = 1e-3` (the near-identity warm-start scale; stable band ≈`1e-3`, `≥1e-2` re-blows-up). Define once per backend `layers.py`.
+- `_NEAR_ZERO_SCALE = 1e-3` (the near-identity warm-start scale ε; stable band ≈`1e-3`, `≥1e-2` re-blows-up). Define once per backend `layers.py`; exposed as the user-tunable `near_zero_scale` on `MonoResidual`/`MonoResidualConfig`.
+- Inputs must be standardized to ≈ unit scale via a fixed **positive** per-feature affine (monotone-safe); the warm-start and `absolute` init assume `x~O(1)`. Never LayerNorm/BatchNorm (breaks monotonicity).
 - The package was never publicly released — change defaults outright, no compat shims. Keep `scaled_elu` as a selectable token (used by the ablation), just not the default.
 - Commit proactively on this branch (`fix/monoresidual-instability`); never commit to `main`.
 - Backend equivalence: run the equivalence suite with `MONONET_TEST_BACKEND=torch` locally (the `default` devcontainer has torch); jax/keras are verified in CI.
@@ -296,17 +297,28 @@ git commit -m "feat: default MonoResidual beta_gate to softplus (fixes gate dead
 
 ---
 
-### Task 4: Near-zero init of `F`'s last layer (all three backends)
+### Task 4: Near-zero init of `F`'s last layer + user-tunable `near_zero_scale` (all three backends)
 
 **Files:**
-- Modify: `mononet/torch/layers.py` (`MonoLinear.__init__`, `MonoResidual` default-`F` builder)
-- Modify: `mononet/jax/layers.py` (`MonoLinear.__init__`, `MonoResidual` default-`F` builder)
-- Modify: `mononet/keras/layers.py` (`MonoDense.__init__`/`build`, `MonoResidual` default-`F` builder)
-- Test: `tests/torch/test_mono_residual_gate.py` (NEW), `tests/jax/test_mono_residual_gate.py` (NEW), `tests/keras/test_mono_residual_gate.py` (NEW)
+- Modify: `mononet/core/config.py` (`MonoResidualConfig` — add `near_zero_scale` field + JSON)
+- Modify: `mononet/torch/layers.py` (`MonoLinear.__init__`, `MonoResidual`)
+- Modify: `mononet/jax/layers.py` (`MonoLinear.__init__`, `MonoResidual`)
+- Modify: `mononet/keras/layers.py` (`MonoDense.__init__`/`build`, `MonoResidual`)
+- Test: `tests/core/test_config.py`; `tests/torch/test_mono_residual_gate.py` (NEW), `tests/jax/test_mono_residual_gate.py` (NEW), `tests/keras/test_mono_residual_gate.py` (NEW)
 
 **Interfaces:**
 - Consumes: nothing new.
-- Produces: a private `near_zero_out: bool = False` keyword on `MonoLinear` (torch/jax) and `MonoDense` (keras). When `True`, the layer's weight is initialized then multiplied by `_NEAR_ZERO_SCALE = 1e-3` and its bias set to zero. `MonoResidual`'s default `F` builds its **last** sub-layer with `near_zero_out=True` (both the `k==1` single-layer and the `k>1` last-of-stack cases). A custom `F` is untouched.
+- Produces:
+  - A private `near_zero_scale: float | None = None` init keyword on `MonoLinear` (torch/jax) and
+    `MonoDense` (keras). When not `None`, the layer's weight is initialized normally then
+    multiplied by `near_zero_scale` and its bias set to zero.
+  - `MonoResidual.__init__` gains a **public** `near_zero_scale: float = _NEAR_ZERO_SCALE` (=`1e-3`)
+    keyword, stored and passed to the **last** default-`F` sub-layer (both `k==1` and `k>1`).
+    `0.0` reproduces exact-zero (frozen-weight trap; documented, not recommended). A custom `F` is
+    untouched.
+  - `MonoResidualConfig` gains a `near_zero_scale: float = 1e-3` field (mirrors `beta_gate`), with
+    JSON round-trip.
+  - `_NEAR_ZERO_SCALE = 1e-3` module constant in each backend `layers.py`.
 
 - [ ] **Step 1: Write the failing test (torch)**
 
@@ -358,14 +370,53 @@ def test_custom_F_is_not_near_zeroed() -> None:
     block = MonoResidual(32, 32, F=custom)
     after = float(block.F.weight.detach().abs().sum())  # type: ignore[union-attr]
     assert after == before  # untouched
+
+
+def test_near_zero_scale_is_user_tunable() -> None:
+    torch.manual_seed(0)
+    small = _last_linear(MonoResidual(32, 32, mode="absolute", activation="elu"))
+    torch.manual_seed(0)
+    big = _last_linear(
+        MonoResidual(32, 32, mode="absolute", activation="elu", near_zero_scale=2e-3)
+    )
+    # same seed => 2e-3 gives ~2x the weight magnitude of the 1e-3 default
+    ratio = float(big.weight.detach().abs().sum()) / float(small.weight.detach().abs().sum())
+    assert ratio == pytest.approx(2.0, rel=1e-5)
+    # 0.0 reproduces exact-zero
+    torch.manual_seed(0)
+    zero = _last_linear(
+        MonoResidual(32, 32, mode="absolute", activation="elu", near_zero_scale=0.0)
+    )
+    assert float(zero.weight.detach().abs().sum()) == 0.0
+```
+
+Also add to `tests/core/test_config.py::test_mono_residual_config_roundtrip`:
+
+```python
+    assert cfg.near_zero_scale == pytest.approx(1e-3)
+    assert MonoResidualConfig.from_json(
+        MonoResidualConfig(units=16, mode="switch", activation=ActivationSpec("relu"),
+                           near_zero_scale=5e-3).to_json()
+    ).near_zero_scale == pytest.approx(5e-3)
 ```
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `uv run pytest tests/torch/test_mono_residual_gate.py -v`
-Expected: FAIL (`test_default_F_last_layer_is_near_zero_but_nonzero` — weight norm is a normal-init magnitude, not `<1.0`).
+Run: `uv run pytest tests/torch/test_mono_residual_gate.py tests/core/test_config.py -v`
+Expected: FAIL (`near_zero_scale` is not a parameter/field yet, and the default weight norm is a normal-init magnitude).
 
-- [ ] **Step 3: Add `near_zero_out` to torch `MonoLinear` and use it in `MonoResidual`**
+- [ ] **Step 3a: Add the config field**
+
+In `mononet/core/config.py`, add to `MonoResidualConfig` after `beta_gate`:
+
+```python
+    near_zero_scale: float = 1e-3
+```
+
+and include it in `to_json` (add `"near_zero_scale": self.near_zero_scale`) and `from_json`
+(`near_zero_scale=data["near_zero_scale"]`). Add a `:param near_zero_scale:` docstring line.
+
+- [ ] **Step 3b: Add `near_zero_scale` to torch `MonoLinear` and `MonoResidual`**
 
 In `mononet/torch/layers.py`, add the module constant near the top (after imports):
 
@@ -373,27 +424,27 @@ In `mononet/torch/layers.py`, add the module constant near the top (after import
 _NEAR_ZERO_SCALE = 1e-3
 ```
 
-Add `near_zero_out: bool = False` to `MonoLinear.__init__`'s keyword-only params, and after the weight/bias are initialized (after the existing `self.bias = …` line ~99):
+Add `near_zero_scale: float | None = None` to `MonoLinear.__init__`'s keyword-only params, and after the weight/bias are initialized (after the existing `self.bias = …` line ~99):
 
 ```python
-        if near_zero_out:
+        if near_zero_scale is not None:
             with torch.no_grad():
-                self.weight.mul_(_NEAR_ZERO_SCALE)
+                self.weight.mul_(near_zero_scale)
                 if self.bias is not None:
                     self.bias.zero_()
 ```
 
-In `MonoResidual.__init__`'s default-`F` builder, pass `near_zero_out=True` to the last sub-layer. For `k == 1`:
+Add `near_zero_scale: float = _NEAR_ZERO_SCALE` to `MonoResidual.__init__`'s keyword-only params (store `self.near_zero_scale = near_zero_scale` is not required — it is only used to build `F`). In the default-`F` builder, pass `near_zero_scale=near_zero_scale` to the last sub-layer. For `k == 1`:
 
 ```python
             if k == 1:
                 self.F: nn.Module = MonoLinear(
                     in_features, units, mode=mode, activation=activation,
-                    init=init, near_zero_out=True,
+                    init=init, near_zero_scale=near_zero_scale,
                 )
 ```
 
-For `k > 1`, build the intermediate layers normally and the final one with `near_zero_out=True`:
+For `k > 1`, build the intermediate layers normally and the final one with the scale:
 
 ```python
             else:
@@ -411,7 +462,7 @@ For `k > 1`, build the intermediate layers normally and the final one with `near
                 sub.append(
                     MonoLinear(
                         units, units, mode=mode, activation=activation,
-                        init=init, near_zero_out=True,
+                        init=init, near_zero_scale=near_zero_scale,
                     )
                 )
                 self.F = nn.Sequential(*sub)
@@ -419,9 +470,11 @@ For `k > 1`, build the intermediate layers normally and the final one with `near
 
 (Note: `k - 2` intermediate `units→units` layers + 1 near-zero last = `k - 1` after the first, preserving total `k`. For `k == 2` this yields `[input_layer, near_zero_last]`.)
 
+(Note: `k - 2` intermediate `units→units` layers + 1 near-zero last = `k - 1` after the first, preserving total `k`. For `k == 2` this yields `[input_layer, near_zero_last]`.)
+
 - [ ] **Step 4: Run to verify it passes**
 
-Run: `uv run pytest tests/torch/test_mono_residual_gate.py -v`
+Run: `uv run pytest tests/torch/test_mono_residual_gate.py tests/core/test_config.py -v`
 Expected: PASS.
 
 - [ ] **Step 5: Verify monotonicity still holds (torch)**
@@ -431,45 +484,45 @@ Expected: PASS (near-zero weights are a valid `|W|` point; block stays non-decre
 
 - [ ] **Step 6: Mirror in JAX**
 
-Create `tests/jax/test_mono_residual_gate.py` (same three tests, `pytest.importorskip("jax")`, using `nnx`; read a weight via `last.weight[...]` and bias via `last.bias[...]`; the JAX `MonoResidual` stores the default stack in `nnx.Sequential`, so index the last built sub-layer — capture it as in Step 3's `sub[-1]`). Then in `mononet/jax/layers.py`:
+Create `tests/jax/test_mono_residual_gate.py` (the four tests, `pytest.importorskip("jax")`, using `nnx`; read a weight via `last.weight[...]` and bias via `last.bias[...]`; the JAX `MonoResidual` stores the default stack in `nnx.Sequential`, so capture the last built sub-layer as `sub[-1]`). Then in `mononet/jax/layers.py`:
 - add `_NEAR_ZERO_SCALE = 1e-3`;
-- add `near_zero_out: bool = False` to `MonoLinear.__init__`, and after the weight/bias `nnx.Param`s are created:
+- add `near_zero_scale: float | None = None` to `MonoLinear.__init__`, and after the weight/bias `nnx.Param`s are created:
 
 ```python
-        if near_zero_out:
-            self.weight[...] = self.weight[...] * _NEAR_ZERO_SCALE
+        if near_zero_scale is not None:
+            self.weight[...] = self.weight[...] * near_zero_scale
             if self.bias is not None:
                 self.bias[...] = jnp.zeros_like(self.bias[...])
 ```
 
-- in the `MonoResidual` default-`F` builder, build the last sub-layer with `near_zero_out=True` (same `k==1` / `k>1` structure as torch).
+- add `near_zero_scale: float = _NEAR_ZERO_SCALE` to `MonoResidual.__init__` and pass it to the last default-`F` sub-layer (same `k==1` / `k>1` structure as torch).
 
 Run: `MONONET_TEST_BACKEND=jax uv run pytest tests/jax/test_mono_residual_gate.py tests/jax/test_property_monotonic.py -v` (skips if JAX not installed; CI covers it).
 
 - [ ] **Step 7: Mirror in Keras**
 
-Keras `MonoDense` creates weights in `build()`, not `__init__`. Create `tests/keras/test_mono_residual_gate.py` (same three tests, `pytest.importorskip("keras")`; build the block by calling it once on a dummy input so weights exist: `block(np.zeros((1, 32), dtype="float32"))`, then read `last.w`/`last.b`). Then in `mononet/keras/layers.py`:
+Keras `MonoDense` creates weights in `build()`, not `__init__`. Create `tests/keras/test_mono_residual_gate.py` (the four tests, `pytest.importorskip("keras")`; build the block by calling it once on a dummy input so weights exist: `block(np.zeros((1, 32), dtype="float32"))`, then read `last.w`/`last.b`). Then in `mononet/keras/layers.py`:
 - add `_NEAR_ZERO_SCALE = 1e-3`;
-- add `near_zero_out: bool = False` to `MonoDense.__init__` (store `self.near_zero_out = near_zero_out`), and at the end of `MonoDense.build`, after `self.w`/`self.b` are created and before `super().build(...)`:
+- add `near_zero_scale: float | None = None` to `MonoDense.__init__` (store `self.near_zero_scale = near_zero_scale`), and at the end of `MonoDense.build`, after `self.w`/`self.b` are created and before `super().build(...)`:
 
 ```python
-        if self.near_zero_out:
-            self.w.assign(self.w * _NEAR_ZERO_SCALE)
+        if self.near_zero_scale is not None:
+            self.w.assign(self.w * self.near_zero_scale)
             if self.b is not None:
                 self.b.assign(ops.zeros_like(self.b))
 ```
 
-- in the `MonoResidual` default-`F` builder, build the last `MonoDense` with `near_zero_out=True` (same `k==1` / `k>1` split; for the `keras.Sequential` case build `k-1` normal + 1 near-zero).
+- add `near_zero_scale: float = _NEAR_ZERO_SCALE` to `MonoResidual.__init__` and build the last default-`F` `MonoDense` with it (same `k==1` / `k>1` split; for the `keras.Sequential` case build `k-1` normal + 1 near-zero).
 
 Run: `MONONET_TEST_BACKEND=keras uv run pytest tests/keras/test_mono_residual_gate.py tests/keras/test_property_monotonic.py -v` (skips if Keras not installed; CI covers it).
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add mononet/torch/layers.py mononet/jax/layers.py mononet/keras/layers.py \
-        tests/torch/test_mono_residual_gate.py tests/jax/test_mono_residual_gate.py \
-        tests/keras/test_mono_residual_gate.py
-git commit -m "feat: near-zero init of default F last layer (fixes |W| frozen-weight trap)"
+git add mononet/core/config.py mononet/torch/layers.py mononet/jax/layers.py mononet/keras/layers.py \
+        tests/core/test_config.py tests/torch/test_mono_residual_gate.py \
+        tests/jax/test_mono_residual_gate.py tests/keras/test_mono_residual_gate.py
+git commit -m "feat: near-zero init of default F (fixes |W| trap) + tunable near_zero_scale"
 ```
 
 ---
@@ -547,21 +600,26 @@ git commit -m "test(torch): deep default MonoResidual opens gate and trains F"
 
 ---
 
-### Task 6: Committed, reproducible evidence (trap instrumentation + ablation JSON)
+### Task 6: Committed, reproducible evidence (trap + ablation + input-scale JSON)
 
 **Files:**
 - Create: `benchmarks/monoresidual_gate_trap.py`
+- Create: `benchmarks/monoresidual_gate_scale.py`
 - Modify: `benchmarks/monoresidual_gate_ablation.py` (emit JSON)
-- Create: `benchmarks/results/monoresidual-gate/trap.json`, `benchmarks/results/monoresidual-gate/ablation.json`
+- Create: `benchmarks/results/monoresidual-gate/{trap,ablation,scale}.json`
 - Test: `tests/benchmarks/test_monoresidual_gate_evidence.py` (NEW, smoke)
 
 **Interfaces:**
 - Consumes: `mononet.torch.MonoResidual`, `_kernels.gate`.
-- Produces: two `python -m benchmarks.*` runnable modules that write committed JSON the docs render from.
+- Produces: three `python -m benchmarks.*` runnable modules that write committed JSON the docs render from.
 
 - [ ] **Step 1: Write the trap-instrumentation script**
 
 Create `benchmarks/monoresidual_gate_trap.py`: a self-contained module that builds a deep default-**pre-fix**-style stack (explicit `beta_gate="scaled_elu"` and a custom non-near-zero `F`) on the inline monotone teacher, trains a few hundred steps, and records per-step `g_beta` (min/max over blocks), `beta`, block-RMS, train/test MSE into a dict. Provide `main(out: Path)` that writes `benchmarks/results/monoresidual-gate/trap.json` and prints a short table. Model structure on `benchmarks/deep_residual_run.py` (argparse `--out`, `json.dump`, `# noqa: T201` prints). Reuse the teacher + `_Block` idiom from `benchmarks/monoresidual_gate_ablation.py` (import the shared helpers if convenient, else duplicate the small teacher fn).
+
+- [ ] **Step 1b: Write the input-scale sensitivity script**
+
+Create `benchmarks/monoresidual_gate_scale.py`: same self-contained idiom, but fix the construction to A+B (near-zero scale `1e-3`, softplus) and sweep the **input scale** `s ∈ {0.1, 1, 10, 100}` with `x ~ U(0, s)` and the target standardized. For each `s`, record `init_f_rms_last`, `init_block_out_rms_last`, and `train_mse` (matching the spec §3.3 table). `main(--out)` writes `benchmarks/results/monoresidual-gate/scale.json` and prints the table. This is the evidence for the input-standardization requirement (docs §7.1) and the `near_zero_scale` calibration.
 
 - [ ] **Step 2: Make the ablation emit JSON**
 
@@ -573,8 +631,9 @@ Run (on GPU if available, else CPU):
 ```bash
 CUDA_VISIBLE_DEVICES=1 uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_ablation --out benchmarks/results/monoresidual-gate/ablation.json
 CUDA_VISIBLE_DEVICES=1 uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_trap --out benchmarks/results/monoresidual-gate/trap.json
+CUDA_VISIBLE_DEVICES=1 uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_scale --out benchmarks/results/monoresidual-gate/scale.json
 ```
-Expected: two JSON files written; ablation JSON's `nearzero/softplus` row has `g_beta_max > 0.1` and `f_moved == n_blocks`; trap JSON's final `g_beta_max ≈ 0`.
+Expected: three JSON files written; ablation JSON's `nearzero/softplus` row has `g_beta_max > 0.1` and `f_moved == n_blocks`; trap JSON's final `g_beta_max ≈ 0`; scale JSON shows `train_mse` low at `s∈{0.1,1}` and large at `s∈{10,100}`.
 
 - [ ] **Step 4: Write a smoke test**
 
@@ -600,21 +659,29 @@ def test_ablation_json_shows_fix_beats_traps() -> None:
 def test_trap_json_shows_closed_gate() -> None:
     trap = json.loads((RESULTS / "trap.json").read_text())
     assert trap["final"]["g_beta_max"] < 0.05
+
+
+def test_scale_json_shows_unit_scale_sensitivity() -> None:
+    rows = json.loads((RESULTS / "scale.json").read_text())
+    by = {r["scale"]: r for r in rows}
+    assert by[1.0]["train_mse"] < 0.1  # unit-scale inputs train
+    assert by[100.0]["train_mse"] > 10.0  # large-scale inputs break
 ```
 
 (Match the exact JSON keys your Steps 1-2 emit; adjust the assertions to those keys.)
 
 - [ ] **Step 5: Run the smoke test and lint**
 
-Run: `uv run pytest tests/benchmarks/test_monoresidual_gate_evidence.py -v && uv run ruff check benchmarks/monoresidual_gate_trap.py benchmarks/monoresidual_gate_ablation.py && uv run mypy benchmarks/monoresidual_gate_trap.py`
+Run: `uv run pytest tests/benchmarks/test_monoresidual_gate_evidence.py -v && uv run ruff check benchmarks/monoresidual_gate_trap.py benchmarks/monoresidual_gate_scale.py benchmarks/monoresidual_gate_ablation.py && uv run mypy benchmarks/monoresidual_gate_trap.py benchmarks/monoresidual_gate_scale.py`
 Expected: PASS / clean.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add benchmarks/monoresidual_gate_trap.py benchmarks/monoresidual_gate_ablation.py \
-        benchmarks/results/monoresidual-gate tests/benchmarks/test_monoresidual_gate_evidence.py
-git commit -m "bench: committed trap + ablation evidence JSON for the gate fix"
+git add benchmarks/monoresidual_gate_trap.py benchmarks/monoresidual_gate_scale.py \
+        benchmarks/monoresidual_gate_ablation.py benchmarks/results/monoresidual-gate \
+        tests/benchmarks/test_monoresidual_gate_evidence.py
+git commit -m "bench: committed trap + ablation + input-scale evidence JSON for the gate fix"
 ```
 
 ---
@@ -725,15 +792,16 @@ In `docs/concepts/monotonic-residual.md`, the "Why the gates are shaped this way
 
 - [ ] **Step 2: Add the "Requirements" and near-zero-init design**
 
-Add a "Requirements for skip connections and gates" subsection (spec §7.1: skip monotone + near-identity-at-init + `g_α=1`; `F` monotone + `≈0` at init + weights-must-stay-trainable + `g_β>0` and able to open; positivity non-negotiable). Then add the near-zero-init design point (spec §7.2 Trap 2): "contribute ≈0 at init" is met by **near-zero init (scale `1e-3`), not exact-zero** — exact-zero is a `sign(0)=0` gradient fixed point under `|W|` that freezes `F` into a constant; note the stable scale band.
+Add a "Requirements for skip connections and gates" subsection (spec §7.1). Cover, as an explicit list: **inputs standardized to ≈ unit scale** via a fixed positive per-feature affine (monotone-safe; not LayerNorm — it breaks monotonicity), because the identity-skip warm-start and the `absolute` init assume `x~O(1)`; skip monotone + near-identity-at-init + `g_α=1`; `F` monotone + `≈0` at init + **weights-must-stay-trainable** + `g_β>0` and able to open; positivity non-negotiable. Then add the near-zero-init design point (spec §3.1 / Trap 2): "contribute ≈0 at init" is met by **near-zero init (scale `1e-3`), not exact-zero** — exact-zero is a `sign(0)=0` gradient fixed point under `|W|` that freezes `F` into a constant; note the stable scale band and that the scale is the user-tunable `near_zero_scale` parameter (default `1e-3`), overridable per input regime.
 
 - [ ] **Step 3: Reframe the experiments and add trap + ablation**
 
-Reframe the existing skip-K sweep paragraph as demonstrating **forward stability (non-divergence)**, explicitly *not* depth-utilisation. Add two subsections rendering the committed JSON: the **trap instrumentation** (`g_β≈0`, `F` idle) and the **A-vs-B ablation** (the six-row table from `ablation.json`, highlighting exact-zero `F-moved 0/16`, `off+softplus` divergence, and `nearzero+softplus` as the winner). Give each a one-line reproduce command:
+Reframe the existing skip-K sweep paragraph as demonstrating **forward stability (non-divergence)**, explicitly *not* depth-utilisation. Add three subsections rendering the committed JSON: the **trap instrumentation** (`g_β≈0`, `F` idle); the **A-vs-B ablation** (the six-row table from `ablation.json`, highlighting exact-zero `F-moved 0/16`, `off+softplus` divergence, and `nearzero+softplus` as the winner); and **input-scale sensitivity** (the four-row table from `scale.json` backing the standardize-inputs requirement and the `near_zero_scale` calibration). Give each a one-line reproduce command:
 
 ```
 uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_ablation
 uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_trap
+uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_scale
 ```
 
 - [ ] **Step 4: "Why A+B" + before/after placeholder**
@@ -760,6 +828,6 @@ Not a code task — executed by the controller after this plan lands (spec §8, 
 
 ## Self-Review notes
 
-- **Spec coverage:** softplus token (T1-T2) ✓; default beta_gate (T3) ✓; near-zero init (T4) ✓; monotonicity preserved (T4 S5/S6/S7) ✓; depth-used + F-trains + no-divergence guards (T5) ✓; equivalence regen (T2) ✓; committed reproducible evidence (T6) ✓; size-driven batch band (T7) ✓; docs rewrite w/ requirements+design+experiments+why-A+B (T8) ✓; Stage-2 re-run captured as out-of-band controller work ✓.
-- **Type consistency:** `near_zero_out` (bool kwarg) and `_NEAR_ZERO_SCALE` (1e-3) used identically across backends; `_last_linear`/`_last_weight_abs_sum` helpers local to their test files; `n_train` keyword added to `suggest_config` and passed from `bundle.X_train.shape[0]`.
+- **Spec coverage:** softplus token (T1-T2) ✓; default beta_gate (T3) ✓; near-zero init + tunable `near_zero_scale` + config field (T4) ✓; input-standardization requirement + sensitivity evidence (T6 S1b, T8 S2/S3) ✓; monotonicity preserved (T4 S5/S6/S7) ✓; depth-used + F-trains + no-divergence guards (T5) ✓; equivalence regen (T2) ✓; committed reproducible evidence trap+ablation+scale (T6) ✓; size-driven batch band (T7) ✓; docs rewrite w/ requirements+design+experiments+why-A+B (T8) ✓; Stage-2 re-run out-of-band ✓.
+- **Type consistency:** dense-layer private kwarg `near_zero_scale: float | None = None` (torch/jax/keras); public `MonoResidual.near_zero_scale: float = _NEAR_ZERO_SCALE` and `MonoResidualConfig.near_zero_scale: float = 1e-3`; `_NEAR_ZERO_SCALE = 1e-3` per backend; `_last_linear`/`_last_weight_abs_sum` helpers local to their test files; `n_train` keyword added to `suggest_config` and passed from `bundle.X_train.shape[0]`.
 - **`k>1` layer count:** builder is `[input] + (k-2)×[units→units] + [near-zero last]` = `k` layers total, matching the pre-fix count; `k==2` → `[input, near-zero-last]`.
