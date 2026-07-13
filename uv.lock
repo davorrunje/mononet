@@ -1878,7 +1878,7 @@ wheels = [
 
 [[package]]
 name = "mononet"
-version = "0.0.0a0"
+version = "0.0.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },
