@@ -304,6 +304,25 @@ GPU-JAX environment used for the tables above has no PyTorch). The construction 
 backend-independent by design; the empirical tolerance will be reported from that
 run.
 
+### 6.4 Field ablation: `MonoResidual` vs plain `MonoLinear`
+
+The hard-monotone field can be a `MonoResidual` stack or a plain `MonoLinear`
+stack (config knob; only `hard_monotone` is affected — the other methods are
+architecture-independent). Both are exactly admissible; the accuracy difference is
+small and tier-dependent (10-seed IQM):
+
+| tier | L¹/L² residual | L¹/L² plain |
+|---|---|---|
+| inverse (LWR, noise 0.02) | 3.52 / 0.714 | 3.48 / 0.744 |
+| forward (Burgers) | 8.06 / 1.64 | 8.09 / 1.23 |
+
+Across the noise sweep, `MonoResidual` is marginally better on the inverse tier
+(e.g. n_obs=80/noise=0.20: L² 1.26 vs 1.33), plain slightly better on the forward
+worst case. Crucially, **the noise crossover (§6.2.1) holds for both variants** —
+the benefit is the monotone *constraint*, not the residual detail. (Before the
+upstream gate-init fix, `MonoResidual` collapsed to a near-linear map here; that is
+now resolved, and the two variants are close.)
+
 ## 7. Discussion and limitations
 
 - **Monotone-solution class.** The guarantee is unconditional *within* this class
