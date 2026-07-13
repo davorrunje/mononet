@@ -15,7 +15,23 @@ from benchmarks._common.search import _ALL_FLAVORS, flavor_name, run_dataset
 
 app = typer.Typer(add_completion=False, help="Run the Phase-2a HP-search flavor study.")
 
-_ALL_DATASETS = ["auto", "heart", "compas", "loan", "blog"]
+_ALL_DATASETS = [
+    "auto",
+    "heart",
+    "compas",
+    "loan",
+    "blog",
+    "adult",
+    "taiwan",
+    "polish",
+    "german",
+    "lc",
+    *[
+        f"synth_{fam}_c{lvl}"
+        for fam in ("additive", "teacher_relu", "teacher_elu", "lattice")
+        for lvl in ("low", "mid", "high")
+    ],
+]
 _SMOKE: dict[str, Any] = {
     "datasets": ["auto", "heart"],
     "n_trials": 5,

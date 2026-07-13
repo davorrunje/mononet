@@ -75,3 +75,44 @@ def test_dry_run_lists_deep_flavor() -> None:
     res = runner.invoke(app, ["--flavors", "absolute-deep", "--dry-run"])
     assert res.exit_code == 0
     assert "absolute-deep" in res.output
+
+
+def test_dry_run_default_datasets_includes_all_22() -> None:
+    """Verify default --datasets (when unset) covers all 10 real + 12 synthetic."""
+    res = runner.invoke(app, ["--dry-run"])
+    assert res.exit_code == 0
+    output = res.output
+
+    # 10 real datasets
+    real = [
+        "auto",
+        "heart",
+        "compas",
+        "loan",
+        "blog",
+        "adult",
+        "taiwan",
+        "polish",
+        "german",
+        "lc",
+    ]
+    for name in real:
+        assert name in output, f"missing real dataset: {name}"
+
+    # 12 synthetic datasets
+    synth = [
+        "synth_additive_clow",
+        "synth_additive_cmid",
+        "synth_additive_chigh",
+        "synth_teacher_relu_clow",
+        "synth_teacher_relu_cmid",
+        "synth_teacher_relu_chigh",
+        "synth_teacher_elu_clow",
+        "synth_teacher_elu_cmid",
+        "synth_teacher_elu_chigh",
+        "synth_lattice_clow",
+        "synth_lattice_cmid",
+        "synth_lattice_chigh",
+    ]
+    for name in synth:
+        assert name in output, f"missing synth dataset: {name}"
