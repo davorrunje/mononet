@@ -388,7 +388,7 @@ def _create_mono_block(
     return create_mono_block_inner
 
 
-def _prepare_mono_input_n_param(  # noqa: C901
+def _prepare_mono_input_n_param(
     inputs: Any,
     param: Any,
 ) -> tuple[list[Any], list[Any], list[str]]:
@@ -420,17 +420,10 @@ def _prepare_mono_input_n_param(  # noqa: C901
             raise ValueError(f"Incompatible types: {type(inputs)=}, {type(param)=}")
         inputs = [inputs[k] for k in sorted_feature_names]
     else:
-        if isinstance(param, int):
-            param = [param]
-        elif isinstance(param, list):
-            # A bare (non-list, non-dict) input already carries all of its
-            # features in one tensor. A list `param` is then the full
-            # per-feature vector for that tensor, so it is kept flat (not
-            # wrapped again) to stay a valid MonoDense monotonicity_indicator.
-            pass
-        else:
+        if not isinstance(param, int):
             raise ValueError(f"Incompatible types: {type(inputs)=}, {type(param)=}")
         inputs = [inputs]
+        param = [param]
         sorted_feature_names = ["inputs"]
     return inputs, param, sorted_feature_names
 
@@ -450,12 +443,9 @@ def _check_convexity_params(
     :returns: ``(has_convex, has_concave)`` for the shared mono block.
     :raises ValueError: If any input is marked both convex and concave.
     """
-    # `monotonicity_indicator` may be longer than `is_convex`/`is_concave`
-    # when a single input tensor supplies its own flat per-feature indicator
-    # vector (see `_prepare_mono_input_n_param`); guard the pairwise check
-    # against that length mismatch instead of indexing out of range.
-    n = min(len(monotonicity_indicator), len(is_convex), len(is_concave))
-    ix = [i for i in range(n) if is_convex[i] and is_concave[i]]
+    ix = [
+        i for i in range(len(monotonicity_indicator)) if is_convex[i] and is_concave[i]
+    ]
     if len(ix) > 0:
         raise ValueError(
             f"Parameters both convex and concave: {[names[i] for i in ix]}"
@@ -576,14 +566,8 @@ def create_type_2(
         for i in range(len(x))
     ]
     y = Concatenate(name="preprocessed_features")(y)
-    # Iterate over `range(len(x))` (not `monotonicity_indicator` directly) so
-    # this stays aligned with the preprocessing loop above: for a single
-    # input tensor, `len(x) == 1` even though `monotonicity_indicator` may be
-    # its longer, flat per-feature vector (see `_prepare_mono_input_n_param`).
     monotonicity_indicator_block: list[int] = list(
-        chain.from_iterable(
-            [abs(monotonicity_indicator[i])] * input_units for i in range(len(x))
-        )
+        chain.from_iterable([abs(v)] * input_units for v in monotonicity_indicator)
     )
     y = _create_mono_block(
         units=[units] * (n_layers - 1) + [final_units],
