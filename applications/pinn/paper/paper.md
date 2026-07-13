@@ -32,11 +32,14 @@ for tuned unconstrained/soft-penalty baselines — at a modest accuracy cost, si
 the strong-form residual actively smears the discontinuity. We then apply it where
 a PINN genuinely complements a classical solver — the *inverse* problem of traffic
 state estimation from sparse, noisy observations (~0.7 % space-time coverage) —
-where the hard-monotone reconstruction is **competitive in accuracy** with
-unconstrained/soft PINNs (L¹ IQM 3.5 vs 3.9) while being the **only structurally
-admissible, oscillation-free** solution (violation 0 vs 0.08–0.10). A naive,
-inexpressive weight-clipping constraint fails badly (≈7× worse error),
-confirming that it is *expressive* hard monotonicity that matters. JAX and PyTorch
+where the hard-monotone reconstruction is competitive in accuracy at low noise
+(L¹ IQM 3.5 vs 3.9) and **decisively more accurate as observation noise grows** —
+~20–36 % lower L² at noise 33 % of the signal range — while being the **only
+structurally admissible, oscillation-free** solution (violation 0 vs the
+baselines' 0.9–1.3 at high noise). The monotone prior regularizes the noise the
+unconstrained/soft baselines over-fit. A naive, inexpressive weight-clipping
+constraint fails badly (≈6× worse error), confirming that it is *expressive* hard
+monotonicity that matters. JAX and PyTorch
 implementations are provided; a cross-backend equivalence check is left to the
 released artifact. Code and trained models ship with the `mononet` package.
 
@@ -259,29 +262,35 @@ overlap, so this is parity-or-better, not a decisive accuracy win). The
 inexpressive weight-clip baseline fails outright (≈6× error), so the effect is due
 to `mononet`'s *expressive* hard monotonicity, not monotonicity per se.
 
-#### 6.2.1 Robustness under sparsity and noise
+#### 6.2.1 Robustness under noise — the key result
 
-Stress-testing each method's tuned config across observation count and noise
-(`results/inverse-sweep.json`; IQM over seeds), at n_obs = 80 (plain-`MonoLinear`
-field; a MonoResidual re-run is pending and will refresh these numbers):
+Stress-testing each method's tuned config across noise (MonoResidual field,
+`results/inverse-sweep.json`; IQM over seeds), at n_obs = 80:
 
 | noise | L² (hard / van / soft) | violation (hard / van / soft) |
 |---|---|---|
-| 0.00 | 0.61 / 0.68 / 0.63 | **0.00** / 0.05 / 0.06 |
-| 0.05 | 0.63 / 0.73 / 0.79 | **0.00** / 0.14 / 0.23 |
-| 0.10 | 1.01 / 0.94 / 1.08 | **0.00** / 0.37 / 0.51 |
+| 0.00 | 0.70 / 0.68 / **0.63** | **0** / 0.05 / 0.06 |
+| 0.05 | **0.69** / 0.73 / 0.79 | **0** / 0.14 / 0.23 |
+| 0.10 | **0.86** / 0.94 / 1.08 | **0** / 0.37 / 0.51 |
+| 0.15 | **1.14** / 1.26 / 1.47 | **0** / 0.62 / 0.88 |
+| 0.20 | **1.26** / 1.59 / 1.97 | **0** / 0.86 / 1.32 |
 
-The **admissibility gap widens with noise**: the unconstrained/soft baselines
-oscillate progressively more (monotonicity violation 0.05 → 0.5 as noise grows),
-while the hard-monotone field is **exactly admissible at every operating point by
-construction**. Reconstruction **L² is comparable throughout** — the constraint's
-value is guaranteed structure under degrading data, not lower error. (This is
-robust across all observation counts; see the JSON artifact.)
+There is a clean **crossover**: at zero noise the unconstrained/soft baselines are
+marginally more accurate (nothing to over-fit), but **from noise ≥ 0.05 the
+hard-monotone field is best on L², and the margin widens with noise** — at
+noise 0.20 it is ~20 % better than vanilla and ~36 % better than soft. The
+mechanism is regularization: the baselines fit the observation noise (and
+oscillate — monotonicity violation climbing to 0.9–1.3), while the monotone prior
+cannot, so it both **resists noise (lower error) and stays exactly admissible
+(violation 0)** at every operating point. This is the paper's central result: in
+the realistic sparse-and-noisy data-assimilation regime, expressive hard
+monotonicity delivers *both* better accuracy *and* guaranteed structure, and the
+advantage grows as data degrades.
 
-*Pending figure: reconstructed `ρ(x,t)` field with observations overlaid. A raw
-out-of-range fraction was measured but is uninformative here — it is dominated by
-sub-0.01 excursions; a physical-bounds `[0, ρ_max]` violation metric is the right
-future measure (RUNBOOK follow-up).*
+*Pending figure: reconstruction L² vs noise (the crossover) and the reconstructed
+`ρ(x,t)` field with observations overlaid. (The raw out-of-range fraction was
+uninformative — dominated by sub-0.01 excursions; a physical-bounds `[0, ρ_max]`
+metric is the right future measure.)*
 
 ### 6.3 Cross-backend equivalence
 

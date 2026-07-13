@@ -3,6 +3,28 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-13 — KEY RESULT: high-noise sweep reveals an accuracy WIN (crossover)
+
+Extended the noise grid to 0.15/0.20 (resume-merge, only new cells). n_obs=80,
+L² (hard / vanilla / soft), MonoResidual field:
+
+| noise | hard | vanilla | soft | viol hard/van/soft |
+|---|---|---|---|---|
+| 0.00 | 0.70 | 0.68 | 0.63 | 0 / 0.05 / 0.06 |
+| 0.05 | **0.69** | 0.73 | 0.79 | 0 / 0.14 / 0.23 |
+| 0.10 | **0.86** | 0.94 | 1.08 | 0 / 0.37 / 0.51 |
+| 0.15 | **1.14** | 1.26 | 1.47 | 0 / 0.62 / 0.88 |
+| 0.20 | **1.26** | 1.59 | 1.97 | 0 / 0.86 / 1.32 |
+
+**Clean crossover:** baselines marginally better at zero noise (nothing to
+overfit); from noise ≥ 0.05 hard_monotone is best on L², margin **widening** with
+noise (0.20: ~20% better than vanilla, ~36% better than soft). Mechanism =
+regularization: baselines fit the noise (and oscillate, violation → 0.9-1.3), the
+monotone prior can't. So at realistic noise the constraint gives **both lower error
+AND guaranteed admissibility** — this is opportunity #1 finally materializing, and
+it only surfaced because the noise grid was pushed to 0.15/0.20. This is now the
+paper's central result (§6.2.1); abstract updated.
+
 ## 2026-07-13 — Residual vs plain field ablation (10-seed IQM, both recorded)
 
 Both field variants tuned + evaluated (config knob `residual`; `-plain` artifacts).
