@@ -82,6 +82,52 @@ def interquartile_mean(vals: np.ndarray) -> float:  # type: ignore[type-arg]
     return float(core.mean())
 
 
+def bootstrap_delta(
+    deep_values: np.ndarray,  # type: ignore[type-arg]
+    shallow_values: np.ndarray,  # type: ignore[type-arg]
+    *,
+    lower_is_better: bool = False,
+    n_boot: int = 2000,
+    seed: int = 0,
+) -> tuple[float, float, float]:
+    """Seed-bootstrap the signed IQM Δ between a "deep" and a "shallow" arm.
+
+    Independently resamples ``deep_values`` and ``shallow_values`` with
+    replacement (``n_boot`` draws) and takes the IQM difference on each draw,
+    sign-normalized so that positive always means the ``deep`` arm is better
+    (see :func:`benchmarks._common.stage2_gate._signed_improvement` for the
+    same convention applied to point estimates). Shared by the loan size-ladder
+    report and the Stage-2 deep-vs-shallow gate so both use one bootstrap
+    implementation.
+
+    :param deep_values: Per-seed metric values for the "deep" arm.
+    :param shallow_values: Per-seed metric values for the "shallow" arm.
+    :param lower_is_better: Metric direction; sign-flips Δ so positive always
+        means "deep is better".
+    :param n_boot: Number of bootstrap resamples.
+    :param seed: RNG seed for reproducibility.
+    :returns: ``(delta_point, delta_lo, delta_hi)`` — the un-resampled point
+        estimate and the 2.5/97.5 percentiles of the bootstrap distribution.
+    """
+    dv = np.asarray(deep_values, dtype=np.float64)
+    sv = np.asarray(shallow_values, dtype=np.float64)
+    sign = -1.0 if lower_is_better else 1.0
+    point = sign * (interquartile_mean(dv) - interquartile_mean(sv))
+    rng = np.random.default_rng(seed)
+    boot = np.array(
+        [
+            sign
+            * (
+                interquartile_mean(rng.choice(dv, len(dv), replace=True))
+                - interquartile_mean(rng.choice(sv, len(sv), replace=True))
+            )
+            for _ in range(n_boot)
+        ]
+    )
+    lo, hi = np.percentile(boot, [2.5, 97.5])
+    return point, float(lo), float(hi)
+
+
 def aggregate(
     rows: list[ResultRow], *, metric: str, lower_is_better: bool, top_k: int = 5
 ) -> Aggregate:
