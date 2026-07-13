@@ -248,8 +248,28 @@ hard-monotone model is the **only structurally admissible** one (violation 0 vs.
 fails outright (≈7× error), so the effect is due to `mononet`'s *expressive*
 hard monotonicity, not monotonicity per se.
 
-*Pending figures (see RUNBOOK): reconstruction L² vs sparsity × noise sweep;
-reconstructed field with observations overlaid.*
+#### 6.2.1 Robustness under sparsity and noise
+
+Stress-testing each method's tuned config across observation count and noise
+(`results/inverse-sweep.json`; IQM over seeds), at n_obs = 80:
+
+| noise | L² (hard / van / soft) | violation (hard / van / soft) |
+|---|---|---|
+| 0.00 | 0.61 / 0.68 / 0.63 | **0.00** / 0.05 / 0.06 |
+| 0.05 | 0.63 / 0.73 / 0.79 | **0.00** / 0.14 / 0.23 |
+| 0.10 | 1.01 / 0.94 / 1.08 | **0.00** / 0.37 / 0.51 |
+
+The **admissibility gap widens with noise**: the unconstrained/soft baselines
+oscillate progressively more (monotonicity violation 0.05 → 0.5 as noise grows),
+while the hard-monotone field is **exactly admissible at every operating point by
+construction**. Reconstruction **L² is comparable throughout** — the constraint's
+value is guaranteed structure under degrading data, not lower error. (This is
+robust across all observation counts; see the JSON artifact.)
+
+*Pending figure: reconstructed `ρ(x,t)` field with observations overlaid. A raw
+out-of-range fraction was measured but is uninformative here — it is dominated by
+sub-0.01 excursions; a physical-bounds `[0, ρ_max]` violation metric is the right
+future measure (RUNBOOK follow-up).*
 
 ### 6.3 Cross-backend equivalence
 

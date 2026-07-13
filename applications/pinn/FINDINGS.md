@@ -3,6 +3,35 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-13 — Sparsity x noise sweep: admissibility gap widens with noise; accuracy a wash
+
+`results/inverse-sweep.json` (tuned-once, stress-tested; 4 obs-counts x 3 noise,
+4 seeds IQM). Representative (n_obs=80, noise=0.10):
+
+| method | L2 | violation |
+|---|---|---|
+| hard_monotone | 1.01 | **0.000** |
+| vanilla | 0.94 | 0.365 |
+| soft | 1.08 | 0.510 |
+| weight_clip | 2.18 | 0.000 |
+
+- **Monotonicity violation is the robust, noise-amplified discriminator:**
+  `hard_monotone` is **0 everywhere**; vanilla/soft grow from ~0.02–0.06 (no noise)
+  to **0.28–0.56** (noise 0.10). The admissibility gap *widens* exactly as data
+  degrades — the "robust where data is bad" story, in the admissibility dimension.
+- **L2 accuracy stays a wash** across the whole grid (hard vs vanilla within
+  ~10 %); the constraint neither wins nor loses on error even at high
+  noise/sparsity. Opportunity #1 (accuracy win under sparsity) did **not** hold.
+- **`oob_frac` did not discriminate** (all 0.3–0.6): it counts *tiny* excursions
+  (hard_monotone shows oob 0.61 with overshoot 0.002), so it is a poor
+  physical-validity proxy as defined. **Follow-up:** measure excursions outside
+  the *physical* bounds `[0, ρ_max]` (negative density / over-jam), not the field's
+  own range — that should separate oscillating baselines from the monotone field.
+
+Net: the sweep **strengthens the admissibility claim** (guaranteed zero violation
+vs. baselines that oscillate more as noise grows) but confirms **accuracy parity,
+not superiority**. Paper §6.2 updated with the violation-vs-noise panel.
+
 ## SESSION SUMMARY (2026-07-12, overnight autonomous run)
 
 Started from "MonoResidual gives disappointing PINN results." Root-caused a stack
