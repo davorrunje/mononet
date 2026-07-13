@@ -140,6 +140,10 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
     dx = float(x_values[1] - x_values[0])
     viol = max(violation(pred[i], axis=0, sign=sign_x) for i in range(cfg.eval_nt))
     over = max(metrics.overshoot(pred[i], ref[i]) for i in range(cfg.eval_nt))
+    # Physical-validity proxy: fraction of predictions outside the true field's
+    # range — i.e. unphysical over/undershoot the reference cannot contain.
+    lo, hi = float(ref.min()), float(ref.max())
+    oob_frac = float(np.mean((pred < lo) | (pred > hi)))
     return {
         "problem": cfg.problem,
         "method": cfg.method,
@@ -149,6 +153,7 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
         "l2": metrics.l2(pred, ref, dx=dx),
         "admissibility_violation": viol,
         "overshoot": over,
+        "oob_frac": oob_frac,
     }
 
 
