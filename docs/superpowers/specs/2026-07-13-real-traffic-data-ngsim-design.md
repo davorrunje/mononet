@@ -158,6 +158,30 @@ tune-once + multi-seed `headline.py` with `--problem ngsim_wave --tier inverse
   held-out set (unit 3) is present;
 - writes `results/real-ngsim.json` (via `--out`).
 
+### 4a. Baselines & literature positioning
+
+The internal comparison is the four methods (hard/vanilla/soft/weight_clip). For
+external credibility with a transportation audience we add the **domain-standard
+non-PINN baseline**:
+
+- **Adaptive Smoothing Method (ASM)** — Treiber & Helbing's anisotropic kernel
+  that smooths sparse detector data *along* the free-flow (`+v_f`) and congested
+  (`−w`) characteristic speeds (taken from the calibrated FD), blended by a
+  congestion weight. It is the recognized TSE benchmark and a genuinely strong
+  competitor (it is *designed* for this reconstruction), so beating it is a far
+  more credible claim than beating the generic RBF. Implemented in
+  `experiments/baselines.py` beside the RBF smoother, scored with the same
+  metrics on the same detectors. The thin-plate RBF stays as the naive
+  smoothness reference.
+
+**Related work (no head-to-head numbers).** PINN-based TSE on NGSIM (physics-
+informed LWR/ARZ reconstruction from sparse data — Shi et al. and related) is the
+methodological precedent and is **cited as related work**. We do **not** quote
+their numbers as a contest: their windows, lanes, detector placement, and error
+definitions differ from ours, so only baselines reimplemented on *our* window
+(ASM, RBF) are compared numerically. *(Exact citations to be confirmed by the
+author; add to `paper/references.bib`.)*
+
 ## Data flow
 
 ```
@@ -169,18 +193,21 @@ core/problems/traffic_real.py  ◀── loads ───────────
                                                               │
 sampling.py (detector mode) ── virtual detectors + held-out ─┤
                                                               ▼
-run.py (inverse) ── train {hard,vanilla,soft,weight_clip} ── eval ──▶ results/real-ngsim.json
-                                                              │
-figures.py ── reconstruction slice + metric bars (PDF+PNG) ──┘
+run.py (inverse) ── train {hard,vanilla,soft,weight_clip} ─┐
+baselines.py ── ASM (Treiber-Helbing) + RBF ──────────────┼─ eval ──▶ results/real-ngsim.json
+                                                           │
+figures.py ── reconstruction slice + metric bars (PDF+PNG) ┘
 ```
 
 ## Figures
 
 Via the existing `experiments/figures.py` (both PDF for LaTeX + PNG for preview):
-- **Reconstruction slice** at a representative time: real field vs each method,
-  virtual detectors overlaid (the money-shot analog on real data).
+- **Reconstruction slice** at a representative time: real field vs each method
+  **and ASM**, virtual detectors overlaid (the money-shot analog on real data).
 - **Metric bars / crossover** across detector density (or a small noise-injection
-  sweep on top of the real field, if we want a stress axis).
+  sweep on top of the real field, if we want a stress axis), including ASM + RBF.
+- **(x,t) heatmap** of the chosen window from the gate (§1a), annotated with the
+  `monotonicity_defect`.
 
 ## Testing
 
@@ -192,6 +219,9 @@ Via the existing `experiments/figures.py` (both PDF for LaTeX + PNG for preview)
   nodes. CI needs **no raw NGSIM data**.
 - `sampling.py` detector mode: correct count, disjoint held-out set, all-times
   coverage.
+- `baselines.py` ASM: unit test that on a synthetic single-wave field ASM
+  reconstructs it from sparse detectors within tolerance (and beats plain RBF),
+  confirming the characteristic-aligned smoothing works.
 - Smoke test: full inverse path on the fixture problem for a few steps.
 
 ## Reproducibility
