@@ -3,24 +3,26 @@
 Evidence backing the skip-connection gate design (see the fix spec/plan). A deep
 ``absolute``-mode ``MonoResidual`` stack fails to use its depth because the
 F-path gate ``g_beta`` (token ``scaled_elu``) sits in a **bootstrap trap**: at
-init F is random (not identity), so engaging it *raises* loss, gradient descent
-drives the gate parameter negative, and ``scaled_elu``'s negative-side gradient
-dead-zone pins it there. ``g_beta`` stays ~0 forever and the "deep" net is really
-a scaled identity chain.
+init F is random (not near-identity), so engaging it *raises* loss, gradient
+descent drives the gate parameter negative, and ``scaled_elu``'s negative-side
+gradient dead-zone pins it there. ``g_beta`` stays ~0 forever and the "deep" net
+is really a scaled identity chain.
 
-This script isolates the two candidate levers on a synthetic monotone
-ReLU-teacher target (self-contained, no dataset loaders):
+This script isolates two levers on a synthetic monotone teacher target
+(self-contained, no dataset loaders):
 
-* ``A`` — zero-init F's last layer, so each block is an **exact identity** at
-  init (no harmful push on the gate parameter);
-* ``B`` — swap the dead-zone gate ``scaled_elu`` for a dead-zone-free positive
-  gate (``softplus``), preserving monotonicity (``g_beta >= 0``).
+* ``A`` — the F-path init. ``off`` = normal init (random F); ``exactzero`` =
+  zero F's last layer (naive Fixup); ``nearzero`` = scale F's last-layer weight
+  by ``_NEAR_ZERO_SCALE`` (near-identity, but nonzero).
+* ``B`` — the F gate. ``scaled_elu`` (dead-zone) vs ``softplus`` (dead-zone-free,
+  monotone).
 
-Result (depth 16): baseline stays trapped (``g_beta==0``); ``A`` alone escapes
-the trap; ``B`` alone **diverges** (a dead-zone-free gate engages a *random* F
-through every block → exponential blow-up), proving the gate activation cannot
-be swapped in isolation; ``A+B`` is best. Conclusion: ``A`` (identity-at-init) is
-the necessary safety property; ``B`` helps only in conjunction with it.
+Key subtlety: under the ``absolute`` construction ``F`` uses ``|W|``, whose
+gradient at ``W=0`` is ``sign(0)=0`` — so **exact-zero init is a gradient fixed
+point**: the last-layer weights never move and ``F`` degenerates to a per-block
+learned *constant*, not an ``x``-dependent depth function. ``nearzero`` keeps the
+weights trainable while still starting ``F ~= 0``. So the fix is near-zero init
+(A) + softplus gate (B); exact-zero is itself a trap.
 
 Run: ``uv run --extra torch --group bench python benchmarks/monoresidual_gate_ablation.py``
 """
@@ -36,6 +38,7 @@ from mononet.torch import MonoLinear
 
 _D, _W = 6, 32
 _GATE_EPS = 0.001
+_NEAR_ZERO_SCALE = 1e-3
 
 
 def _teacher(x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
@@ -48,18 +51,20 @@ def _teacher(x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 
 class _Block(nn.Module):
-    """One residual block, with the two ablation levers as flags."""
+    """One residual block, parametrized by the two ablation levers."""
 
-    def __init__(self, *, zero_init_f: bool, softplus_gate: bool) -> None:
+    def __init__(self, *, a_mode: str, softplus_gate: bool) -> None:
         super().__init__()
         self.softplus_gate = softplus_gate
         self.f_in = MonoLinear(_W, _W, mode="absolute", activation="elu")
         self.f_out = MonoLinear(_W, _W, mode="absolute", activation="elu")
-        if zero_init_f:
-            with torch.no_grad():
+        with torch.no_grad():
+            if a_mode == "exactzero":
                 self.f_out.weight.zero_()
-                if self.f_out.bias is not None:
-                    self.f_out.bias.zero_()
+            elif a_mode == "nearzero":
+                self.f_out.weight.mul_(_NEAR_ZERO_SCALE)
+            if a_mode in ("exactzero", "nearzero") and self.f_out.bias is not None:
+                self.f_out.bias.zero_()
         self.beta = nn.Parameter(torch.zeros(()))
 
     def g_beta(self) -> torch.Tensor:
@@ -70,16 +75,20 @@ class _Block(nn.Module):
         neg = _GATE_EPS * torch.exp(torch.clamp(self.beta, max=0) / _GATE_EPS)
         return pos + neg
 
+    def f(self, x: torch.Tensor) -> torch.Tensor:
+        """Compute the residual branch ``F(x)``."""
+        out: torch.Tensor = self.f_out(self.f_in(x))
+        return out
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Gated residual: ``x + g_beta * F(x)``."""
-        fx: torch.Tensor = self.f_out(self.f_in(x))
-        out: torch.Tensor = x + self.g_beta() * fx
+        out: torch.Tensor = x + self.g_beta() * self.f(x)
         return out
 
 
 def _run(
     *,
-    zero_init_f: bool,
+    a_mode: str,
     softplus_gate: bool,
     x_tr: torch.Tensor,
     y_tr: torch.Tensor,
@@ -88,24 +97,16 @@ def _run(
     depth: int = 16,
     steps: int = 400,
 ) -> None:
-    """Train one deep stack and print gate opening / loss / block-RMS."""
+    """Train one deep stack; print gate opening, loss, and F-weight movement."""
     net = nn.Sequential(
         MonoLinear(_D, _W, mode="absolute", activation="elu"),
-        *[
-            _Block(zero_init_f=zero_init_f, softplus_gate=softplus_gate)
-            for _ in range(depth)
-        ],
+        *[_Block(a_mode=a_mode, softplus_gate=softplus_gate) for _ in range(depth)],
         MonoLinear(_W, 1, mode="absolute"),
     )
+    blocks = [m for m in net if isinstance(m, _Block)]
+    w0 = [float(b.f_out.weight.detach().abs().sum()) for b in blocks]
     opt = torch.optim.Adam(net.parameters(), 1e-3)
     loss_fn = nn.MSELoss()
-    rms_last = 0.0
-    h = x_tr[:2048]
-    with torch.no_grad():
-        for module in net:
-            h = module(h)
-            if isinstance(module, _Block):
-                rms_last = float(h.pow(2).mean().sqrt())
     loss = torch.zeros(())
     for _ in range(steps):
         opt.zero_grad()
@@ -114,16 +115,22 @@ def _run(
         opt.step()
     with torch.no_grad():
         test = float(loss_fn(net(x_te), y_te))
-    gates = [float(m.g_beta()) for m in net if isinstance(m, _Block)]
+    gates = [float(b.g_beta()) for b in blocks]
+    moved = sum(
+        1
+        for b, w in zip(blocks, w0, strict=True)
+        if abs(float(b.f_out.weight.detach().abs().sum()) - w) > 1e-8
+    )
+    label = f"A={a_mode:<9} B={'softplus' if softplus_gate else 'scaled_elu':<10}"
     print(  # noqa: T201
-        f"A={int(zero_init_f)} B={int(softplus_gate)}: "
-        f"train {float(loss):.4f} test {test:.4f} | "
-        f"g_beta[{min(gates):.3f},{max(gates):.3f}] | initRMS[last]={rms_last:.1f}"
+        f"{label}: train {float(loss):.4f} test {test:.4f} | "
+        f"g_beta[{min(gates):.3f},{max(gates):.3f}] | "
+        f"F-weights-moved {moved}/{len(blocks)}"
     )
 
 
 def main() -> None:
-    """Run the four-config ablation and print the table."""
+    """Run the ablation grid and print the table."""
     torch.manual_seed(0)
     rng = np.random.default_rng(0)
     x_tr_np = rng.uniform(0, 1, (16000, _D))
@@ -138,16 +145,20 @@ def main() -> None:
     ).unsqueeze(1)
 
     print(  # noqa: T201
-        "A=zero-init F | B=softplus gate | depth=16, monotone teacher target"
+        "depth=16, absolute mode, monotone teacher target | "
+        f"near-zero scale={_NEAR_ZERO_SCALE}"
     )
-    for zero_init_f, softplus_gate in [
-        (False, False),
-        (True, False),
-        (False, True),
-        (True, True),
-    ]:
+    grid = [
+        ("off", False),  # baseline: trapped
+        ("exactzero", False),  # A exact-zero only: freezes F weights
+        ("nearzero", False),  # A near-zero only: escapes trap, F trains
+        ("off", True),  # B only: diverges
+        ("exactzero", True),  # exact-zero + B: gate opens but F still frozen
+        ("nearzero", True),  # near-zero + B: best
+    ]
+    for a_mode, softplus_gate in grid:
         _run(
-            zero_init_f=zero_init_f,
+            a_mode=a_mode,
             softplus_gate=softplus_gate,
             x_tr=x_tr,
             y_tr=y_tr,
