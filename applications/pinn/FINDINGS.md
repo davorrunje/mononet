@@ -3,6 +3,24 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-13 — Residual vs plain field ablation (10-seed IQM, both recorded)
+
+Both field variants tuned + evaluated (config knob `residual`; `-plain` artifacts).
+The knob only affects `hard_monotone` (vanilla/soft/weight_clip are architecture-
+independent), so the ablation is the hard_monotone row:
+
+| tier | residual L1/L2 | plain L1/L2 | (both viol 0) |
+|---|---|---|---|
+| inverse (LWR) | 3.52 / 0.714 | 3.48 / 0.744 | tied |
+| forward (Burgers) | 8.06 / 1.64 | 8.09 / 1.23 | plain better L2 |
+
+**Finding:** with proper per-variant tuning the residual/plain difference is
+**small and tier-dependent** — a wash on the inverse flagship, plain slightly
+better L2 on the forward worst-case tier. Both are exactly admissible. So the
+`MonoResidual` vs plain-`MonoLinear` choice is not a major lever here (contrast the
+pre-PR#100 collapse, where residual was catastrophic). Artifacts:
+`{inverse-headline,forward-mechanism}{,-plain}.json`.
+
 ## 2026-07-13 — MonoResidual inverse headline (10-seed IQM) — best on L1/L2 + sole admissible
 
 Re-ran the inverse flagship with the MonoResidual field (`inverse-headline.json`):
