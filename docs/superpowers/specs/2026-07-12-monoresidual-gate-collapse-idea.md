@@ -1,6 +1,11 @@
 # Follow-up: `MonoResidual` gate collapse to a near-linear map (training pathology)
 
-Status: Idea / bug-investigation backlog — not scheduled.
+Status: **RESOLVED by PR #100** (near-zero gate init + softplus gate), merged to
+main 2026-07-13. Smoke-verified on the 1-D Heaviside: MonoResidual now fits
+*sharper* than a plain MonoLinear stack (relu MSE 3e-5 / slope 197; softplus MSE
+4e-4 / slope 94) — previously it collapsed (MSE 0.0625, slope 0.75, relu≡softplus).
+The PINN field (`applications/pinn`) has been switched back to `MonoResidual`.
+Kept for the record.
 Origin: surfaced while building the Structure-Preserving PINN application
 (`applications/pinn`, see `applications/pinn/FINDINGS.md`).
 

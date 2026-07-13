@@ -3,6 +3,24 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-13 — MonoResidual restored (PR #100 fixes the gate collapse)
+
+PR #100 (near-zero gate init + softplus gate) fixes the `MonoResidual` collapse.
+Smoke test (GPUs free):
+
+- **1-D Heaviside:** MonoResidual now fits *sharper* than the plain MonoLinear
+  fallback — relu MSE 3e-5 (slope 197), softplus MSE 4e-4 (slope 94) — vs the old
+  collapse (MSE 0.0625, slope 0.75, relu≡softplus).
+- **Inverse PINN (LWR, tuned-with-plain-HP, 4 seeds):** MonoResidual field L2 IQM
+  **0.66** vs plain-MonoLinear **0.79**, violation 0 — ~17 % better *before*
+  re-tuning.
+
+`HardMonoField` switched back to `MonoResidual` (spec's ~4-layer design) in **both**
+backends; also added the input normalization to the torch builder for parity (jax
+already had it) — both backends now MonoResidual + normalized. Gate-collapse
+follow-up marked resolved. **Re-running the headline + sweep with the MonoResidual
+field next; the results below will be superseded.**
+
 ## 2026-07-13 — Sparsity x noise sweep: admissibility gap widens with noise; accuracy a wash
 
 `results/inverse-sweep.json` (tuned-once, stress-tested; 4 obs-counts x 3 noise,

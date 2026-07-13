@@ -22,6 +22,27 @@ from mononet.torch import MonoInput, MonoLinear, MonoResidual
 if TYPE_CHECKING:
     from applications.pinn.models.protocol import Method, ModelConfig
 
+Bounds = tuple[float, float, float, float]
+
+
+def _bounds(domain: tuple[tuple[float, float], tuple[float, float]]) -> Bounds:
+    """Flatten a ``((x0,x1),(t0,t1))`` domain into ``(x0,x1,t0,t1)`` floats."""
+    (x0, x1), (t0, t1) = domain
+    return (float(x0), float(x1), float(t0), float(t1))
+
+
+def _normalize(
+    x: torch.Tensor, t: torch.Tensor, bounds: Bounds
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Affine-map ``x``, ``t`` from the problem domain to ``[-1, 1]``.
+
+    Done inside the model (so it is a function of raw ``(x, t)`` and the PINN
+    residual's autodiff chains through it); increasing in ``x``, so monotonicity
+    direction is preserved. Mirrors the JAX builder.
+    """
+    x0, x1, t0, t1 = bounds
+    return 2.0 * (x - x0) / (x1 - x0) - 1.0, 2.0 * (t - t0) / (t1 - t0) - 1.0
+
 
 def _plain_mlp(in_dim: int, width: int, out_dim: int, activation: str) -> nn.Module:
     act = {"tanh": nn.Tanh, "elu": nn.ELU, "softplus": nn.Softplus}[activation]
@@ -52,13 +73,15 @@ class _ClampedLinear(nn.Module):
 class VanillaMLP(nn.Module):
     """Unconstrained MLP over ``[x, t]`` (also the ``soft`` architecture)."""
 
-    def __init__(self, cfg: ModelConfig) -> None:
+    def __init__(self, cfg: ModelConfig, bounds: Bounds) -> None:
         """Build the unconstrained MLP."""
         super().__init__()
+        self.bounds = bounds
         self.net = _plain_mlp(2, cfg.width, 1, cfg.plain_activation)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         """Return ``u(x, t)``."""
+        x, t = _normalize(x, t, self.bounds)
         out: torch.Tensor = self.net(torch.cat([x, t], dim=-1))
         return out
 
@@ -66,9 +89,10 @@ class VanillaMLP(nn.Module):
 class WeightClipMono(nn.Module):
     """Monotone-in-``x`` net via non-negative weights (inexpressive baseline)."""
 
-    def __init__(self, cfg: ModelConfig, sign_x: int) -> None:
+    def __init__(self, cfg: ModelConfig, sign_x: int, bounds: Bounds) -> None:
         """Build the clamped-weight monotone stack and the ``t`` embedding."""
         super().__init__()
+        self.bounds = bounds
         self.sign_x = float(sign_x)
         self.t_embed = _plain_mlp(
             1, cfg.t_embed_width, cfg.t_embed_dim, cfg.plain_activation
@@ -84,6 +108,7 @@ class WeightClipMono(nn.Module):
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         """Return ``u(x, t)`` (monotone in ``x`` via non-negative weights)."""
+        x, t = _normalize(x, t, self.bounds)
         z = torch.cat([self.sign_x * x, self.t_embed(t)], dim=-1)
         out: torch.Tensor = self.stack(z)
         return out
@@ -92,9 +117,10 @@ class WeightClipMono(nn.Module):
 class HardMonoField(nn.Module):
     """Expressive hard-monotone-in-``x`` field built from ``mononet`` layers."""
 
-    def __init__(self, cfg: ModelConfig, sign_x: int) -> None:
+    def __init__(self, cfg: ModelConfig, sign_x: int, bounds: Bounds) -> None:
         """Build the mononet monotone stack and the unconstrained ``t`` embedding."""
         super().__init__()
+        self.bounds = bounds
         self.t_embed = _plain_mlp(
             1, cfg.t_embed_width, cfg.t_embed_dim, cfg.plain_activation
         )
@@ -116,6 +142,7 @@ class HardMonoField(nn.Module):
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         """Return ``u(x, t)`` (monotone in ``x`` by construction)."""
+        x, t = _normalize(x, t, self.bounds)
         z = torch.cat([x, self.t_embed(t)], dim=-1)
         out: torch.Tensor = self.mono(self.mono_input(z))
         return out
@@ -132,10 +159,11 @@ def build_torch(problem: object, cfg: ModelConfig, method: Method) -> nn.Module:
     """
     torch.manual_seed(cfg.seed)
     sign_x = int(problem.admissibility().mask[0])  # type: ignore[attr-defined]
+    bounds = _bounds(problem.domain)  # type: ignore[attr-defined]
     if method in ("vanilla", "soft"):
-        return VanillaMLP(cfg)
+        return VanillaMLP(cfg, bounds)
     if method == "weight_clip":
-        return WeightClipMono(cfg, sign_x)
+        return WeightClipMono(cfg, sign_x, bounds)
     if method == "hard_monotone":
-        return HardMonoField(cfg, sign_x)
+        return HardMonoField(cfg, sign_x, bounds)
     raise ValueError(f"unknown method {method!r}")

@@ -16,7 +16,7 @@ import numpy as np
 from flax import nnx
 
 from mononet.core.types import ActivationSpec, MonotonicityMask
-from mononet.jax import MonoInput, MonoLinear
+from mononet.jax import MonoInput, MonoLinear, MonoResidual
 
 if TYPE_CHECKING:
     from applications.pinn.models.protocol import Method, ModelConfig
@@ -134,22 +134,21 @@ class HardMonoField(nnx.Module):
         )
         self.mono_input = MonoInput(mask)
         act = ActivationSpec(cfg.mono_activation)  # type: ignore[arg-type]
-        # Plain MonoLinear stack (NOT MonoResidual): the dual-gated residual block
-        # trains to a near-linear collapse in this sharp-feature regime (see
-        # applications/pinn/FINDINGS.md and the MonoResidual gate-collapse
-        # follow-up). A plain absolute-mode MonoLinear stack fits sharp monotone
-        # targets (verified on the 1-D Heaviside; softplus keeps u differentiable
-        # for the PINN residual). ``n_blocks`` hidden layers + an identity head
-        # give ~4 layers total at the default.
-        self.n_layers = max(2, cfg.n_blocks + 1)
-        self.layer0 = MonoLinear(
+        # MonoResidual stack (spec's ~4-layer design). The earlier near-linear
+        # gate-collapse in this sharp-feature regime is fixed upstream by PR #100
+        # (near-zero gate init + softplus gate); verified on the 1-D Heaviside,
+        # MonoResidual now fits sharper than a plain MonoLinear stack and improves
+        # the inverse reconstruction. ``n_blocks`` residual blocks + an identity
+        # head. Mirrors the PyTorch builder.
+        self.n_layers = max(1, cfg.n_blocks)
+        self.layer0 = MonoResidual(
             in_dim, cfg.width, mode=cfg.mode, activation=act, rngs=rngs
         )  # type: ignore[arg-type]
         for i in range(1, self.n_layers):
             setattr(
                 self,
                 f"layer{i}",
-                MonoLinear(
+                MonoResidual(
                     cfg.width, cfg.width, mode=cfg.mode, activation=act, rngs=rngs
                 ),  # type: ignore[arg-type]
             )
