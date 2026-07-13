@@ -183,6 +183,14 @@ module = [
 ]
 disallow_subclassing_any = false
 
+[[tool.mypy.overrides]]
+# jax 0.10.2 types `jax.jit` such that mypy flags the bare `@jax.jit` as an
+# untyped decorator (jax 0.10.1 does not). CI's static-analysis job resolves the
+# newer jax outside the lockfile, so relax this one check for the JAX trainer
+# (the codebase's only jit-decorated function).
+module = ["applications.pinn.training.jax_trainer"]
+disallow_untyped_decorators = false
+
 [tool.pytest.ini_options]
 addopts = '--cov=mononet --cov=docs/examples --cov-append --cov-branch --cov-report=term-missing'
 testpaths = ["tests", "tests/benchmarks"]
