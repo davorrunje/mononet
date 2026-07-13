@@ -105,21 +105,22 @@ Both A and B become the out-of-the-box `MonoResidual` behaviour in all three bac
 the minimal *safe* fix; A+B is the best measured result and is what ships. `scaled_elu` is
 **retained as a selectable `beta_gate` token** (no removal) for reproducibility of pre-fix runs.
 
-## 4. API & backward compatibility
+## 4. API changes
 
-- **`MonoResidualConfig.beta_gate` default** flips `"scaled_elu"` → `"softplus"`
-  (`mononet/core/config.py`); `alpha_gate` unchanged. JSON round-trip carries the token, so old
-  configs that pinned `"scaled_elu"` reproduce exactly.
-- **`beta_gate` default** flips to `"softplus"` in each `layers.py` and `_kernels.py`
-  (torch/jax/keras) and in `reference.py::monotonic_residual`.
+The package has **never been publicly released**, so there is no backward-compatibility
+constraint — we change the defaults outright, no deprecation window or compat shims.
+
+- **`beta_gate` default** flips `"scaled_elu"` → `"softplus"` everywhere it is declared:
+  `mononet/core/config.py` (`MonoResidualConfig`), each backend `layers.py` and `_kernels.py`
+  (torch/jax/keras), and `reference.py::monotonic_residual`. `alpha_gate` (skip gate) is
+  unchanged.
 - **New gate token `"softplus"`** added to `apply_gate` (reference) and the three kernel gate
-  dispatchers. `shifted_elu`/`scaled_elu` remain.
+  dispatchers. `shifted_elu` and `scaled_elu` remain selectable tokens — `scaled_elu` is kept
+  only so the trap/ablation experiments can still instantiate the old gate for comparison, not
+  for user compatibility.
 - **Default `F` construction** zero-inits its last layer in all three `MonoResidual`
-  implementations. A custom user-supplied `F` is untouched (caller owns it).
-- **Compat note.** This changes the numerics of a default `MonoResidual`. Pre-1.0, accepted (same
-  posture as the `sub_depth`, `mode="absolute"`, and identity-activation default changes).
-  Explicit `beta_gate="scaled_elu"` + no-zero-init escape hatch documented for exact pre-fix
-  reproduction.
+  implementations, so the block is an exact identity at init. A custom user-supplied `F` is
+  untouched (the caller owns its init).
 
 ## 5. Components / repo layout
 
@@ -131,9 +132,15 @@ mononet/{torch,jax,keras}/layers.py    # default beta_gate -> softplus; zero-ini
 tests/equivalence/cases/*.json         # regenerate: add softplus-gate cases; refresh gated cases
 tests/{torch,jax,keras}/test_mono_residual_gate.py   # NEW: gate-opens + monotonicity + zero-init F
 benchmarks/monoresidual_gate_ablation.py             # committed A-vs-B reproducer (done, b19b2a9)
-benchmarks/monoresidual_gate_trap.py                 # NEW: committed trap instrumentation
-docs/concepts/monotonic-residual.md    # AMEND §gate-design with the trap + ablation + rationale
+benchmarks/monoresidual_gate_trap.py                 # NEW: committed trap instrumentation (writes JSON)
+benchmarks/results/monoresidual-gate/*.json          # NEW: committed trap + ablation results
+docs/concepts/monotonic-residual.md    # REWRITE gate/skip requirements + design + experiments (see §7)
 ```
+
+Both experiments follow the `benchmarks/deep_residual_run.py` pattern (a `python -m` runnable
+module that writes a committed results JSON and prints a table); the docs render from the
+committed JSON with a one-line reproduce command, so every number on the page is reproducible.
+`monoresidual_gate_ablation.py` (already committed) will be adjusted to also emit its JSON.
 
 ## 6. Testing / CI (TDD)
 
@@ -156,22 +163,51 @@ docs/concepts/monotonic-residual.md    # AMEND §gate-design with the trap + abl
 
 ## 7. Docs (the standing requirement — paper-grade, evidence-backed)
 
-Amend `docs/concepts/monotonic-residual.md` (the existing §3 theory doc). The gate-design
-subsection must **explain why the skip-connection gates are chosen the way they are and back it
-with data** — not assert it:
+Target page: **`docs/concepts/monotonic-residual.md`** — "Deep monotonic networks with residual
+skips" (already in the Concepts toctree). It currently contains a **refuted** rationale (the
+"Why the gates are shaped this way" subsection, lines ~52–60: "*the `ε·exp(β/ε)` tail … so `β`
+can escape `0` and `F` can come online*") and an experiments section whose "trains to MSE ≈ 0.1"
+is read as "depth works" when it only shows non-divergence. Both must be corrected. The page must
+**document the requirements, the design choices, the experiments, and why we chose A+B — backed
+by reproducible benchmarks**, not assertion. Required structure:
 
-1. **Requirements recap** — both gates strictly positive (monotonicity as a hard invariant);
-   skip gate `=1` at init; residual branch `≈` off at init for deep stability.
-2. **The trap** — why the earlier `scaled_elu`-only design satisfied those requirements yet
-   *failed silently*: at-init `∂loss/∂β>0` (random F) + negative-side dead zone ⇒ `g_β` pinned.
-   The corrected §3.1.1 reasoning (drift direction was assumed wrong). Include the trap
-   instrumentation figure.
-3. **The fix and the ablation** — A (identity-at-init F) as the load-bearing safety property; B
-   (dead-zone-free softplus) as the enhancement that is *only* safe given A; the A-vs-B table
-   (§2) with the B-alone divergence as the evidence that the levers are not independent.
-4. **Before/after** — the #90 (large-dataset screen) and #99 (synthetic depth probe) results
-   re-run after the fix, showing whether usable depth changes the depth-neutral verdict.
-5. **Recommendation** — defaults (A+B), the `scaled_elu` escape hatch, monotonicity preserved.
+1. **Requirements for skip connections and gates** (make the constraints explicit and complete):
+   - *Skip path* — must be **monotone** (identity when `in==out`; `exp`-parametrized positive
+     projection when `in≠out`) and **near-identity at init** (strongest warm start; keeps deep
+     stacks forward-stable). Its gate `g_α` must be strictly positive and `=1` at init.
+   - *Residual path `F`* — must be **monotone** (holds by the `|W|`/`switch` construction for
+     *any* weights) and **contribute ≈ 0 at init** so the block starts as an identity and the
+     deep stack does not blow up. Its gate `g_β` must be strictly positive (monotonicity) —
+     which **rules out a signed/ReZero-style gate** — and must be able to **open** (leave its
+     init value) once `F` becomes useful.
+   - *Why positivity is non-negotiable* — a negative gate flips a branch to non-increasing;
+     monotonicity is enforced at call time via the gate parametrization, so it is a hard
+     invariant under free optimization (keep the existing theorem + proof).
+2. **Design choices** — the two independent knobs and how each requirement is met:
+   - Skip gate `g_α = elu(α)+1` (unchanged): `=1` at init, unbounded, decays to `0⁺`; why
+     `sigmoid`/`exp`/`softplus` fail *for the skip gate*.
+   - "Contribute ≈ 0 at init" is achieved **by initialization of `F` (zero-init its last layer),
+     not by shrinking the gate.** This is the key correction: decoupling identity-at-init from
+     `g_β`'s value frees `g_β` to use a clean gate.
+   - Residual gate `g_β = softplus(β)`: strictly positive, **no dead zone** (gradient `σ(β)∈(0,1)`
+     everywhere), so it can open in either direction. Explain that `softplus` was previously
+     rejected *because* `softplus(0)≈0.69` broke identity-at-init — and why zero-init `F` removes
+     exactly that objection.
+3. **Experiments (reproducible under `benchmarks/`)** — replace the "depth works because it
+   trains" framing:
+   - Keep the skip-K sweep (it correctly establishes skips fix **divergence**), but reframe it as
+     *forward stability*, not depth-utilisation.
+   - **Trap instrumentation** (`benchmarks/monoresidual_gate_trap.py`): `g_β` pinned at `≈0`, `β`
+     trapped negative, skip path carrying the fit — the evidence that depth went *unused*.
+   - **A-vs-B ablation** (`benchmarks/monoresidual_gate_ablation.py`): the four-row table (§2)
+     with the B-alone divergence, establishing A necessary + primary, B beneficial only with A.
+   - **Before/after** (#90 large-dataset screen, #99 synthetic depth probe) re-run on the fixed
+     layer — whether usable depth changes the depth-neutral verdict.
+   Each renders from committed `benchmarks/results/**` JSON with a one-line `uv run … -m …`
+   reproduce command.
+4. **Why A+B** — a short synthesis: A is the necessary safety property (B alone diverges),
+   A+B is best measured, monotonicity preserved throughout.
+5. **Recommendation** — the shipped defaults (A+B), `sub_depth=2`, monotonicity guarantee intact.
 
 ## 8. Staged plan
 
@@ -187,7 +223,8 @@ with data** — not assert it:
 - No signed gate / ReZero-style negative-α (monotonicity forbids it).
 - No normalization, no scale-control layer (`1/L`, LayerNorm) — the ablation shows the optimizer
   self-regulates `g_β` once A holds; block-RMS is stable. (LayerNorm would also break monotonicity.)
-- No removal of `scaled_elu` (kept as a selectable token for reproducibility).
+- No removal of `scaled_elu` (kept as a selectable token so the trap/ablation experiments can
+  still instantiate the old gate — not for user compatibility).
 - No change to `MonoLinear`/`MonoInput` or the `switch`/`absolute` math; `g_α`/skip unchanged.
 - Not the depth-separation *theory* write-up itself (separate; this fix unblocks its experiments).
 
@@ -195,6 +232,7 @@ with data** — not assert it:
 
 - Confirm zero-init interacts cleanly with the `absolute` static init (Sub-project A): the last
   layer is overwritten to zero *after* the init runs — verify no init asserts non-zero.
-- Decide whether to expose an explicit `zero_init_residual: bool = True` knob or make it implicit
-  in the default-`F` path only (leaning implicit: custom `F` opts out by construction).
+- Zero-init is **implicit in the default-`F` path only** (a custom `F` opts out by
+  construction); no separate `zero_init_residual` knob — there are no external users to give one
+  to, and a custom `F` already owns its init.
 - Equivalence-case regeneration must stay deterministic (committed JSON, no live seeds).
