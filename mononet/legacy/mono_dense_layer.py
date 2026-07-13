@@ -14,7 +14,7 @@ import warnings
 from contextlib import contextmanager
 from functools import lru_cache
 from itertools import chain
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import keras
 import numpy as np
@@ -331,19 +331,27 @@ class MonoDense(keras.layers.Dense):  # type: ignore[misc]
     def get_config(self) -> dict[str, Any]:
         """Serialize the layer configuration.
 
+        After ``build()``, ``self.monotonicity_indicator`` has been replaced
+        by a ``(fan_in, 1)`` ``np.ndarray`` (see :meth:`build`), which is not
+        JSON-serializable; it is converted to a plain list here so the config
+        stays ``json.dumps``-able (required by ``keras.models.save_model``).
+        A list round-trips through :func:`get_monotonicity_indicator` in
+        ``from_config`` -> ``__init__`` -> ``build`` just like the original
+        int/list/array form, so this does not affect numerics.
+
         :returns: Config dict with the original legacy keys.
         """
+        ind = self.monotonicity_indicator
+        if isinstance(ind, np.ndarray):
+            ind = ind.tolist()
         return {
             "units": self.units,
             "activation": self.org_activation,
-            "monotonicity_indicator": self.monotonicity_indicator,
+            "monotonicity_indicator": ind,
             "is_convex": self.is_convex,
             "is_concave": self.is_concave,
             "activation_weights": self.activation_weights,
         }
-
-
-T = TypeVar("T")
 
 
 def _create_mono_block(
@@ -537,6 +545,19 @@ def create_type_2(
     :param is_concave: Per-input concave flag(s).
     :param dropout: Optional dropout rate between hidden layers.
     :returns: Output tensor.
+
+    Inherited naming limitation: per-feature layers are named
+    ``mono_dense_{name}_increasing``/``_decreasing``, while the shared block
+    (:func:`_create_mono_block`) names its layers ``mono_dense_{i}_increasing``
+    for ``i > 0``. For list/dict inputs, the default per-feature names are
+    ``"0"``, ``"1"``, ... . So when every feature is increasing
+    (``monotonicity_indicator`` all ``1``) and there are enough hidden layers
+    (``n_layers - 1`` at least as large as a feature's positional index), a
+    per-feature name like ``mono_dense_1_increasing`` collides with the
+    shared block's layer of the same name, and Keras's Functional API raises
+    ``ValueError: The name "mono_dense_1_increasing" is used 2 times``. This
+    matches the original ``airtai/monotonic-nn`` behavior and is not fixed
+    here to stay faithful to upstream naming.
     """
     _, is_convex, _ = _prepare_mono_input_n_param(inputs, is_convex)
     _, is_concave, _ = _prepare_mono_input_n_param(inputs, is_concave)
