@@ -50,13 +50,18 @@ uv run python -m applications.pinn.experiments.headline --no-residual \
     --problem burgers_riemann --tier forward \
     --out applications/pinn/results/forward-mechanism-plain.json
 
-# Sparsity x noise sweep (residual + plain)
+# Sparsity x noise sweep (residual + plain). Re-running with an extended noise
+# grid resumes: cells already in --out are kept, only new ones computed.
 uv run python -m applications.pinn.experiments.sweep_inverse \
     --tuned applications/pinn/results/inverse-headline.json \
     --out applications/pinn/results/inverse-sweep.json
 uv run python -m applications.pinn.experiments.sweep_inverse --no-residual \
     --tuned applications/pinn/results/inverse-headline-plain.json \
     --out applications/pinn/results/inverse-sweep-plain.json
+
+# Non-PINN smoothness comparator (classical RBF smoother; CPU-only, no PDE)
+uv run python -m applications.pinn.experiments.baselines \
+    --out applications/pinn/results/inverse-baseline-smoother.json
 ```
 
 Each writes per-method best params + per-seed metrics + IQM/band to the JSON;
