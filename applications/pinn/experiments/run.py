@@ -10,6 +10,7 @@ admissibility violation that is ``0`` by construction for the hard-monotone mode
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -92,11 +93,36 @@ def _train(
     return trained_jax
 
 
-def run_one(cfg: RunConfig) -> dict[str, Any]:
-    """Run one experiment and return its metrics artifact.
+@dataclass(frozen=True)
+class FieldResult:
+    """Trained-model fields for one run — the raw material for metrics and figures.
+
+    :param x_values: Spatial evaluation axis, shape ``(eval_nx,)``.
+    :param t_values: Temporal evaluation axis, shape ``(eval_nt,)``.
+    :param ref: Ground-truth field, shape ``(eval_nt, eval_nx)``.
+    :param pred: Trained-model field on the same grid.
+    :param obs: Inverse-tier observations ``(coords (N, 2), values (N,))``, else
+        ``None`` (forward tier).
+    :param sign_x: Admissible sign of ``du/dx`` (``+1``/``-1``).
+    """
+
+    x_values: Array
+    t_values: Array
+    ref: Array
+    pred: Array
+    obs: tuple[Array, Array] | None
+    sign_x: int
+
+
+def predict_field(cfg: RunConfig) -> FieldResult:
+    """Build, train, and evaluate one model, returning its fields (not metrics).
+
+    Shared by :func:`run_one` (which reduces the fields to scalar metrics) and the
+    figure generator (which plots them).
 
     :param cfg: The fully-specified run configuration.
-    :returns: A JSON-serialisable dict of configuration + headline metrics.
+    :returns: The reference and predicted fields plus, for the inverse tier, the
+        sparse noisy observations the model was fit to.
     """
     problem = get(cfg.problem)()
     domain = problem.domain
@@ -104,6 +130,7 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
 
     x_values, t_values = sampling.eval_grid(domain, cfg.eval_nx, cfg.eval_nt)
     collocation = sampling.collocation(domain, cfg.n_collocation, seed=cfg.seed)
+    obs: tuple[Array, Array] | None = None
     if cfg.tier == "inverse":
         # Reconstruct from sparse noisy observations of the reference field.
         ref_field = _ground_truth(
@@ -117,7 +144,8 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
             noise_std=cfg.noise_std,
             seed=cfg.seed + 3,
         )
-        data = TrainingData(collocation=collocation, obs=(obs_coords, obs_vals))
+        obs = (obs_coords, obs_vals)
+        data = TrainingData(collocation=collocation, obs=obs)
     else:
         ic_pts = sampling.initial_points(domain, cfg.n_ic, seed=cfg.seed + 1)
         ic_vals = problem.initial(ic_pts[:, 0])  # type: ignore[attr-defined]
@@ -135,10 +163,20 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
     ref = _ground_truth(problem, grid_x.ravel(), grid_t.ravel()).reshape(
         cfg.eval_nt, cfg.eval_nx
     )
-
     sign_x = int(problem.admissibility().mask[0])
-    dx = float(x_values[1] - x_values[0])
-    viol = max(violation(pred[i], axis=0, sign=sign_x) for i in range(cfg.eval_nt))
+    return FieldResult(x_values, t_values, ref, pred, obs, sign_x)
+
+
+def run_one(cfg: RunConfig) -> dict[str, Any]:
+    """Run one experiment and return its metrics artifact.
+
+    :param cfg: The fully-specified run configuration.
+    :returns: A JSON-serialisable dict of configuration + headline metrics.
+    """
+    r = predict_field(cfg)
+    pred, ref = r.pred, r.ref
+    dx = float(r.x_values[1] - r.x_values[0])
+    viol = max(violation(pred[i], axis=0, sign=r.sign_x) for i in range(cfg.eval_nt))
     over = max(metrics.overshoot(pred[i], ref[i]) for i in range(cfg.eval_nt))
     # Physical-validity proxy: fraction of predictions outside the true field's
     # range — i.e. unphysical over/undershoot the reference cannot contain.

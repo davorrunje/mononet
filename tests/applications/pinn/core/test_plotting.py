@@ -24,3 +24,25 @@ def test_plotting_returns_figures() -> None:
     assert isinstance(fig2, Figure)
     assert isinstance(fig3, Figure)
     assert len(fig1.axes[0].get_lines()) == 2
+
+
+def test_reconstruction_profile_with_obs() -> None:
+    """Reconstruction profile draws each series and overlays observations."""
+    x = np.linspace(-1.0, 1.0, 20)
+    obs = (np.array([-0.5, 0.5]), np.array([0.2, 0.8]))
+    fig = plotting.reconstruction_profile(
+        x, {"true": x, "hard": x**3}, obs=obs, title="r"
+    )
+    assert isinstance(fig, Figure)
+    assert len(fig.axes[0].get_lines()) == 2  # two profile curves
+    assert len(fig.axes[0].collections) == 1  # one scatter (obs)
+
+
+def test_metric_vs_noise() -> None:
+    """Crossover helper plots one line per method against the noise axis."""
+    noise = np.array([0.0, 0.05, 0.1])
+    fig = plotting.metric_vs_noise(
+        noise, {"hard": noise, "vanilla": 2 * noise}, ylabel="L1 error"
+    )
+    assert isinstance(fig, Figure)
+    assert len(fig.axes[0].get_lines()) == 2

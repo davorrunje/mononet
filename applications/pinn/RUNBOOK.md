@@ -62,6 +62,11 @@ uv run python -m applications.pinn.experiments.sweep_inverse --no-residual \
 # Non-PINN smoothness comparator (classical RBF smoother; CPU-only, no PDE)
 uv run python -m applications.pinn.experiments.baselines \
     --out applications/pinn/results/inverse-baseline-smoother.json
+
+# Paper figures: crossover curves (from the sweep JSONs) + reconstruction slices
+# (retrains the six tuned inverse configs at the stress point). Writes PNGs to
+# paper/figures/. Add --no-reconstructions to rebuild only the curves (no training).
+uv run python -m applications.pinn.experiments.figures
 ```
 
 Each writes per-method best params + per-seed metrics + IQM/band to the JSON;
@@ -72,7 +77,7 @@ are filled from these artifacts.
 
 - [ ] **Cross-backend equivalence** (JAX vs PyTorch): needs both backends — run on
       the `default` (`all-cpu`) devcontainer; `gpu-jax` has no Torch.
-- [ ] **Figures** (TV(t) curves, shock profiles, reconstructed field, sparsity ×
-      noise sweep): `core/plotting.py` exists; generation + the sweep are not yet
-      wired into a committed script.
+- [x] **Figures** — reconstruction slices + L¹/L²/admissibility crossover curves
+      wired into `experiments/figures.py` (writes `paper/figures/*.png`). TV(t)
+      curves remain a forward-tier nicety, not yet generated.
 - [ ] **Notebook** render into Sphinx docs.
