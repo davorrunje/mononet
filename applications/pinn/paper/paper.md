@@ -285,7 +285,11 @@ cannot, so it both **resists noise (lower error) and stays exactly admissible
 (violation 0)** at every operating point. This is the paper's central result: in
 the realistic sparse-and-noisy data-assimilation regime, expressive hard
 monotonicity delivers *both* better accuracy *and* guaranteed structure, and the
-advantage grows as data degrades.
+advantage grows as data degrades. The crossover is **general**: it holds at every
+observation count (20–160; at the sparsest, hard-monotone wins even at zero noise)
+and for both the `MonoResidual` and plain-`MonoLinear` fields — 20 cells with a
+coherent monotone trend, so it reflects the *monotone constraint*, not a single
+operating point or architecture detail.
 
 *Pending figure: reconstruction L² vs noise (the crossover) and the reconstructed
 `ρ(x,t)` field with observations overlaid. (The raw out-of-range fraction was

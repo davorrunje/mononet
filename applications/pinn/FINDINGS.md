@@ -20,7 +20,17 @@ L² (hard / vanilla / soft), MonoResidual field:
 overfit); from noise ≥ 0.05 hard_monotone is best on L², margin **widening** with
 noise (0.20: ~20% better than vanilla, ~36% better than soft). Mechanism =
 regularization: baselines fit the noise (and oscillate, violation → 0.9-1.3), the
-monotone prior can't. So at realistic noise the constraint gives **both lower error
+monotone prior can't.
+
+**Generality (checked, strengthens it):** the crossover holds across **all four
+observation counts** (20/40/80/160), not just n_obs=80 — at any noise ≥ 0.05
+hard_monotone is best on L² at every sparsity, and at n_obs=20 it wins even at
+noise 0. Baselines win *only* at exactly zero noise with denser data. And it holds
+for **both field variants** (plain sweep committed too): plain hard_monotone also
+beats its baselines at high noise (MonoResidual marginally better than plain across
+the sweep, e.g. n_obs=80/noise=0.20: 1.26 vs 1.33). So the effect is due to the
+*monotone constraint*, robust to sparsity and to the residual-vs-plain detail — 20
+cells with a coherent monotone trend, not a single-point fluke. So at realistic noise the constraint gives **both lower error
 AND guaranteed admissibility** — this is opportunity #1 finally materializing, and
 it only surfaced because the noise grid was pushed to 0.15/0.20. This is now the
 paper's central result (§6.2.1); abstract updated.
