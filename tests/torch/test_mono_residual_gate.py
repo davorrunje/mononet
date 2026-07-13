@@ -34,7 +34,7 @@ def test_default_block_is_near_identity_at_init() -> None:
     torch.manual_seed(0)
     block = MonoResidual(32, 32, mode="absolute", activation="elu")
     x = torch.randn(8, 32)
-    fx_rms = float(block.F(x).pow(2).mean().sqrt())
+    fx_rms = float(block.F(x).detach().pow(2).mean().sqrt())
     assert fx_rms < 0.2  # F(x) ~= 0 at init => block ~= g_alpha * skip
 
 
