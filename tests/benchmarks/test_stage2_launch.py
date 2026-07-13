@@ -10,10 +10,16 @@ if TYPE_CHECKING:
     import pytest
 
 
-def test_run_parallel_distributes_datasets_round_robin(
+def test_run_parallel_distributes_datasets_across_the_device_pool(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """4 datasets over a 2-device pool land 2-per-device, not piled on one."""
+    """Each dataset runs once, on a pool device, with both devices used.
+
+    4 datasets over a 2-device pool. Distribution is load-balanced by the
+    work-stealing queue (like ``screen_launch``), so the exact per-device split
+    is not fixed — only completeness, pool-membership, and both-devices-used
+    are guaranteed.
+    """
     calls: list[tuple[list[str], dict[str, str]]] = []
 
     def _fake_run(cmd: list[str], env: dict[str, str], check: bool) -> None:
@@ -39,9 +45,12 @@ def test_run_parallel_distributes_datasets_round_robin(
         name = cmd[cmd.index("--datasets") + 1]
         by_device[device].append(name)
 
+    # completeness + pool-membership (indexing by_device would KeyError on an
+    # out-of-pool device), and both devices are used — but NOT an exact split,
+    # which the work-stealing queue does not guarantee.
     assert sorted(by_device["cuda:0"] + by_device["cuda:1"]) == sorted(datasets)
-    assert len(by_device["cuda:0"]) == 2
-    assert len(by_device["cuda:1"]) == 2
+    assert len(by_device["cuda:0"]) >= 1
+    assert len(by_device["cuda:1"]) >= 1
 
 
 def test_run_parallel_passes_n_jobs_one_and_pinned_device(
