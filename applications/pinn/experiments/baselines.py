@@ -37,7 +37,6 @@ Array = npt.NDArray[np.float64]
 _N_OBS = (20, 40, 80, 160)
 _NOISE = (0.0, 0.05, 0.1, 0.15, 0.2)
 _LAMBDAS = (1e-3, 1e-2, 1e-1, 1.0, 10.0)
-_PROBLEM = "lwr_riemann"
 
 
 def _norm(coords: Array, bounds: tuple[float, float, float, float]) -> Array:
@@ -78,6 +77,7 @@ def _best_lambda(obs_coords: Array, obs_vals: Array, seed: int) -> float:
 def main() -> None:
     """CLI entry point."""
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--problem", default="lwr_riemann")
     p.add_argument(
         "--out", default="applications/pinn/results/inverse-baseline-smoother.json"
     )
@@ -86,7 +86,7 @@ def main() -> None:
     p.add_argument("--eval-nt", type=int, default=60)
     args = p.parse_args()
 
-    prob = get(_PROBLEM)()
+    prob = get(args.problem)()
     (x0, x1), (t0, t1) = prob.domain
     bounds = (float(x0), float(x1), float(t0), float(t1))
     sign_x = int(prob.admissibility().mask[0])
@@ -99,12 +99,12 @@ def main() -> None:
     dx = float(xs[1] - xs[0])
 
     print(
-        f"== non-PINN smoother baseline: {_PROBLEM}, "
+        f"== non-PINN smoother baseline: {args.problem}, "
         f"{len(_N_OBS)}x{len(_NOISE)} cells, {args.seeds} seeds ==",
         flush=True,
     )
     out: dict[str, Any] = {
-        "problem": _PROBLEM,
+        "problem": args.problem,
         "method": "rbf_smoother",
         "n_obs": list(_N_OBS),
         "noise": list(_NOISE),
