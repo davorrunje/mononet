@@ -142,6 +142,17 @@ layers with a monotonicity mask that constrains `u_θ` to be non-increasing in `
 stack of `MonoResidual` blocks (≈4 layers; depth beyond a few layers does not
 help this construction, so width is the capacity lever).
 
+**Prior strength — monotonicity only, by design.** `mononet` also exposes a
+convex/concave activation split (`convex_fraction`): the balanced setting (0.5)
+gives a universal approximator of *arbitrary monotone* functions with no curvature
+bias, while skewing it toward all-convex (or all-concave) additionally forces the
+output to be **convex (or concave)** — a strictly stronger shape prior. We use the
+neutral 0.5, i.e. **pure monotonicity**, because entropy solutions in this class
+are monotone but *not* globally convex or concave (a shock is flat–drop–flat, with
+an inflection at the front); imposing curvature would be an incorrect, over-strong
+prior. The curvature knob is the natural lever for problem classes whose solutions
+*do* have known convexity — see the outlook (§7).
+
 ### 3.2 Admissibility abstraction and problem registry
 
 Each PDE is a plug-in exposing: the residual, an `AdmissibilitySpec` (the
@@ -349,7 +360,12 @@ now resolved, and the two variants are close.)
   monotonicity/convexity statement — high-dimensional HJB (with the domain-
   restriction and expressiveness caveats of the de-risking analysis),
   Fokker–Planck (valid-density-by-construction), and eikonal (causality) — each a
-  follow-up paper.
+  follow-up paper. Those classes are exactly where the **convex/concave knob**
+  (§3.1) becomes the operative prior rather than the neutral setting used here:
+  HJB value functions are monotone *and* convex/concave, and option-pricing values
+  are convex in the underlying (no-arbitrage). Enforcing that curvature *by
+  construction* is a strictly stronger structural guarantee than monotonicity, and
+  is the mechanism those follow-ups will exploit.
 
 ## Acknowledgments / Reproducibility
 
