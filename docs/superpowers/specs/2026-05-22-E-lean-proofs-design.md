@@ -1,5 +1,9 @@
 # Sub-project E — Lean 4 formalization of the paper's theorems
 
+> **Superseded (2026-07-12):** the Lean formalization now lives in the
+> standalone [neural-network-proofs](https://github.com/davorrunje/neural-network-proofs)
+> repo and is no longer part of mononet. This spec is kept for historical record.
+
 **Date:** 2026-05-22
 **Author:** Davor Runje
 **Status:** Draft (brainstorming output); pending user review.

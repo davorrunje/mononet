@@ -38,7 +38,7 @@ The high-level project decomposition lives in five sub-project specs:
 | [B](docs/superpowers/specs/2026-05-22-B-paper-reproduction-design.md) | Reproduction of paper Tables 1 & 2 |
 | [C](docs/superpowers/specs/2026-05-22-C-extended-benchmarks-design.md) | Extended datasets, ablations, scaling |
 | [D](docs/superpowers/specs/2026-05-22-D-injective-monotonic-and-flows-design.md) | Strictly-monotonic primitives and normalizing flows |
-| [E](docs/superpowers/specs/2026-05-22-E-lean-proofs-design.md) | Lean 4 + mathlib4 formalization of paper theorems |
+| [E](docs/superpowers/specs/2026-05-22-E-lean-proofs-design.md) *(moved out)* | Lean 4 + mathlib4 formalization — now the standalone [neural-network-proofs](https://github.com/davorrunje/neural-network-proofs) repo |
 
 Each sub-project spec sits below the parent meta-spec [2026-05-21-mononet-package-design.md](docs/superpowers/specs/2026-05-21-mononet-package-design.md), which establishes the package layout, license posture, CI matrix, and naming conventions. **Read the parent spec first** when you need the global picture.
 
@@ -95,7 +95,6 @@ Four devcontainer flavors under [.devcontainer/](.devcontainer/):
 | `gpu-torch` | GPU benchmarks with PyTorch |
 | `gpu-jax` | GPU work with JAX (Flax NNX) |
 | `gpu-keras` | GPU work with Keras 3 (JAX backend + CUDA 12 by default) |
-| `proofs` | Reviewing the Lean 4 / mathlib4 formalization under `proofs/` (CPU, no ML extras) |
 
 `shared/` holds scripts reused across flavors. Selection guidance is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
