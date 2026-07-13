@@ -112,7 +112,7 @@ def trainability(
         loss = nn.functional.mse_loss(net(x), y)
         loss.backward()  # type: ignore[no-untyped-call]
         opt.step()
-        loss_val = float(loss)
+        loss_val = float(loss.detach())
         if loss_val < 0.5 and hit == float("inf"):
             hit = float(ep)
     return {"final_train_loss": loss_val, "epochs_to_threshold": hit}
