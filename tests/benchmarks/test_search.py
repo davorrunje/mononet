@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+import json
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 import pytest
 
@@ -12,6 +17,9 @@ from benchmarks._common.search import (
     flavor_name,
     search,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _bundle(task: str = "regression") -> DatasetBundle:
@@ -155,7 +163,7 @@ def test_final_eval_reports_all_seeds() -> None:
     )
     # 6 seeds > the old top_k=5 default, so all-seeds reporting is observable:
     # the old best-5-of-6 would give n_selected == 5; the new behaviour gives 6.
-    agg = final_eval(
+    agg, rows = final_eval(
         b,
         res.best_params,
         mode="switch",
@@ -167,3 +175,39 @@ def test_final_eval_reports_all_seeds() -> None:
     assert np.isfinite(agg.mean)
     assert agg.n_seeds == 6
     assert agg.n_selected == 6  # all seeds reported, no best-k selection
+    assert len(rows) == 6
+
+
+def test_run_dataset_persists_secondary_accuracy_for_classification(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Classification run_dataset records secondary["accuracy"] alongside roc_auc.
+
+    `final_eval` computes both `roc_auc` (primary) and `accuracy` for every
+    classification seed, but the committed rec previously stored only the
+    primary metric's Aggregate — dropping accuracy from the persisted JSON.
+    """
+    from benchmarks._common.search import run_dataset
+
+    bundle = _bundle(task="binary_classification")
+
+    def fake_load(name: str, *, data_dir: Any) -> DatasetBundle:
+        return bundle
+
+    monkeypatch.setattr("benchmarks.datasets.registry.load", fake_load)
+
+    paths = run_dataset(
+        "syn",
+        backend="torch",
+        flavors=(("switch", False, False),),
+        n_trials=2,
+        epochs=1,
+        final_seeds=range(3),
+        n_splits=2,
+        out_dir=tmp_path,
+    )
+    rec = json.loads(paths[0].read_text())
+    assert rec["test_metric"] == "roc_auc"
+    sec = rec["secondary"]["accuracy"]
+    assert np.isfinite(sec["iqm"])
+    assert len(sec["values"]) == 3

@@ -12,7 +12,7 @@ import numpy as np
 import optuna
 
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
-from benchmarks._common.results import Aggregate, aggregate
+from benchmarks._common.results import Aggregate, ResultRow, aggregate
 from benchmarks._common.runner import run
 from benchmarks._common.search_spaces import suggest_config
 from benchmarks._common.splits import cv_splits
@@ -160,8 +160,16 @@ def final_eval(
     metric: str | None = None,
     seeds: Iterable[int] = range(10),
     epochs: int = 50,
-) -> Aggregate:
-    """Refit best HPs on the full train split; report TEST mean±std over all seeds."""
+) -> tuple[Aggregate, list[ResultRow]]:
+    """Refit best HPs on the full train split; report TEST mean±std over all seeds.
+
+    :returns: ``(agg, rows)`` — the primary-metric :class:`Aggregate` and the
+        raw per-seed :class:`ResultRow` list backing it. Each row's ``scores``
+        holds every metric computed for that seed (e.g. ``roc_auc`` *and*
+        ``accuracy`` for classification, per the `metrics` tuple below), so
+        callers can aggregate secondary metrics (see `_secondary_metrics`)
+        without a second training run.
+    """
     metric = metric or _primary_metric(bundle)
     metrics: tuple[str, ...] = (
         ("roc_auc", "accuracy") if metric == "roc_auc" else (metric,)
@@ -189,9 +197,48 @@ def final_eval(
         metrics=metrics,  # type: ignore[arg-type]
     )
     rows = run(cfg, bundle)
-    return aggregate(
+    agg = aggregate(
         rows, metric=metric, lower_is_better=_lower_is_better(metric), top_k=len(rows)
     )
+    return agg, rows
+
+
+def _secondary_metrics(
+    rows: list[ResultRow], primary_metric: str
+) -> dict[str, dict[str, Any]]:
+    """Aggregate every metric in ``rows[0].scores`` other than ``primary_metric``.
+
+    Shared by `run_dataset` and the size-ladder's `run_ladder` so both persist
+    secondary metrics (e.g. classification ``accuracy`` alongside the primary
+    ``roc_auc``) the same way, reusing :func:`aggregate` per metric.
+
+    :param rows: Per-seed result rows (from `final_eval`, possibly
+        concatenated across several `final_eval` calls, e.g. one per
+        size-ladder seed); each row's ``scores`` holds every metric computed
+        for that run.
+    :param primary_metric: The metric already reported under ``test_*``;
+        excluded here to avoid duplicating it.
+    :returns: ``{metric: {"iqm", "mean", "std", "median", "values"}}`` for
+        every other metric present in ``rows``; empty when there is none
+        (e.g. regression, which has a single metric).
+    """
+    if not rows:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for m in rows[0].scores:
+        if m == primary_metric:
+            continue
+        agg = aggregate(
+            rows, metric=m, lower_is_better=_lower_is_better(m), top_k=len(rows)
+        )
+        out[m] = {
+            "iqm": agg.iqm,
+            "mean": agg.mean,
+            "std": agg.std,
+            "median": agg.median,
+            "values": list(agg.values),
+        }
+    return out
 
 
 # (mode, residual, deep) triples. Deep implies residual=True with a larger
@@ -327,7 +374,7 @@ def run_dataset(
             search_seeds=search_seeds,
             storage=storage,
         )
-        agg = final_eval(
+        agg, eval_rows = final_eval(
             bundle,
             study.best_params,
             mode=mode,
@@ -353,6 +400,9 @@ def run_dataset(
             "test_median": agg.median,
             "test_iqm": agg.iqm,
             "test_values": list(agg.values),
+            # Secondary metrics (e.g. accuracy alongside roc_auc); empty for
+            # regression datasets, which have a single metric.
+            "secondary": _secondary_metrics(eval_rows, agg.metric),
             "n_collapse": _count_collapses(
                 agg.values,
                 task=bundle.task,

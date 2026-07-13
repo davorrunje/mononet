@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from benchmarks._common.results import bootstrap_delta
+from benchmarks._common.search import _lower_is_better
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -21,9 +22,12 @@ def delta_by_n(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     The band resamples the deep and shallow per-seed value vectors independently
     (`_BOOT` draws, seed `_BOOT_SEED`) and takes the 2.5/97.5 percentiles of the
     bootstrapped IQM difference, via the shared
-    :func:`benchmarks._common.results.bootstrap_delta`. This report is used for
-    accuracy-style (higher-is-better) metrics only, so ``lower_is_better`` is
-    fixed at ``False``.
+    :func:`benchmarks._common.results.bootstrap_delta`. Metric direction
+    (``lower_is_better``) is derived per record from its ``test_metric`` via
+    :func:`benchmarks._common.search._lower_is_better` — this report is not
+    accuracy-style-only: size-ladderable regression datasets (e.g. ``blog``)
+    report ``mse``, where lower is better, and hardcoding ``False`` would flip
+    the sign of Δ.
     """
     by_n: dict[int, dict[str, dict[str, Any]]] = {}
     for r in records:
@@ -35,8 +39,9 @@ def delta_by_n(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         dv = np.asarray(deep["test_values"], dtype=np.float64)
         sv = np.asarray(shallow["test_values"], dtype=np.float64)
+        lower_is_better = _lower_is_better(str(deep["test_metric"]))
         point, lo, hi = bootstrap_delta(
-            dv, sv, lower_is_better=False, n_boot=_BOOT, seed=_BOOT_SEED
+            dv, sv, lower_is_better=lower_is_better, n_boot=_BOOT, seed=_BOOT_SEED
         )
         out.append(
             {

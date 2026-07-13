@@ -19,15 +19,15 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from benchmarks._common.results import interquartile_mean
+from benchmarks._common.results import ResultRow, interquartile_mean
 from benchmarks._common.search import (
     _count_collapses,
     _lower_is_better,
     _primary_metric,
+    _secondary_metrics,
     final_eval,
     search,
 )
-from benchmarks._common.search_spaces import _LARGE_BATCH_THRESHOLD
 from benchmarks._common.splits import subsample_train
 
 if TYPE_CHECKING:
@@ -38,24 +38,30 @@ if TYPE_CHECKING:
 _NS: tuple[int, ...] = (5_000, 15_000, 45_000, 135_000, 1_000_000_000)  # last = full
 _ARMS: tuple[str, ...] = ("shallow", "deep")
 
+# Ladder-eligibility floor: a dataset needs at least this many training rows
+# for the ladder's largest rungs (135_000, full) to probe scale meaningfully.
+# Distinct from `search_spaces._LARGE_BATCH_THRESHOLD` (an unrelated batch-size
+# band cutoff) even though both currently happen to be 20_000.
+_MIN_LADDER_TRAIN = 20_000
+
 
 def _require_large(bundle: DatasetBundle, dataset: str) -> None:
     """Raise if `bundle` is too small to size-ladder.
 
-    Only large datasets (``n_train >= _LARGE_BATCH_THRESHOLD``) can be
+    Only large datasets (``n_train >= _MIN_LADDER_TRAIN``) can be
     meaningfully size-laddered: the ladder's largest rungs (135_000, full)
     are meant to probe scale, and a small dataset has no room to grow into
     them.
 
     :param bundle: The loaded dataset bundle.
     :param dataset: Dataset name, for the error message.
-    :raises ValueError: If ``len(bundle.X_train) < _LARGE_BATCH_THRESHOLD``.
+    :raises ValueError: If ``len(bundle.X_train) < _MIN_LADDER_TRAIN``.
     """
     n_train = len(bundle.X_train)
-    if n_train < _LARGE_BATCH_THRESHOLD:
+    if n_train < _MIN_LADDER_TRAIN:
         raise ValueError(
             f"size-ladder requires a large dataset (n_train >= "
-            f"{_LARGE_BATCH_THRESHOLD}); {dataset!r} has n_train={n_train}"
+            f"{_MIN_LADDER_TRAIN}); {dataset!r} has n_train={n_train}"
         )
 
 
@@ -68,12 +74,19 @@ def _ladder_eval(
     n: int,
     final_seeds: Iterable[int],
     epochs: int,
-) -> list[float]:
-    """Per-seed: subsample train to n (seed s), refit, test on full test."""
+) -> tuple[list[float], list[ResultRow]]:
+    """Per-seed: subsample train to n (seed s), refit, test on full test.
+
+    :returns: ``(values, rows)`` — the primary-metric value for each seed, and
+        every underlying `ResultRow` (one per seed) concatenated across seeds,
+        so a caller can also aggregate secondary metrics via
+        `benchmarks._common.search._secondary_metrics`.
+    """
     values: list[float] = []
+    rows: list[ResultRow] = []
     for s in final_seeds:
         b_s = subsample_train(bundle, n, seed=s)
-        agg = final_eval(
+        agg, seed_rows = final_eval(
             b_s,
             best_params,
             mode="absolute",
@@ -83,7 +96,8 @@ def _ladder_eval(
             epochs=epochs,
         )
         values.append(float(agg.values[0]))
-    return values
+        rows.extend(seed_rows)
+    return values, rows
 
 
 def run_ladder(
@@ -143,7 +157,7 @@ def run_ladder(
                 search_seeds=search_seeds,
                 n_jobs=n_jobs,
             )
-            values = _ladder_eval(
+            values, eval_rows = _ladder_eval(
                 bundle,
                 study.best_params,
                 deep=deep,
@@ -167,6 +181,9 @@ def run_ladder(
                     "test_median": float(np.median(values)),
                     "test_iqm": interquartile_mean(np.asarray(values)),
                     "test_values": values,
+                    # Secondary metrics (e.g. accuracy alongside roc_auc);
+                    # empty for regression datasets (single metric).
+                    "secondary": _secondary_metrics(eval_rows, metric),
                     "n_collapse": _count_collapses(
                         tuple(values),
                         task=bundle.task,
@@ -195,7 +212,7 @@ def main() -> None:
 
     With no arguments, runs the full ladder for `loan` (back-compat default)
     to the canonical results path. ``--dataset`` selects any other large
-    dataset from the registry (`n_train >= _LARGE_BATCH_THRESHOLD`; smaller
+    dataset from the registry (`n_train >= _MIN_LADDER_TRAIN`; smaller
     datasets raise `ValueError` via `_require_large`). The
     ``--ns``/``--arms``/``--out`` options let a launcher run one cell per
     process (each pinned to a GPU via ``$MONONET_TORCH_DEVICE``) into a partial
