@@ -98,10 +98,14 @@ Accuracy is base-rate-trivial on the imbalanced datasets (loan 0.649 ≈ base ra
 - Compute ROC-AUC in `benchmarks/_common/runner.py` (needs predicted probabilities +
   `sklearn.metrics.roc_auc_score`); still compute accuracy for the table.
 - `benchmarks/_common/search.py::_primary_metric` returns `"roc_auc"` for
-  `binary_classification`, `"mse"`/`"rmse"` for regression. This becomes the objective's primary
-  metric **and** the gate metric. Accuracy remains a reported secondary column.
+  `binary_classification` and **`"mse"` for all regression** (`auto`, `blog`, synthetic). This
+  becomes the objective's primary metric **and** the gate metric. Accuracy remains a reported
+  secondary metric (persisted under `rec["secondary"]`).
 
-Regression datasets (`auto`, `blog`, synthetic) rank/gate on MSE/RMSE as today.
+Regression datasets rank/gate on **MSE**. RMSE is a strictly monotone transform of MSE, so every
+ranking and gate verdict is identical either way; the docs table may still *display* RMSE for
+`blog` (via `sqrt`) for continuity with the paper without changing the gate. (This supersedes an
+earlier "MSE for auto / RMSE for blog" wording — the gate metric is uniformly MSE for regression.)
 
 ## 5. Stage A — screen (all datasets)
 
