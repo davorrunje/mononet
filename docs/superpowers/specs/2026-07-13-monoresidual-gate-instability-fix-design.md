@@ -214,9 +214,27 @@ by reproducible benchmarks**, not assertion. Required structure:
 - **Stage 1 (this spec):** core + 3 backends + tests + equivalence regen + committed trap/ablation
   reproducers + docs amendment. Success = failing test (1) passes; monotonicity (2) preserved;
   equivalence green.
-- **Stage 2:** re-run #99 (probe) and #90 (screen) on the fixed layer; update both draft PRs and
-  the docs before/after subsection. Only *then* is the depth-null conclusion trustworthy — the
-  prior runs are confounded by the trap.
+- **Stage 2 (the benchmark re-run):** the fix changes whether depth is usable, so every
+  depth-sensitive result is confounded by the trap and must be re-run on the fixed layer.
+  Scope and execution:
+  - **All 10 datasets in the registry** — the paper 5 (`auto`, `heart`, `compas`, `loan`,
+    `blog`) **and PR #90's additions** (`adult`, `taiwan`, `polish`, `german`, `lc` =
+    Lending Club). No dataset is exempt; the depth-neutral verdict must be re-tested everywhere.
+  - **Both GPUs (5090 + 3090)** via the existing device-assigning launcher pattern
+    (`benchmarks/screen_launch.py` / `loan_ladder_launch.py`), `n_jobs=1` per process (the
+    threaded-Optuna deadlock stands — parallelize across *processes/GPUs*, not threads).
+  - **Size-driven batch bands, for speed.** Generalize `benchmarks/_common/search_spaces.py`'s
+    hardcoded `_LARGE_BATCH_DATASETS = {"loan", "blog"}` into a **rule keyed on train-set size**:
+    datasets above a row threshold draw from the large-batch band (`512–4096`) so 50-epoch
+    training is launch-bound-cheap; small datasets (`heart`, `auto`, `german`, …) keep the
+    small band (`8–256`) where small batches still matter for generalization. The threshold is
+    derived once from the loaded `n_train` (not a hand-maintained name set), so new datasets are
+    banded automatically. `lc`/`adult`/`taiwan` land in the large band; `heart`/`auto`/`german`
+    in the small band.
+  - **Artifacts:** the standard flavor-comparison / deep-residual-accuracy table and the #90
+    screen, both regenerated across all 10 datasets; plus the #99 synthetic probe. Update both
+    draft PRs and the docs before/after subsection. Only *then* is the depth conclusion
+    trustworthy.
 
 ## 9. Non-goals
 
