@@ -3,6 +3,23 @@
 Durable log of empirical findings so they survive across sessions/clones. Not
 part of the manuscript; feeds §6/§7 once resolved. Newest first.
 
+## 2026-07-13 — Non-PINN smoothness baseline: PDE + monotonicity both needed
+
+Classical thin-plate RBF smoother fit directly to the observations (no PDE, no
+monotonicity; smoothing tuned by held-out-obs CV), `inverse-baseline-smoother.json`.
+n_obs=80, L2: noise 0.00 → 1.37, 0.20 → 2.19 — **~2x worse than the hard-monotone
+PINN (0.70 → 1.26) at every noise**, and not admissible (violation 0.1-0.4).
+
+**Addresses the "is it just smoothing?" caveat:** a generic smoother reproduces
+neither the accuracy nor the admissibility. The result rests on **two** ingredients
+it lacks — the PDE (fills unobserved space-time; a pure data smoother can't) *and*
+expressive hard monotonicity (noise-robust accuracy + admissibility). Note this
+conflates "no PDE" with "no monotonicity"; a within-PINN smoothness-penalty variant
+(vanilla + curvature penalty) would isolate monotonicity-vs-smoothness *given* the
+PDE — a cheap further control if wanted. The existing `soft` baseline (tuned
+monotonicity *penalty*) already loses to hard, giving the within-PINN hard>soft
+signal.
+
 ## 2026-07-13 — KEY RESULT: high-noise sweep reveals an accuracy WIN (crossover)
 
 Extended the noise grid to 0.15/0.20 (resume-merge, only new cells). n_obs=80,

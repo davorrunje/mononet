@@ -291,6 +291,15 @@ and for both the `MonoResidual` and plain-`MonoLinear` fields — 20 cells with 
 coherent monotone trend, so it reflects the *monotone constraint*, not a single
 operating point or architecture detail.
 
+**Non-PINN / smoothness comparator.** To check the win is not just "any smoother",
+a classical thin-plate-spline RBF fit *directly* to the observations (no PDE, no
+monotonicity; smoothing tuned by held-out-observation CV) is far worse across the
+whole grid — n_obs=80: L² 1.37 → 2.19 (noise 0 → 0.20) vs the hard-monotone
+field's 0.70 → 1.26, i.e. ~2× — and is not admissible (violation 0.1–0.4). So the
+result rests on **two** ingredients a generic smoother lacks: the PDE (to fill
+unobserved space-time) *and* expressive hard monotonicity (accuracy under noise +
+admissibility). Generic smoothing reproduces neither.
+
 *Pending figure: reconstruction L² vs noise (the crossover) and the reconstructed
 `ρ(x,t)` field with observations overlaid. (The raw out-of-range fraction was
 uninformative — dominated by sub-0.01 excursions; a physical-bounds `[0, ρ_max]`
