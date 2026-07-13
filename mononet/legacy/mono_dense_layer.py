@@ -13,11 +13,13 @@ from __future__ import annotations
 import warnings
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, cast
+from itertools import chain
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import keras
 import numpy as np
 from keras import activations, ops
+from keras.layers import Concatenate, Dense, Dropout
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -336,3 +338,269 @@ class MonoDense(keras.layers.Dense):  # type: ignore[misc]
             "is_concave": self.is_concave,
             "activation_weights": self.activation_weights,
         }
+
+
+T = TypeVar("T")
+
+
+def _create_mono_block(
+    *,
+    units: list[int],
+    activation: str | Callable[[Any], Any],
+    monotonicity_indicator: Any = 1,
+    is_convex: bool = False,
+    is_concave: bool = False,
+    dropout: float | None = None,
+) -> Callable[[Any], Any]:
+    """Return a callable that stacks ``MonoDense`` layers over an input tensor.
+
+    :param units: Output width of each layer, in order.
+    :param activation: Base activation for the hidden layers (the final layer is
+        linear).
+    :param monotonicity_indicator: Indicator for the first layer; ``1`` for all
+        subsequent layers (monotonicity is preserved thereafter).
+    :param is_convex: Force convex activation split.
+    :param is_concave: Force concave activation split.
+    :param dropout: Optional dropout rate applied between hidden layers.
+    :returns: A function mapping an input tensor to the block output.
+    """
+
+    def create_mono_block_inner(x: Any) -> Any:
+        if len(units) == 0:
+            return x
+        y = x
+        for i in range(len(units)):
+            y = MonoDense(
+                units=units[i],
+                activation=activation if i < len(units) - 1 else None,
+                monotonicity_indicator=monotonicity_indicator if i == 0 else 1,
+                is_convex=is_convex,
+                is_concave=is_concave,
+                name=f"mono_dense_{i}"
+                + ("_increasing" if i != 0 else "")
+                + ("_convex" if is_convex else "")
+                + ("_concave" if is_concave else ""),
+            )(y)
+            if (i < len(units) - 1) and dropout:
+                y = Dropout(dropout)(y)
+        return y
+
+    return create_mono_block_inner
+
+
+def _prepare_mono_input_n_param(  # noqa: C901
+    inputs: Any,
+    param: Any,
+) -> tuple[list[Any], list[Any], list[str]]:
+    """Broadcast a per-input parameter against a list/dict/tensor of inputs.
+
+    :param inputs: A tensor, a list of tensors, or a dict of named tensors.
+    :param param: A scalar, list, or dict matching ``inputs``.
+    :returns: ``(inputs_list, param_list, sorted_feature_names)``.
+    :raises ValueError: On incompatible input/param types or mismatched lengths.
+    """
+    if isinstance(inputs, list):
+        if isinstance(param, int):
+            param = [param] * len(inputs)
+        elif isinstance(param, list):
+            if len(inputs) != len(param):
+                raise ValueError(f"{len(inputs)} != {len(param)}")
+        else:
+            raise ValueError(f"Incompatible types: {type(inputs)=}, {type(param)=}")
+        sorted_feature_names = [f"{i}" for i in range(len(inputs))]
+    elif isinstance(inputs, dict):
+        sorted_feature_names = sorted(inputs.keys())
+        if isinstance(param, int):
+            param = [param] * len(inputs)
+        elif isinstance(param, dict):
+            if set(param.keys()) != set(sorted_feature_names):
+                raise ValueError(f"{set(param.keys())} != {set(sorted_feature_names)}")
+            param = [param[k] for k in sorted_feature_names]
+        else:
+            raise ValueError(f"Incompatible types: {type(inputs)=}, {type(param)=}")
+        inputs = [inputs[k] for k in sorted_feature_names]
+    else:
+        if isinstance(param, int):
+            param = [param]
+        elif isinstance(param, list):
+            # A bare (non-list, non-dict) input already carries all of its
+            # features in one tensor. A list `param` is then the full
+            # per-feature vector for that tensor, so it is kept flat (not
+            # wrapped again) to stay a valid MonoDense monotonicity_indicator.
+            pass
+        else:
+            raise ValueError(f"Incompatible types: {type(inputs)=}, {type(param)=}")
+        inputs = [inputs]
+        sorted_feature_names = ["inputs"]
+    return inputs, param, sorted_feature_names
+
+
+def _check_convexity_params(
+    monotonicity_indicator: list[int],
+    is_convex: list[bool],
+    is_concave: list[bool],
+    names: list[str],
+) -> tuple[bool, bool]:
+    """Validate per-input convexity flags and reduce them to block-level flags.
+
+    :param monotonicity_indicator: Per-input indicators.
+    :param is_convex: Per-input convex flags.
+    :param is_concave: Per-input concave flags.
+    :param names: Per-input names (for error messages).
+    :returns: ``(has_convex, has_concave)`` for the shared mono block.
+    :raises ValueError: If any input is marked both convex and concave.
+    """
+    # `monotonicity_indicator` may be longer than `is_convex`/`is_concave`
+    # when a single input tensor supplies its own flat per-feature indicator
+    # vector (see `_prepare_mono_input_n_param`); guard the pairwise check
+    # against that length mismatch instead of indexing out of range.
+    n = min(len(monotonicity_indicator), len(is_convex), len(is_concave))
+    ix = [i for i in range(n) if is_convex[i] and is_concave[i]]
+    if len(ix) > 0:
+        raise ValueError(
+            f"Parameters both convex and concave: {[names[i] for i in ix]}"
+        )
+    has_convex = any(is_convex)
+    has_concave = any(is_concave)
+    if has_convex and has_concave:
+        print("WARNING: we have both convex and concave parameters")  # noqa: T201
+    return has_convex, has_concave
+
+
+def create_type_1(
+    inputs: Any,
+    *,
+    units: int,
+    final_units: int,
+    activation: str | Callable[[Any], Any],
+    n_layers: int,
+    final_activation: str | Callable[[Any], Any] | None = None,
+    monotonicity_indicator: Any = 1,
+    is_convex: Any = False,
+    is_concave: Any = False,
+    dropout: float | None = None,
+) -> Any:
+    """Build a Type-1 monotonic MLP (features concatenated, then mono block).
+
+    :param inputs: Input tensor, list of tensors, or dict of named tensors.
+    :param units: Hidden-layer width.
+    :param final_units: Output-layer width.
+    :param activation: Base activation.
+    :param n_layers: Total layers (hidden + output).
+    :param final_activation: Optional activation applied to the output.
+    :param monotonicity_indicator: Per-input indicator (int, list, or dict).
+    :param is_convex: Per-input convex flag(s).
+    :param is_concave: Per-input concave flag(s).
+    :param dropout: Optional dropout rate between hidden layers.
+    :returns: Output tensor.
+    """
+    _, is_convex, _ = _prepare_mono_input_n_param(inputs, is_convex)
+    _, is_concave, _ = _prepare_mono_input_n_param(inputs, is_concave)
+    x, monotonicity_indicator, names = _prepare_mono_input_n_param(
+        inputs, monotonicity_indicator
+    )
+    has_convex, has_concave = _check_convexity_params(
+        monotonicity_indicator, is_convex, is_concave, names
+    )
+    y = Concatenate()(x)
+    y = _create_mono_block(
+        units=[units] * (n_layers - 1) + [final_units],
+        activation=activation,
+        monotonicity_indicator=monotonicity_indicator,
+        is_convex=has_convex,
+        is_concave=has_concave and not has_convex,
+        dropout=dropout,
+    )(y)
+    if final_activation is not None:
+        y = activations.get(final_activation)(y)
+    return y
+
+
+def create_type_2(
+    inputs: Any,
+    *,
+    input_units: int | None = None,
+    units: int,
+    final_units: int,
+    activation: str | Callable[[Any], Any],
+    n_layers: int,
+    final_activation: str | Callable[[Any], Any] | None = None,
+    monotonicity_indicator: Any = 1,
+    is_convex: Any = False,
+    is_concave: Any = False,
+    dropout: float | None = None,
+) -> Any:
+    """Build a Type-2 monotonic network (per-input units, then shared block).
+
+    :param inputs: Input tensor, list of tensors, or dict of named tensors.
+    :param input_units: Per-input preprocessing width (default ``max(units//4, 1)``).
+    :param units: Hidden-layer width.
+    :param final_units: Output-layer width.
+    :param activation: Base activation.
+    :param n_layers: Total layers (hidden + output) in the shared block.
+    :param final_activation: Optional activation applied to the output.
+    :param monotonicity_indicator: Per-input indicator (int, list, or dict).
+    :param is_convex: Per-input convex flag(s).
+    :param is_concave: Per-input concave flag(s).
+    :param dropout: Optional dropout rate between hidden layers.
+    :returns: Output tensor.
+    """
+    _, is_convex, _ = _prepare_mono_input_n_param(inputs, is_convex)
+    _, is_concave, _ = _prepare_mono_input_n_param(inputs, is_concave)
+    x, monotonicity_indicator, names = _prepare_mono_input_n_param(
+        inputs, monotonicity_indicator
+    )
+    has_convex, has_concave = _check_convexity_params(
+        monotonicity_indicator, is_convex, is_concave, names
+    )
+    if input_units is None:
+        input_units = max(units // 4, 1)
+    y = [
+        (
+            MonoDense(
+                units=input_units,
+                activation=activation,
+                monotonicity_indicator=monotonicity_indicator[i],
+                is_convex=is_convex[i],
+                is_concave=is_concave[i],
+                name=f"mono_dense_{names[i]}"
+                + ("_increasing" if monotonicity_indicator[i] == 1 else "_decreasing")
+                + ("_convex" if is_convex[i] else "")
+                + ("_concave" if is_concave[i] else ""),
+            )(x[i])
+            if monotonicity_indicator[i] != 0
+            else Dense(
+                units=input_units, activation=activation, name=f"dense_{names[i]}"
+            )(x[i])
+        )
+        for i in range(len(x))
+    ]
+    y = Concatenate(name="preprocessed_features")(y)
+    # Iterate over `range(len(x))` (not `monotonicity_indicator` directly) so
+    # this stays aligned with the preprocessing loop above: for a single
+    # input tensor, `len(x) == 1` even though `monotonicity_indicator` may be
+    # its longer, flat per-feature vector (see `_prepare_mono_input_n_param`).
+    monotonicity_indicator_block: list[int] = list(
+        chain.from_iterable(
+            [abs(monotonicity_indicator[i])] * input_units for i in range(len(x))
+        )
+    )
+    y = _create_mono_block(
+        units=[units] * (n_layers - 1) + [final_units],
+        activation=activation,
+        monotonicity_indicator=monotonicity_indicator_block,
+        is_convex=has_convex,
+        is_concave=has_concave and not has_convex,
+        dropout=dropout,
+    )(y)
+    if final_activation is not None:
+        y = activations.get(final_activation)(y)
+    return y
+
+
+MonoDense.create_type_1 = classmethod(  # type: ignore[assignment]
+    lambda cls, inputs, **kwargs: create_type_1(inputs, **kwargs)
+)
+MonoDense.create_type_2 = classmethod(  # type: ignore[assignment]
+    lambda cls, inputs, **kwargs: create_type_2(inputs, **kwargs)
+)

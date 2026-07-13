@@ -6,6 +6,26 @@ Importing this module pulls in Keras 3. It is intentionally NOT imported by
 here is deprecated; use the modern ``mononet`` backends instead.
 """
 
-from mononet.legacy.mono_dense_layer import MonoDense
+from mononet.legacy.mono_dense_layer import (
+    MonoDense,
+    apply_activations,
+    apply_monotonicity_indicator_to_kernel,
+    create_type_1,
+    create_type_2,
+    get_activation_functions,
+    get_monotonicity_indicator,
+    get_saturated_activation,
+    replace_kernel_using_monotonicity_indicator,
+)
 
-__all__ = ["MonoDense"]
+__all__ = [
+    "MonoDense",
+    "apply_activations",
+    "apply_monotonicity_indicator_to_kernel",
+    "create_type_1",
+    "create_type_2",
+    "get_activation_functions",
+    "get_monotonicity_indicator",
+    "get_saturated_activation",
+    "replace_kernel_using_monotonicity_indicator",
+]
