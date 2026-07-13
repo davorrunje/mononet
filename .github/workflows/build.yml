@@ -118,7 +118,7 @@ jobs:
           coverage erase
           MONONET_TEST_BACKEND=torch pytest tests/core tests/torch tests/equivalence tests/examples tests/test_top_level_imports.py
           MONONET_TEST_BACKEND=jax   pytest tests/jax   tests/equivalence
-          MONONET_TEST_BACKEND=keras pytest tests/keras tests/equivalence
+          MONONET_TEST_BACKEND=keras pytest tests/keras tests/equivalence tests/legacy
           coverage report --show-missing --fail-under=100
           coverage xml
       # Advisory only: skipped on fork PRs (no token). The hard --fail-under=100
