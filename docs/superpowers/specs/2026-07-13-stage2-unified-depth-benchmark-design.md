@@ -74,8 +74,10 @@ target-linearity artifact, not evidence about monotone depth. The fixed generato
   `teacher_elu` (smooth) genuinely nonlinear *and genuinely different from each other*.
   Monotonicity is preserved (non-negative weights + monotone activation hold for any input range;
   all synthetic features remain non-decreasing).
-- **Strengthen `lattice`** (nested min/max of non-negative linear terms) — the cleanest
-  monotone-nonlinear, depth-relevant family, non-degenerate regardless of input sign; deepen the
+- **Strengthen `lattice`** (nested min/max of monotone single-hidden-layer ReLU experts — pure
+  min/max of *affine* terms plateaus at R²≈0.9 on a bounded box and cannot clear the gate, so the
+  experts are nonlinear-but-monotone) — the cleanest monotone-nonlinear, depth-relevant family,
+  non-degenerate regardless of input sign; deepen the
   min/max nesting so it is strongly nonlinear (the current R²≈0.93 is too shallow).
 - **Spread `additive` knots** across the (centered) input range so the ramps actually fire.
 - **Acceptance gate:** a committed test asserts each family at high `c` fits a linear model with

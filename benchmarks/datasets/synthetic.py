@@ -4,8 +4,9 @@ Every target is non-decreasing in every input, asserted numerically at
 generation time. Inputs are sampled from the **centered** cube
 ``[-1,1]^d`` so that sharp/smooth nonlinearities actually bite (a positive
 cube ``[0,1]^d`` keeps every non-negative-weight preactivation positive,
-collapsing ReLU/ELU to the identity — see the module history and
-``.superpowers/sdd/task-3-report.md``).
+collapsing ReLU/ELU to the identity — see the design spec
+``docs/superpowers/specs/2026-07-13-stage2-unified-depth-benchmark-design.md``
+§3, "genuinely nonlinear" requirement).
 
 Four families, all monotone by construction (non-negative weights + a
 monotone activation, or nested ``min``/``max`` of monotone terms) and

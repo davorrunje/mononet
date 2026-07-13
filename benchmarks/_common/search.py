@@ -292,7 +292,8 @@ def run_dataset(
 ) -> list[Path]:
     """Search + final_eval each flavor of one dataset; write per-flavor JSON.
 
-    Budget falls back to the per-dataset `_BUDGET` defaults when not overridden.
+    Budget falls back to `_budget_for(dataset)` when not overridden — the
+    per-dataset `_BUDGET` defaults, or the `_SYNTH_BUDGET` preset for `synth_*`.
     Returns the written JSON paths.
     """
     from benchmarks.datasets.download import default_dest
