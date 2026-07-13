@@ -157,8 +157,8 @@ def _run(
         "gate": "softplus" if softplus_gate else "scaled_elu",
         "train": round(_finite(float(loss)), 6),
         "test": round(_finite(test), 6),
-        "g_beta_min": round(min(gates), 6),
-        "g_beta_max": round(max(gates), 6),
+        "g_beta_min": round(_finite(min(gates)), 6),
+        "g_beta_max": round(_finite(max(gates)), 6),
         "f_moved": moved,
         "n_blocks": len(blocks),
     }

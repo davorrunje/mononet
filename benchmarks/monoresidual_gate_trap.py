@@ -98,6 +98,12 @@ def main(out: Path | None = None) -> None:
         loss = loss_fn(net(x_tr), y_tr)
         loss.backward()
         opt.step()
+        # Downsample the trace: keep every 10th step plus the first and last,
+        # so the JSON stays summary-sized while still showing g_beta collapse
+        # within the first ~10 steps. The final row is always retained, so the
+        # top-level ``final`` summary (asserted by the smoke test) is exact.
+        if not (step % 10 == 0 or step == _STEPS - 1):
+            continue
         with torch.no_grad():
             gates = [float(b.g_beta()) for b in blocks]
             betas = [float(b.beta) for b in blocks]
@@ -107,10 +113,10 @@ def main(out: Path | None = None) -> None:
                 "step": step,
                 "train_mse": round(_finite(float(loss)), 6),
                 "test_mse": round(_finite(test), 6),
-                "g_beta_min": round(min(gates), 6),
-                "g_beta_max": round(max(gates), 6),
-                "beta_min": round(min(betas), 6),
-                "beta_max": round(max(betas), 6),
+                "g_beta_min": round(_finite(min(gates)), 6),
+                "g_beta_max": round(_finite(max(gates)), 6),
+                "beta_min": round(_finite(min(betas)), 6),
+                "beta_max": round(_finite(max(betas)), 6),
                 "block_out_rms": round(_finite(_block_out_rms(blocks, x_diag)), 6),
             }
         )
