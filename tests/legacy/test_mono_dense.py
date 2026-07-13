@@ -80,3 +80,32 @@ def test_get_config_round_trip() -> None:
     assert cfg["activation_weights"] == (2.0, 3.0, 1.0)
     rebuilt = MonoDense.from_config(cfg)
     assert rebuilt.units == 5
+
+
+def test_forward_pass_with_use_bias_false() -> None:
+    legacy._WARNED = True
+    layer = MonoDense(
+        1,
+        activation="relu",
+        monotonicity_indicator=1,
+        use_bias=False,
+        is_convex=True,
+    )
+    layer.build((None, 2))
+
+    # Assert no bias weight exists (only kernel, no bias)
+    weights = layer.get_weights()
+    assert len(weights) == 1
+
+    # Set a known kernel
+    kernel = np.array([[2.0], [3.0]], dtype="float32")
+    layer.set_weights([kernel])
+
+    # Input: [1, 1]
+    # Pre-activation: matmul([1, 1], [[2], [3]]) = 1*2 + 1*3 = 5
+    # Post-activation (relu with is_convex=True): relu(5) = 5
+    x = ops.convert_to_tensor(np.array([[1.0, 1.0]], dtype="float32"))
+    expected = np.array([[5.0]], dtype="float32")
+
+    output = layer(x)
+    assert np.allclose(np.asarray(output), expected, atol=1e-5)

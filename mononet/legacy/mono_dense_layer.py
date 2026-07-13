@@ -227,7 +227,7 @@ class MonoDense(keras.layers.Dense):  # type: ignore[misc]
     """Monotonic counterpart of ``keras.layers.Dense`` (legacy API).
 
     Faithful reproduction of the original ``airtai/monotonic-nn`` layer. The
-    kernel is sign-constrained per :paramref:`monotonicity_indicator` and the
+    kernel is sign-constrained per `monotonicity_indicator` and the
     output is split into convex/concave/saturated activation groups.
 
     :param units: Output dimensionality.
