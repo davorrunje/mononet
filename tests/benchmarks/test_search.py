@@ -110,6 +110,38 @@ def test_search_objective_is_fold_mean() -> None:
         assert np.isfinite(res.best_value)
 
 
+def test_classification_final_eval_reports_roc_auc_and_accuracy() -> None:
+    # With roc_auc as the classification primary, final_eval must still compute
+    # and store accuracy alongside it in each ResultRow's scores dict.
+    from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
+    from benchmarks._common.runner import run
+
+    b = _bundle(task="binary_classification")
+    cfg = BenchmarkConfig(
+        dataset="syn",
+        backend="torch",
+        mode="switch",
+        residual=False,
+        depth=1,
+        width=8,
+        activation="elu",
+        convex_fraction=0.5,
+        embed_hidden=(8,),
+        dropout=0.0,
+        optimizer=OptimizerSpec("adam", 1e-2, 0.0),
+        lr_decay=None,
+        batch_size=32,
+        epochs=2,
+        early_stopping=None,
+        seeds=(0,),
+        metrics=("roc_auc", "accuracy"),
+    )
+    rows = run(cfg, b)
+    assert rows
+    assert "roc_auc" in rows[0].scores
+    assert "accuracy" in rows[0].scores
+
+
 def test_final_eval_reports_all_seeds() -> None:
     b = _bundle()
     res = search(

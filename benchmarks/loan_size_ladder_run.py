@@ -120,6 +120,7 @@ def run_ladder(
                         task=bundle.task,
                         base_rate=base_rate,
                         lower_is_better=False,
+                        metric="accuracy",
                     ),
                     "n_seeds": len(values),
                 }

@@ -163,6 +163,9 @@ def final_eval(
 ) -> Aggregate:
     """Refit best HPs on the full train split; report TEST mean±std over all seeds."""
     metric = metric or _primary_metric(bundle)
+    metrics: tuple[str, ...] = (
+        ("roc_auc", "accuracy") if metric == "roc_auc" else (metric,)
+    )
     width = int(best_params["width"])
     cfg = BenchmarkConfig(
         dataset=bundle.name,
@@ -183,7 +186,7 @@ def final_eval(
         epochs=epochs,
         early_stopping=None,
         seeds=tuple(seeds),
-        metrics=(metric,),  # type: ignore[arg-type]
+        metrics=metrics,  # type: ignore[arg-type]
     )
     rows = run(cfg, bundle)
     return aggregate(
@@ -223,22 +226,34 @@ _BUDGET: dict[str, tuple[int, range, int]] = {
 
 
 def _count_collapses(
-    values: tuple[float, ...], *, task: str, base_rate: float, lower_is_better: bool
+    values: tuple[float, ...],
+    *,
+    task: str,
+    base_rate: float,
+    lower_is_better: bool,
+    metric: str,
 ) -> int:
     """Count collapsed/degenerate seeds among ``values``.
 
-    Classification: seeds at or below ``base_rate + 0.02`` (constant-prediction
-    collapse). Regression: gross bad-side Tukey outliers (beyond ``q75 + 3*IQR``).
+    Classification: seeds at or below a metric-aware constant-prediction floor.
+    A collapsed (constant/random) classifier scores ``base_rate`` on
+    ``accuracy`` but ``0.5`` on ``roc_auc`` (chance AUC is 0.5 regardless of
+    class imbalance), so the floor is ``0.5 + 0.02`` for ``roc_auc`` and
+    ``base_rate + 0.02`` for ``accuracy``. Regression: gross bad-side Tukey
+    outliers (beyond ``q75 + 3*IQR``).
 
     :param values: Per-seed metric values.
     :param task: ``binary_classification`` or ``regression``.
     :param base_rate: Majority-class fraction (classification only).
     :param lower_is_better: Metric direction.
+    :param metric: Primary metric name; selects the classification collapse
+        floor (``roc_auc`` -> 0.5, ``accuracy`` -> ``base_rate``).
     :returns: Number of collapsed seeds.
     """
     arr = np.asarray(values, dtype=np.float64)
     if task == "binary_classification":
-        return int((arr <= base_rate + 0.02).sum())
+        floor = 0.5 if metric == "roc_auc" else base_rate
+        return int((arr <= floor + 0.02).sum())
     q25, q75 = np.percentile(arr, [25, 75])
     iqr = q75 - q25
     return int((arr > q75 + 3.0 * iqr).sum())
@@ -326,6 +341,7 @@ def run_dataset(
                 task=bundle.task,
                 base_rate=base_rate,
                 lower_is_better=_lower_is_better(agg.metric),
+                metric=agg.metric,
             ),
             "n_seeds": agg.n_seeds,
         }
