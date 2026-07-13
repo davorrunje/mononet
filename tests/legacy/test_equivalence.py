@@ -30,10 +30,26 @@ def _load(name: str) -> list[dict[str, Any]]:
 _MONODENSE_CASES = _load("monodense_cases.json")
 _BUILDER_CASES = _load("builder_cases.json")
 
-pytestmark = pytest.mark.skipif(
-    not _MONODENSE_CASES and not _BUILDER_CASES,
-    reason="legacy goldens not generated; run tools/gen-legacy-goldens.py",
-)
+# Expected committed golden-case counts. This is a hard assertion, not a
+# skip: if the goldens file is deleted, emptied, or truncated, the fidelity
+# anchor (test_monodense_matches_golden / test_builder_matches_golden) would
+# otherwise vanish from the parametrized suite with green CI. A regenerated
+# goldens file with a different intentional case count must update these
+# constants alongside it.
+_EXPECTED_MONODENSE_CASES = 4
+_EXPECTED_BUILDER_CASES = 2
+
+
+def test_goldens_present() -> None:
+    """Fail (not skip) if the committed golden cases are missing or truncated."""
+    assert len(_MONODENSE_CASES) == _EXPECTED_MONODENSE_CASES, (
+        f"expected {_EXPECTED_MONODENSE_CASES} monodense golden cases, "
+        f"found {len(_MONODENSE_CASES)}; run tools/gen-legacy-goldens.py"
+    )
+    assert len(_BUILDER_CASES) == _EXPECTED_BUILDER_CASES, (
+        f"expected {_EXPECTED_BUILDER_CASES} builder golden cases, "
+        f"found {len(_BUILDER_CASES)}; run tools/gen-legacy-goldens.py"
+    )
 
 
 @pytest.mark.parametrize("case", _MONODENSE_CASES, ids=lambda c: c["name"])

@@ -87,3 +87,27 @@ def test_create_type_2_builds_runnable_model() -> None:
     model = keras.Model(inputs, out)
     xs = [np.zeros((2, 1), dtype="float32") for _ in range(4)]
     assert tuple(model(xs).shape) == (2, 1)
+
+
+def test_create_type_2_all_increasing_hits_inherited_name_collision() -> None:
+    """Document an inherited upstream limitation (see ``create_type_2`` docstring).
+
+    An all-increasing per-feature ``monotonicity_indicator`` with enough
+    hidden layers makes a per-feature layer name collide with a shared-block
+    layer name (both land on ``mono_dense_1_increasing`` and
+    ``mono_dense_2_increasing`` here). This matches the original
+    ``airtai/monotonic-nn`` behavior and is intentionally not fixed, so this
+    test pins the current (broken) behavior rather than a desired one.
+    """
+    legacy._WARNED = True
+    inputs = [keras.Input(shape=(1,)) for _ in range(3)]
+    out = create_type_2(
+        inputs,
+        units=8,
+        final_units=1,
+        activation="elu",
+        n_layers=3,
+        monotonicity_indicator=[1, 1, 1],
+    )
+    with pytest.raises(ValueError, match="used 2 times"):
+        keras.Model(inputs, out)

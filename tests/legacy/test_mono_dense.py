@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import contextlib
+import json
 import os
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -15,7 +17,10 @@ keras = pytest.importorskip("keras")
 from keras import ops  # noqa: E402
 
 import mononet.legacy.mono_dense_layer as legacy  # noqa: E402
-from mononet.legacy import MonoDense  # noqa: E402
+from mononet.legacy import MonoDense, create_type_1  # noqa: E402
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @contextlib.contextmanager
@@ -80,6 +85,68 @@ def test_get_config_round_trip() -> None:
     assert cfg["activation_weights"] == (2.0, 3.0, 1.0)
     rebuilt = MonoDense.from_config(cfg)
     assert rebuilt.units == 5
+
+
+def test_get_config_round_trip_after_build_is_json_serializable() -> None:
+    """Regression test for build() overwriting monotonicity_indicator.
+
+    ``build()`` replaces ``monotonicity_indicator`` with an ``np.ndarray``,
+    which ``get_config()`` must convert back to a JSON-serializable form (a
+    plain list) for ``json.dumps()`` / ``keras.models.save_model()`` to work.
+    """
+    legacy._WARNED = True
+    layer = MonoDense(3, activation="relu", monotonicity_indicator=[1, -1, 0])
+    layer.build((None, 3))
+    assert isinstance(layer.monotonicity_indicator, np.ndarray)
+
+    cfg = layer.get_config()
+    # Must not raise TypeError: Object of type ndarray is not JSON serializable.
+    serialized = json.dumps(cfg)
+    assert isinstance(cfg["monotonicity_indicator"], list)
+
+    deserialized = json.loads(serialized)
+    rebuilt = MonoDense.from_config(deserialized)
+    assert rebuilt.units == 3
+    rebuilt.build((None, 3))
+    x = ops.convert_to_tensor(np.ones((1, 3), dtype="float32"))
+    y = np.asarray(rebuilt(x))
+    assert y.shape == (1, 3)
+
+
+@pytest.mark.filterwarnings(
+    "ignore:__array__ implementation doesn't accept a copy keyword:DeprecationWarning"
+)
+def test_save_model_on_built_mono_dense_model(tmp_path: Path) -> None:
+    """End-to-end guard that a built MonoDense model is save_model-able.
+
+    Every layer's ``get_config()`` must be JSON-serializable.
+    ``save_model`` internally calls ``Variable.numpy()``, which under the JAX
+    backend + NumPy 2.x raises an unrelated DeprecationWarning from inside
+    Keras itself (see the comment in ``test_forward_pass_with_use_bias_false``
+    below for the same root cause); it is filtered here rather than sidestepped
+    since ``save_model`` itself is the thing under test.
+    """
+    legacy._WARNED = True
+    inputs = [keras.Input(shape=(1,)) for _ in range(3)]
+    out = create_type_1(
+        inputs,
+        units=4,
+        final_units=1,
+        activation="relu",
+        n_layers=2,
+        monotonicity_indicator=[1, -1, 0],
+    )
+    model = keras.Model(inputs, out)
+    # Force a build/call so any MonoDense layers replace their indicator with
+    # an np.ndarray (build() happens lazily via the functional call above,
+    # but exercise the same path other tests use for clarity).
+    xs = [np.zeros((2, 1), dtype="float32") for _ in range(3)]
+    model(xs)
+
+    for layer in model.layers:
+        json.dumps(layer.get_config())
+
+    keras.models.save_model(model, str(tmp_path / "m.keras"))
 
 
 def test_forward_pass_with_use_bias_false() -> None:
