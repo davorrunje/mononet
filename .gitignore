@@ -208,3 +208,4 @@ cython_debug/
 
 # size-ladder per-cell intermediates (merged into loan.json)
 benchmarks/results/size-ladder/_partial/
+.venv-keras

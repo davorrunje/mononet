@@ -23,6 +23,9 @@ if TYPE_CHECKING:
     from mononet.core.config import Mode
 
 
+_NEAR_ZERO_SCALE = 1e-3
+
+
 def _act_name(activation: ActivationSpec | ActivationName) -> str:
     """Return the string name of an activation spec or pass through a string.
 
@@ -60,6 +63,10 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         (only used in ``absolute`` mode).
     :param init: Initializer name or :class:`~mononet.core.types.InitSpec`.
     :param bias: Whether to include a bias term (default ``True``).
+    :param near_zero_scale: Private. When not ``None``, the weight is scaled
+        by this factor after init and the bias is zeroed — used by
+        :class:`MonoResidual` to near-zero-initialize the last layer of its
+        default ``F``.
     """
 
     def __init__(
@@ -71,6 +78,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
+        near_zero_scale: float | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialise MonoDense."""
@@ -84,6 +92,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         self.init_name = _init_name(init)
         self._absolute_default = mode == "absolute" and init is None
         self.use_bias = bias
+        self.near_zero_scale = near_zero_scale
 
     def build(self, input_shape: Any) -> None:
         """Create weights once the input width is known.
@@ -110,6 +119,13 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
             if self.use_bias
             else None
         )
+        if self.near_zero_scale is not None:
+            self.w.assign(self.w * self.near_zero_scale)
+            if self.b is not None:
+                # Multiply the Variable (Variable.__mul__ returns a backend
+                # tensor); ``ops.zeros_like(self.b)`` would pass the raw keras
+                # Variable to the backend and fail dtype conversion under JAX.
+                self.b.assign(self.b * 0.0)
         super().build(input_shape)
 
     def call(self, inputs: Any) -> Any:
@@ -156,6 +172,9 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
     :param units: Output width; must equal input width if no skip projection is
         desired.
     :param F: Inner monotone layer; defaults to a fresh :class:`MonoDense`.
+        A custom ``F`` is not near-zero-initialised; for deep stacks initialise
+        its last layer near zero (or pass ``beta_gate="scaled_elu"``) to avoid
+        divergence at init.
     :param mode: Forwarded to the default ``F``. ``absolute`` (default) or
         ``switch``.
     :param activation: Forwarded to the default ``F`` (default ``None``).
@@ -163,10 +182,17 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         explicit ``F``. A custom ``F`` is not serializable, so
         :meth:`get_config` emits ``activation=None`` in that case.
     :param alpha_gate: Gate token for the skip path (``shifted_elu``).
-    :param beta_gate: Gate token for the dense path (``scaled_elu``).
+    :param beta_gate: Gate token for the dense path (``softplus``).
     :param init: Forwarded to the default ``F``.
     :param sub_depth: Number of :class:`MonoDense` layers in ``F`` (default 2;
         ``1`` = legacy single layer).  Mutually exclusive with ``F``.
+    :param near_zero_scale: Scale applied to the default ``F``'s last-layer
+        weight (bias zeroed) so the block starts near-identity — the deep
+        default stack (``softplus`` ``beta_gate``) would otherwise diverge
+        through a randomly-initialized residual branch. ``0.0`` reproduces
+        exact-zero, which is not recommended: under ``absolute`` mode ``F``
+        uses ``|W|``, whose gradient at ``W=0`` is ``sign(0)=0``, a fixed
+        point that freezes the weights. A custom ``F`` is untouched.
     :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
         provided, or if both ``F`` and ``activation`` are provided.
     """
@@ -179,9 +205,10 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
-        beta_gate: str = "scaled_elu",
+        beta_gate: str = "softplus",
         init: InitSpec | str | None = None,
         sub_depth: int | None = None,
+        near_zero_scale: float = _NEAR_ZERO_SCALE,
         **kwargs: Any,
     ) -> None:
         """Initialise MonoResidual.
@@ -207,15 +234,27 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
             k = 2 if sub_depth is None else sub_depth
             if k == 1:
                 self.F: keras.layers.Layer = MonoDense(
-                    units, mode=mode, activation=activation, init=init
+                    units,
+                    mode=mode,
+                    activation=activation,
+                    init=init,
+                    near_zero_scale=near_zero_scale,
                 )
             else:
-                self.F = keras.Sequential(
-                    [
-                        MonoDense(units, mode=mode, activation=activation, init=init)
-                        for _ in range(k)
-                    ]
+                sub = [
+                    MonoDense(units, mode=mode, activation=activation, init=init)
+                    for _ in range(k - 1)
+                ]
+                sub.append(
+                    MonoDense(
+                        units,
+                        mode=mode,
+                        activation=activation,
+                        init=init,
+                        near_zero_scale=near_zero_scale,
+                    )
                 )
+                self.F = keras.Sequential(sub)
         else:
             if activation is not None:
                 raise ValueError("pass either F or activation, not both")

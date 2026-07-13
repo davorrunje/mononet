@@ -53,6 +53,17 @@ repos:
 
 -   repo: local
     hooks:
+    -   id: reference-hash
+        name: Equivalence REFERENCE_HASH matches reference.py
+        entry: "tools/check-reference-hash.sh"
+        language: system
+        files: ^(mononet/core/reference\.py|tests/equivalence/cases/REFERENCE_HASH)$
+        pass_filenames: false
+        require_serial: true
+        verbose: true
+
+-   repo: local
+    hooks:
     -   id: docs
         name: Build docs
         entry: "tools/build-docs-pre-commit.sh"

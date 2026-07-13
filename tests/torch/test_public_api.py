@@ -28,6 +28,8 @@ def test_mono_residual_warm_start_near_identity() -> None:
     import mononet.torch as t
 
     torch.manual_seed(0)  # deterministic init + input (jax/keras tests already seed)
+    # near-identity holds with the true default (softplus beta_gate, near-zero
+    # last-layer init of the default F): g_beta(0)*F(x) stays inside atol.
     block = t.MonoResidual(4, 4, mode="switch", activation="relu")
     x = torch.randn(3, 4)
     y = block(x)

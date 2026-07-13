@@ -102,6 +102,9 @@ class MonoResidualConfig:
     :param alpha_gate: Gate token for the skip path.
     :param beta_gate: Gate token for the residual (transform) path.
     :param init: Weight-initialization spec.
+    :param near_zero_scale: Scale applied to the default `F`'s last-layer
+        weight (bias zeroed) so the block starts near-identity. `0.0`
+        reproduces exact-zero (not recommended — see `MonoResidual`).
     :raises ValueError: If `units` is not positive or `mode` is unknown.
     """
 
@@ -109,8 +112,9 @@ class MonoResidualConfig:
     mode: Mode = "absolute"
     activation: ActivationSpec = field(kw_only=True)
     alpha_gate: str = "shifted_elu"
-    beta_gate: str = "scaled_elu"
+    beta_gate: str = "softplus"
     init: InitSpec = field(default_factory=InitSpec)
+    near_zero_scale: float = 1e-3
 
     def __post_init__(self) -> None:
         """Validate units and mode."""
@@ -128,6 +132,7 @@ class MonoResidualConfig:
             "alpha_gate": self.alpha_gate,
             "beta_gate": self.beta_gate,
             "init": {"scheme": self.init.scheme, "seed": self.init.seed},
+            "near_zero_scale": self.near_zero_scale,
         }
 
     def to_json(self) -> str:
@@ -144,6 +149,7 @@ class MonoResidualConfig:
             alpha_gate=data["alpha_gate"],
             beta_gate=data["beta_gate"],
             init=InitSpec(scheme=data["init"]["scheme"], seed=data["init"]["seed"]),
+            near_zero_scale=data["near_zero_scale"],
         )
 
     @classmethod

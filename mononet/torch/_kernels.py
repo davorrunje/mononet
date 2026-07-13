@@ -52,7 +52,7 @@ def concave_reflection(name: str, h: torch.Tensor) -> torch.Tensor:
 def gate(token: str, raw: torch.Tensor) -> torch.Tensor:
     """Resolve and apply a gate token to a raw parameter.
 
-    :param token: Gate type: ``shifted_elu`` or ``scaled_elu``.
+    :param token: Gate type: ``shifted_elu``, ``scaled_elu``, or ``softplus``.
     :param raw: Raw (unconstrained) gate parameter tensor.
     :returns: Gate value tensor guaranteed positive.
     :raises ValueError: If ``token`` is not a recognised gate.
@@ -65,6 +65,8 @@ def gate(token: str, raw: torch.Tensor) -> torch.Tensor:
         return torch.clamp(raw, min=0.0) + eps * torch.exp(
             torch.clamp(raw, max=0.0) / eps
         )
+    if token == "softplus":
+        return functional.softplus(raw)
     raise ValueError(f"unknown gate token {token!r}")
 
 
@@ -114,7 +116,7 @@ def monotonic_residual(
     activation_name: str,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
-    beta_gate: str = "scaled_elu",
+    beta_gate: str = "softplus",
     skip_weight: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """PyTorch dual-gated monotone residual kernel.
