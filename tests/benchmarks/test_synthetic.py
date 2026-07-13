@@ -1,28 +1,41 @@
-"""Tests for the synthetic monotone-regression generator (depth probe, #99)."""
+"""Tests for the synthetic monotone-regression generator (depth probe, #99).
+
+The generator families must be genuinely *nonlinear* at high complexity to
+be useful depth probes — the ``test_high_c_families_are_nonlinear`` gate is
+the check that would have caught the original degeneracy (all families
+near-linear, ``teacher_relu`` byte-identical to ``teacher_elu``).
+"""
 
 from __future__ import annotations
 
 import numpy as np
+import pytest
+from sklearn.linear_model import LinearRegression
 
 from benchmarks.datasets.synthetic import _target_fn, synth_monotone
 
+_FAMILIES = ("additive", "teacher_relu", "teacher_elu", "lattice")
+
 
 def test_teacher_relu_and_elu_differ() -> None:
-    # NOTE: under uniform-[0,1]^6 sampling with realistic budgets (n up to
-    # 20000), a training set essentially never lands close enough to the
-    # all-zero corner to make any depth-1 pre-activation negative, so
-    # relu(z) == z == elu(z) everywhere sampled and y_train is bit-identical
-    # between the two families (verified empirically across many
-    # seed/c combinations). That does NOT mean the `act` switch is unwired
-    # -- it means the corner where relu/elu diverge (z < 0) has near-zero
-    # probability mass under this domain/width/depth combination. Probe the
-    # corner directly (x near the all-zero point) where the switch is
-    # guaranteed to matter: relu(z)=0 vs elu(z)=expm1(z)<0 for z<0.
-    f_relu = _target_fn("teacher_relu", c=2, d=6, seed=0)
-    f_elu = _target_fn("teacher_elu", c=2, d=6, seed=0)
-    x = np.full((1, 6), 1e-3)
-    diff = float(np.max(np.abs(f_relu(x) - f_elu(x))))
-    assert diff > 1e-6  # activation switch is wired
+    # On the centered [-1,1]^d domain the strongly-negative-biased
+    # preactivations straddle zero, so relu (hard clip at 0) and elu (smooth
+    # floor at -1) produce genuinely different on-distribution targets. This
+    # guards the activation switch against the original degeneracy where they
+    # were bit-identical.
+    r = synth_monotone("teacher_relu", 2, d=6, n_train=4000, n_test=64, seed=0)
+    e = synth_monotone("teacher_elu", 2, d=6, n_train=4000, n_test=64, seed=0)
+    assert float(np.max(np.abs(r.y_train - e.y_train))) > 1e-3
+
+
+@pytest.mark.parametrize("kind", _FAMILIES)
+def test_high_c_families_are_nonlinear(kind: str) -> None:
+    # Non-degeneracy gate: a high-complexity target must NOT be linearly
+    # fittable. If a family regressed to near-linear (as the pre-fix ones
+    # did), R^2 -> 1.0 and this fails.
+    b = synth_monotone(kind, 4, d=6, n_train=16000, n_test=4000, seed=7)  # type: ignore[arg-type]
+    r2 = LinearRegression().fit(b.X_train, b.y_train).score(b.X_train, b.y_train)
+    assert r2 < 0.7, f"{kind} high-c is near-linear (R^2={r2:.3f})"
 
 
 def test_targets_are_monotone_increasing() -> None:
@@ -30,7 +43,7 @@ def test_targets_are_monotone_increasing() -> None:
     f = _target_fn("teacher_relu", c=2, d=6, seed=0)
     x = b.X_train.copy()
     base = f(x)
-    x[:, 0] = np.minimum(1.0, x[:, 0] + 0.5)  # raise one increasing feature
+    x[:, 0] += 0.5  # raise one increasing feature
     assert np.all(f(x) - base >= -1e-8)
 
 
