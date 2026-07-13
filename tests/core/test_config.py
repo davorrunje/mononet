@@ -41,6 +41,15 @@ def test_mono_residual_config_roundtrip() -> None:
     assert MonoResidualConfig.from_json(cfg.to_json()) == cfg
     assert cfg.alpha_gate == "shifted_elu"
     assert cfg.beta_gate == "softplus"
+    assert cfg.near_zero_scale == pytest.approx(1e-3)
+    assert MonoResidualConfig.from_json(
+        MonoResidualConfig(
+            units=16,
+            mode="switch",
+            activation=ActivationSpec("relu"),
+            near_zero_scale=5e-3,
+        ).to_json()
+    ).near_zero_scale == pytest.approx(5e-3)
 
 
 def test_monoconfig_default_activation_is_identity() -> None:

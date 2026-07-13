@@ -26,6 +26,8 @@ if TYPE_CHECKING:
     from mononet.core.config import Mode
 
 
+_NEAR_ZERO_SCALE = 1e-3
+
 _INIT_FNS = {
     "he_normal": jinit.he_normal(),
     "glorot_uniform": jinit.glorot_uniform(),
@@ -73,6 +75,10 @@ class MonoLinear(nnx.Module):
     :param convex_fraction: Fraction of convex units (``absolute`` mode only).
     :param init: Weight initializer; defaults to ``he_normal``.
     :param bias: Whether to include a bias vector.
+    :param near_zero_scale: Private. When not ``None``, the weight is scaled
+        by this factor after init and the bias is zeroed — used by
+        ``MonoResidual`` to near-zero-initialize the last layer of its
+        default ``F``.
     :param rngs: Flax NNX RNG container.
     """
 
@@ -86,6 +92,7 @@ class MonoLinear(nnx.Module):
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
+        near_zero_scale: float | None = None,
         rngs: nnx.Rngs,
     ) -> None:
         """Initialise MonoLinear with weights and optional bias."""
@@ -108,6 +115,10 @@ class MonoLinear(nnx.Module):
         self.bias: nnx.Param[jnp.ndarray] | None = (
             nnx.Param(jnp.full((units,), bias_fill)) if bias else None
         )
+        if near_zero_scale is not None:
+            self.weight[...] = self.weight[...] * near_zero_scale
+            if self.bias is not None:
+                self.bias[...] = jnp.zeros_like(self.bias[...])
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         """Apply the monotonic dense transformation.
@@ -147,6 +158,13 @@ class MonoResidual(nnx.Module):
     :param sub_depth: Number of :class:`MonoLinear` layers to stack when ``F``
         is ``None``; default ``2``. Pass ``1`` for the legacy single-layer
         behaviour. Mutually exclusive with an explicit ``F``.
+    :param near_zero_scale: Scale applied to the default ``F``'s last-layer
+        weight (bias zeroed) so the block starts near-identity — the deep
+        default stack (``softplus`` ``beta_gate``) would otherwise diverge
+        through a randomly-initialized residual branch. ``0.0`` reproduces
+        exact-zero, which is not recommended: under ``absolute`` mode ``F``
+        uses ``|W|``, whose gradient at ``W=0`` is ``sign(0)=0``, a fixed
+        point that freezes the weights. A custom ``F`` is untouched.
     :param rngs: Flax NNX RNG container.
     :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
         provided, or if both ``F`` and ``activation`` are provided.
@@ -164,6 +182,7 @@ class MonoResidual(nnx.Module):
         beta_gate: str = "softplus",
         init: InitSpec | str | None = None,
         sub_depth: int | None = None,
+        near_zero_scale: float = _NEAR_ZERO_SCALE,
         rngs: nnx.Rngs,
     ) -> None:
         """Initialise MonoResidual with sublayer F and scalar gate params."""
@@ -182,6 +201,7 @@ class MonoResidual(nnx.Module):
                     mode=mode,
                     activation=activation,
                     init=init,
+                    near_zero_scale=near_zero_scale,
                     rngs=rngs,
                 )
             else:
@@ -204,8 +224,19 @@ class MonoResidual(nnx.Module):
                         init=init,
                         rngs=rngs,
                     )
-                    for _ in range(k - 1)
+                    for _ in range(k - 2)
                 ]
+                sub.append(
+                    MonoLinear(
+                        units,
+                        units,
+                        mode=mode,
+                        activation=activation,
+                        init=init,
+                        near_zero_scale=near_zero_scale,
+                        rngs=rngs,
+                    )
+                )
                 self.F = nnx.Sequential(*sub)
         else:
             if activation is not None:

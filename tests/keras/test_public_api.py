@@ -36,10 +36,9 @@ def test_mono_residual_warm_start_near_identity() -> None:
 
     # deterministic weight init (torch/jax tests seed too)
     keras.utils.set_random_seed(0)
-    # near-identity holds only for the eps-gate; pin it explicitly here
-    block = kmod.MonoResidual(
-        4, mode="switch", activation="relu", beta_gate="scaled_elu"
-    )
+    # near-identity holds with the true default (softplus beta_gate, near-zero
+    # last-layer init of the default F): g_beta(0)*F(x) stays inside atol.
+    block = kmod.MonoResidual(4, mode="switch", activation="relu")
     x = ops.convert_to_tensor(np.random.default_rng(0).normal(size=(3, 4)))
     assert bool(ops.all(ops.abs(block(x) - x) < 5e-3))
 
