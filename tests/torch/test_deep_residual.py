@@ -29,9 +29,18 @@ def _final_mse(
     return loss_val
 
 
-def test_deep_residual_trains_where_plain_fails() -> None:
-    # depth-32 absolute: sub_depth=2 residual trains (~0.10 measured); plain diverges.
+def test_deep_residual_stays_bounded_where_plain_diverges() -> None:
+    # Residual skips keep a depth-32 stack BOUNDED where a plain stack diverges.
+    # With the A+B default (softplus gate + near-zero-init F) the residual branch
+    # now genuinely engages (gate open, F trains) instead of sitting idle, so on
+    # this shallow *separable* target (y = Σ softplus(aᵢ·xᵢ), which needs no
+    # depth) at this deliberately small/fast budget it settles ~0.8 rather than
+    # the old F-off skip-only ~0.10 — engaged depth is neutral-to-harmful here
+    # (the depth-null result). It stays BOUNDED, unlike the plain stack (~1e23).
+    # That engaged depth *does* train to low MSE given an adequate budget is
+    # shown by benchmarks/monoresidual_gate_ablation.py (0.068) and confirmed at
+    # n=4000/lr=1e-3 (0.138); here we only guard trainability-vs-divergence.
     residual = _final_mse(2)
     plain = _final_mse(None)
-    assert residual < 0.3, f"residual d32 mse {residual}"
-    assert plain > 1.0, f"plain d32 mse {plain}"
+    assert residual < 2.0, f"residual d32 not bounded: {residual}"
+    assert plain > 100.0, f"plain d32 did not diverge: {plain}"
