@@ -80,11 +80,12 @@ def test_bundle_shape_and_monotone_direction() -> None:
 
 def test_registry_load_high_complexity_bundle(tmp_path: Path) -> None:
     # `registry.load` on a registered "_chigh" (c=4) key returns the
-    # generator-backed bundle at the pinned size (d=6, n_train=16000,
-    # n_test=4000), ignoring `data_dir` entirely (nonexistent tmp_path).
+    # generator-backed bundle at the pinned size (d=6, n_train=32000
+    # (>20k so it draws the large-batch band), n_test=4000), ignoring
+    # `data_dir` entirely (nonexistent tmp_path).
     b = load("synth_teacher_relu_chigh", data_dir=tmp_path)
     assert b.task == "regression"
-    assert b.X_train.shape == (16000, 6)
+    assert b.X_train.shape == (32000, 6)
     assert b.X_test.shape == (4000, 6)
     assert b.mono_increasing == tuple(range(6))
     assert b.mono_decreasing == ()
