@@ -5,16 +5,25 @@ pytest.importorskip("optuna")
 pytest.importorskip("torch")
 
 from benchmarks._common.bundle import DatasetBundle
-from benchmarks._common.search import StudyResult, final_eval, flavor_name, search
+from benchmarks._common.search import (
+    StudyResult,
+    _primary_metric,
+    final_eval,
+    flavor_name,
+    search,
+)
 
 
-def _bundle() -> DatasetBundle:
+def _bundle(task: str = "regression") -> DatasetBundle:
     rng = np.random.default_rng(0)
     X = rng.normal(size=(120, 5))
-    y = (X[:, 0] + 0.1 * rng.normal(size=120)).astype(np.float64)
+    if task == "binary_classification":
+        y = (X[:, 0] > 0).astype(np.float64)
+    else:
+        y = (X[:, 0] + 0.1 * rng.normal(size=120)).astype(np.float64)
     return DatasetBundle(
         name="syn",
-        task="regression",
+        task=task,  # type: ignore[arg-type]
         X_train=X,
         y_train=y,
         X_test=X[:30],
@@ -24,6 +33,14 @@ def _bundle() -> DatasetBundle:
         feature_names=tuple(f"f{i}" for i in range(5)),
         metadata={},
     )
+
+
+def test_primary_metric_is_roc_auc_for_binary_classification() -> None:
+    assert _primary_metric(_bundle(task="binary_classification")) == "roc_auc"
+
+
+def test_primary_metric_is_mse_for_regression() -> None:
+    assert _primary_metric(_bundle(task="regression")) == "mse"
 
 
 def test_flavor_name() -> None:

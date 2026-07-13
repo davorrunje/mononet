@@ -39,7 +39,7 @@ def flavor_name(mode: str, residual: bool, deep: bool = False) -> str:
 
 
 def _primary_metric(bundle: DatasetBundle) -> str:
-    return "accuracy" if bundle.task == "binary_classification" else "mse"
+    return "roc_auc" if bundle.task == "binary_classification" else "mse"
 
 
 def _lower_is_better(metric: str) -> bool:

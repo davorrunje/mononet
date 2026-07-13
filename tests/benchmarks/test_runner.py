@@ -54,3 +54,17 @@ def test_run_returns_one_row_per_seed_with_finite_metric() -> None:
     assert len(rows) == 2
     assert all(np.isfinite(r.scores["mse"]) for r in rows)
     assert all(r.seed in (0, 1) for r in rows)
+
+
+def test_score_computes_roc_auc_for_binary() -> None:
+    from sklearn.metrics import roc_auc_score
+
+    from benchmarks._common.runner import _score_predictions
+
+    y_true = np.array([0.0, 0.0, 1.0, 1.0])
+    y_pred = np.array([0.1, 0.4, 0.35, 0.9])  # one swap -> AUC 0.75
+    scores = _score_predictions(
+        y_pred, y_true, binary=True, metrics=("roc_auc", "accuracy")
+    )
+    assert scores["roc_auc"] == pytest.approx(roc_auc_score(y_true, y_pred))
+    assert "accuracy" in scores
