@@ -14,7 +14,9 @@ from keras import ops  # noqa: E402
 
 from mononet.legacy.mono_dense_layer import (  # noqa: E402
     apply_activations,
+    apply_monotonicity_indicator_to_kernel,
     get_activation_functions,
+    get_monotonicity_indicator,
 )
 
 
@@ -78,3 +80,35 @@ def test_apply_activations_rejects_bad_weights() -> None:
             saturated_activation=saturated,
             activation_weights=(1.0, -1.0, 1.0),
         )
+
+
+def test_get_monotonicity_indicator_reshapes_to_column() -> None:
+    ind = get_monotonicity_indicator([1, -1, 0], input_shape=(None, 3), units=4)
+    assert ind.shape == (3, 1)
+
+
+def test_get_monotonicity_indicator_rejects_out_of_domain() -> None:
+    with pytest.raises(ValueError, match="must be one of -1, 0, 1"):
+        get_monotonicity_indicator([2], input_shape=(None, 1), units=1)
+
+
+def test_get_monotonicity_indicator_rejects_rank_gt_2() -> None:
+    with pytest.raises(ValueError, match="rank greater than 2"):
+        get_monotonicity_indicator(np.ones((2, 2, 2)), input_shape=(None, 2), units=2)
+
+
+def test_apply_indicator_to_kernel_signs() -> None:
+    kernel = ops.convert_to_tensor(
+        np.array([[-1.0, 2.0], [3.0, -4.0]], dtype="float32")
+    )
+    indicator = ops.convert_to_tensor(np.array([[1], [-1]], dtype="float32"))
+    out = np.asarray(apply_monotonicity_indicator_to_kernel(kernel, indicator))
+    # row 0 -> |.| (increasing); row 1 -> -|.| (decreasing)
+    assert np.allclose(out, [[1.0, 2.0], [-3.0, -4.0]])
+
+
+def test_apply_indicator_zero_leaves_kernel_unchanged() -> None:
+    kernel = ops.convert_to_tensor(np.array([[-1.0, 2.0]], dtype="float32"))
+    indicator = ops.convert_to_tensor(np.array([[0]], dtype="float32"))
+    out = np.asarray(apply_monotonicity_indicator_to_kernel(kernel, indicator))
+    assert np.allclose(out, [[-1.0, 2.0]])

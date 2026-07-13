@@ -11,14 +11,15 @@ instead. Every ``MonoDense`` construction emits a :class:`DeprecationWarning`.
 from __future__ import annotations
 
 import warnings
+from contextlib import contextmanager
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from keras import activations, ops
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
 _WARNED = False
 
@@ -142,6 +143,83 @@ def apply_activations(
     y_saturated = saturated_activation(x_saturated)
 
     return ops.concatenate([y_convex, y_concave, y_saturated], axis=-1)
+
+
+def get_monotonicity_indicator(
+    monotonicity_indicator: Any,
+    *,
+    input_shape: tuple[int | None, ...],
+    units: int,
+) -> np.ndarray:
+    """Normalise a monotonicity indicator to a broadcastable column vector.
+
+    :param monotonicity_indicator: Scalar or array of per-input signs, each in
+        ``{-1, 0, 1}`` (``1`` increasing, ``-1`` decreasing, ``0`` free).
+    :param input_shape: Layer input shape; ``input_shape[-1]`` is the fan-in.
+    :param units: Output width.
+    :returns: The indicator reshaped to ``(fan_in, 1)`` (or as given if already
+        2-D), validated against ``{-1, 0, 1}``.
+    :raises ValueError: If the indicator has rank > 2 or contains a value
+        outside ``{-1, 0, 1}``.
+    """
+    ind = np.array(monotonicity_indicator)
+    if len(ind.shape) < 2:
+        ind = np.reshape(ind, (-1, 1))
+    elif len(ind.shape) > 2:
+        raise ValueError(f"monotonicity_indicator has rank greater than 2: {ind.shape}")
+
+    fan_in = cast("int", input_shape[-1])
+    np.broadcast_to(ind, shape=(fan_in, units))
+
+    if not np.all((ind == -1) | (ind == 0) | (ind == 1)):
+        raise ValueError(
+            "Each element of monotonicity_indicator must be one of -1, 0, 1, "
+            f"but it is: '{ind}'"
+        )
+    return ind
+
+
+def apply_monotonicity_indicator_to_kernel(
+    kernel: Any,
+    monotonicity_indicator: Any,
+) -> Any:
+    """Sign-constrain a kernel by a monotonicity indicator.
+
+    :param kernel: Weight tensor of shape ``(fan_in, units)``.
+    :param monotonicity_indicator: Broadcastable ``{-1, 0, 1}`` indicator.
+    :returns: Kernel with ``|W|`` where the indicator is ``1``, ``-|W|`` where
+        it is ``-1``, and ``W`` unchanged where it is ``0``.
+    """
+    monotonicity_indicator = ops.convert_to_tensor(monotonicity_indicator)
+    abs_kernel = ops.abs(kernel)
+    xs = ops.where(monotonicity_indicator == 1, abs_kernel, kernel)
+    xs = ops.where(monotonicity_indicator == -1, -abs_kernel, xs)
+    return xs
+
+
+@contextmanager
+def replace_kernel_using_monotonicity_indicator(
+    layer: Any,
+    monotonicity_indicator: Any,
+) -> Generator[None]:
+    """Temporarily swap ``layer.kernel`` for its sign-constrained version.
+
+    Retained for API compatibility with the original package. The ported
+    :class:`MonoDense` does not rely on this context manager (it constrains the
+    kernel functionally in ``call`` instead).
+
+    :param layer: A layer exposing a mutable ``kernel`` attribute.
+    :param monotonicity_indicator: Broadcastable ``{-1, 0, 1}`` indicator.
+    :yields: Nothing; restores the original kernel on exit.
+    """
+    old_kernel = layer.kernel
+    layer.kernel = apply_monotonicity_indicator_to_kernel(
+        layer.kernel, monotonicity_indicator
+    )
+    try:
+        yield
+    finally:
+        layer.kernel = old_kernel
 
 
 class MonoDense:  # placeholder, replaced in Task 4
