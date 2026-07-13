@@ -35,7 +35,9 @@ if TYPE_CHECKING:
 
 _METHODS: tuple[Method, ...] = ("hard_monotone", "vanilla", "soft", "weight_clip")
 _N_OBS = (20, 40, 80, 160)
-_NOISE = (0.0, 0.05, 0.1)
+# Density range is [0.2, 0.8] (span 0.6); the high tail (0.15, 0.20) is ~25-33%
+# of range -- a genuine stress test for where oscillation hurts.
+_NOISE = (0.0, 0.05, 0.1, 0.15, 0.2)
 _KEYS = ("l2", "admissibility_violation", "overshoot", "oob_frac")
 
 
