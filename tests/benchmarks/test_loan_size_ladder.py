@@ -70,6 +70,21 @@ def test_require_large_accepts_large_dataset() -> None:
     _require_large(_synthetic_bundle(n=25_000, name="lc"), "lc")
 
 
+def test_run_ladder_guards_small_dataset_when_named() -> None:
+    """run_ladder(dataset=...) enforces the >=20k guard at the function boundary."""
+    with pytest.raises(ValueError, match="n_train"):
+        run_ladder(
+            _synthetic_bundle(n=600, name="heart"),
+            dataset="heart",
+            ns=(100,),
+            arms=("shallow",),
+            n_trials=2,
+            search_seeds=1,
+            final_seeds=range(2),
+            epochs=1,
+        )
+
+
 def test_main_threads_dataset_into_load_and_run_ladder(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

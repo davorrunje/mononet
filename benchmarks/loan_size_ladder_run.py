@@ -106,12 +106,22 @@ def run_ladder(
     classification, ``mse`` for regression; see `_primary_metric`), not a
     hardcoded metric — so this generalizes beyond `loan`-style datasets.
 
-    :param dataset: Dataset name to stamp on each record; defaults to
-        `bundle.name`. Does not affect what is loaded (`bundle` is already
-        loaded) — see `_require_large` for the large-dataset eligibility
-        check applied by callers.
+    When `dataset` is not None (every real Stage-B / CLI call passes it), the
+    large-dataset guard (`_require_large`, `n_train >= 20_000`) is enforced at
+    the function boundary. Internal callers that pass `dataset=None` (e.g. the
+    single-point `screen_dataset` in `large_screen_run.py`, or the smoke test)
+    stay unguarded — they intentionally run tiny/arbitrary-size bundles.
+
+    :param dataset: Dataset name to stamp on each record and gate on; defaults
+        to `bundle.name` for the record stamp. Passing a non-None value also
+        triggers the `n_train >= 20_000` eligibility check. Does not affect
+        what is loaded (`bundle` is already loaded).
     :param n_jobs: Optuna trial parallelism within each arm's search (threaded).
+    :raises ValueError: If `dataset is not None` and the bundle is too small
+        to size-ladder (`n_train < 20_000`).
     """
+    if dataset is not None:
+        _require_large(bundle, dataset)
     ds_name = dataset if dataset is not None else bundle.name
     metric = _primary_metric(bundle)
     seeds = list(final_seeds)
@@ -215,7 +225,7 @@ def main() -> None:
     out: Path = args.out if args.out is not None else _default_out(args.dataset)
 
     bundle = load(args.dataset, data_dir=default_dest())
-    _require_large(bundle, args.dataset)
+    # The n_train >= 20_000 guard fires inside run_ladder (dataset is not None).
     records = run_ladder(
         bundle,
         dataset=args.dataset,
