@@ -44,7 +44,7 @@ def test_residual_get_config_roundtrips() -> None:
     assert cfg["mode"] == "switch"
     assert cfg["activation"] == "relu"
     assert cfg["alpha_gate"] == "shifted_elu"
-    assert cfg["beta_gate"] == "scaled_elu"
+    assert cfg["beta_gate"] == "softplus"
 
 
 def test_mono_input_accepts_scalar_direction() -> None:

@@ -24,6 +24,8 @@ if TYPE_CHECKING:
     from mononet.core.config import Mode
 
 
+_NEAR_ZERO_SCALE = 1e-3
+
 _INIT_FNS: dict[str, Callable[[torch.Tensor], torch.Tensor]] = {
     "he_normal": lambda t: nn.init.kaiming_normal_(t, nonlinearity="relu"),
     "glorot_uniform": nn.init.xavier_uniform_,
@@ -66,6 +68,10 @@ class MonoLinear(nn.Module):
     :param convex_fraction: Convex-neuron fraction (absolute mode).
     :param init: Weight initializer name/`InitSpec`/`None` (default `he_normal`).
     :param bias: Whether to include a bias term.
+    :param near_zero_scale: Private. When not `None`, the weight is scaled by
+        this factor after init and the bias is zeroed — used by
+        `MonoResidual` to near-zero-initialize the last layer of its default
+        `F`.
     """
 
     def __init__(
@@ -78,6 +84,7 @@ class MonoLinear(nn.Module):
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
         bias: bool = True,
+        near_zero_scale: float | None = None,
     ) -> None:
         """Initialise MonoLinear."""
         super().__init__()
@@ -97,6 +104,11 @@ class MonoLinear(nn.Module):
         else:
             _init_weight(self.weight, init)
         self.bias = nn.Parameter(torch.full((units,), bias_fill)) if bias else None
+        if near_zero_scale is not None:
+            with torch.no_grad():
+                self.weight.mul_(near_zero_scale)
+                if self.bias is not None:
+                    self.bias.zero_()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the monotonic dense transformation."""
@@ -117,7 +129,10 @@ class MonoResidual(nn.Module):
     :param units: Output feature count.
     :param F: Monotone sub-module, a `units -> Module` factory, or `None`
         (default: build from `sub_depth`). A custom `F` carries the caller's
-        responsibility for monotonicity. Mutually exclusive with `sub_depth`.
+        responsibility for monotonicity; it is not near-zero-initialised, so for
+        deep stacks initialise its last layer near zero (or pass
+        ``beta_gate="scaled_elu"``) to avoid divergence at init. Mutually
+        exclusive with `sub_depth`.
     :param mode: Mode for the default `F`. `"absolute"` (default) or
         `"switch"`.
     :param activation: Activation for the default `F` (default `None`).
@@ -129,6 +144,13 @@ class MonoResidual(nn.Module):
     :param sub_depth: Number of `MonoLinear` layers in the default `F`.
         `None` (default) uses 2; `1` gives a single `MonoLinear`. Must be
         >= 1. Mutually exclusive with `F`.
+    :param near_zero_scale: Scale applied to the default `F`'s last-layer
+        weight (bias zeroed) so the block starts near-identity — the deep
+        default stack (`softplus` `beta_gate`) would otherwise diverge
+        through a randomly-initialized residual branch. `0.0` reproduces
+        exact-zero, which is not recommended: under `absolute` mode `F` uses
+        `|W|`, whose gradient at `W=0` is `sign(0)=0`, a fixed point that
+        freezes the weights. A custom `F` is untouched.
     :raises ValueError: If `F` is `None` and `activation` is not provided,
         or if both `F` and `activation` are provided.
     """
@@ -142,9 +164,10 @@ class MonoResidual(nn.Module):
         mode: Mode = "absolute",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
-        beta_gate: str = "scaled_elu",
+        beta_gate: str = "softplus",
         init: InitSpec | str | None = None,
         sub_depth: int | None = None,
+        near_zero_scale: float = _NEAR_ZERO_SCALE,
     ) -> None:
         """Initialise MonoResidual.
 
@@ -163,7 +186,12 @@ class MonoResidual(nn.Module):
             k = 2 if sub_depth is None else sub_depth
             if k == 1:
                 self.F: nn.Module = MonoLinear(
-                    in_features, units, mode=mode, activation=activation, init=init
+                    in_features,
+                    units,
+                    mode=mode,
+                    activation=activation,
+                    init=init,
+                    near_zero_scale=near_zero_scale,
                 )
             else:
                 sub = [
@@ -175,8 +203,18 @@ class MonoResidual(nn.Module):
                     MonoLinear(
                         units, units, mode=mode, activation=activation, init=init
                     )
-                    for _ in range(k - 1)
+                    for _ in range(k - 2)
                 ]
+                sub.append(
+                    MonoLinear(
+                        units,
+                        units,
+                        mode=mode,
+                        activation=activation,
+                        init=init,
+                        near_zero_scale=near_zero_scale,
+                    )
+                )
                 self.F = nn.Sequential(*sub)
         else:
             if activation is not None:
