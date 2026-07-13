@@ -94,12 +94,18 @@ pipeline, extended to the new datasets/metric.
   holdout + the large-batch band (#100's size-driven `search_spaces`). New large datasets reuse
   the large preset; new small (`german`, `polish`, `compas`) reuse the small preset. Synthetic
   rows use a fixed cheap preset (they're fast).
-- **Significance gate.** Generalize `benchmarks/_common/screen_gate.py` from accuracy-only to be
-  **metric-aware**: seed-bootstrap 95% CI on Δ = (best-deep − best-shallow) in the dataset's
-  primary metric, plus a per-metric practical-margin floor (AUC and MSE need different floors than
-  the 0.005 accuracy margin). Verdict per dataset: **deep-better** (Δ_lo > 0 and Δ_point ≥ margin),
-  **neutral**, or **deep-worse**. "best-shallow" = better of the 4 non-deep flavors; "best-deep" =
-  better of the 2 deep flavors, by primary metric.
+- **Significance gate.** Stage A always **emits the raw evidence** per dataset — Δ =
+  (best-deep − best-shallow) point estimate + a seed-bootstrap 95% CI (Δ_lo, Δ_hi), in the
+  dataset's primary metric — so the gate can be applied *after* the run. The gate
+  (`benchmarks/_common/screen_gate.py`, generalized from accuracy-only to **metric-aware**) is a
+  pure function `gate(delta_lo, delta_point, margin, direction) → verdict`; its **practical-margin
+  floor is a parameter decided post-results** by inspecting the observed Δ distribution (per
+  decision 2026-07-13), *not* hardcoded. The significance component (`Δ_lo > 0` in the metric's
+  improvement direction) is objective and reported regardless. Verdict per dataset:
+  **deep-better** (significant *and* Δ_point ≥ chosen margin), **neutral**, or **deep-worse**.
+  "best-shallow" = better of the 4 non-deep flavors; "best-deep" = better of the 2 deep flavors,
+  by primary metric. Because the margin is chosen after Stage A, the Stage-A → Stage-B gating is
+  an explicit analysis step, not an in-run automatic route.
 - **Output.** One results tree `benchmarks/results/stage2/<dataset>-<flavor>.json` (schema =
   current `run_dataset` output + `roc_auc`), consumed by the docs table and the gate.
 
@@ -202,8 +208,11 @@ execution + write-up gated on step 1 landing.
 
 ## 13. Open items
 
-- Practical-margin floors per metric: ROC-AUC (e.g. ≥ 0.01?), MSE/RMSE (relative, e.g. ≥ 1%?) —
-  pin defaults in the plan; the accuracy 0.005 stays for the reported accuracy column only.
+- Practical-margin floors per metric: **deferred to post-Stage-A analysis** (decided from the
+  observed Δ distribution — decision 2026-07-13). The plan builds the gate to take `margin` as a
+  parameter and Stage A to emit Δ + bootstrap CI unconditionally; no default margin is baked in.
+  The gate's unit tests pin *behavior* (significant-and-≥-margin logic, per direction), not a
+  specific margin value.
 - Synthetic `c` levels: concrete definitions of low/mid/high per family (depth of the teacher /
   number of interacting features) — pin in the plan; must produce genuinely monotone targets
   (the additive/ReLU-ramp lesson from #99's Task 1).
