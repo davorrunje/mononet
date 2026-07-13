@@ -15,7 +15,9 @@ def _last_linear(block: MonoResidual) -> MonoLinear:
     f = block.F
     if isinstance(f, MonoLinear):
         return f
-    last = f.layers[-1]  # nnx.Sequential
+    # f is nnx.Sequential here; mypy doesn't narrow unions of nnx.Module
+    assert hasattr(f, "layers"), f"Expected f to have 'layers', got {type(f)}"
+    last = f.layers[-1]  # type: ignore[attr-defined]
     assert isinstance(last, MonoLinear)
     return last
 
@@ -43,7 +45,7 @@ def test_custom_F_is_not_near_zeroed() -> None:  # noqa: N802
     custom = MonoLinear(32, 32, mode="absolute", activation="elu", rngs=nnx.Rngs(0))
     before = float(jnp.abs(custom.weight[...]).sum())
     block = MonoResidual(32, 32, F=custom, rngs=nnx.Rngs(1))
-    after = float(jnp.abs(block.F.weight[...]).sum())  # type: ignore[union-attr]
+    after = float(jnp.abs(block.F.weight[...]).sum())  # type: ignore[attr-defined]
     assert after == before  # untouched
 
 
