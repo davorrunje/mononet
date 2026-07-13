@@ -49,3 +49,23 @@ def test_calibrate_greenshields_recovers_params() -> None:
     params = ngsim.calibrate_greenshields(rho, q)
     assert abs(params["v_max"] - v_max) < 1.0
     assert abs(params["rho_max"] - rho_max) < 0.1
+
+
+def test_window_scan_finds_monotone_subregion() -> None:
+    """Scan picks a window where density is monotone in x and reports low defect."""
+    x = np.linspace(0.0, 1.0, 40)
+    t = np.linspace(0.0, 1.0, 40)
+    # Left half: monotone-decreasing ramp in x (clean). Right half: a sine (dirty).
+    ramp = (1.0 - x)[None, :] * np.ones((40, 1))
+    dirty = (0.5 + 0.5 * np.sin(12.0 * x))[None, :] * np.ones((40, 1))
+    rho = np.concatenate([ramp[:, :20], dirty[:, 20:]], axis=1)
+    win = ngsim.window_scan(rho, x, t, tau=0.05, min_nx=8, min_nt=8)
+    xi = win["xi"]
+    assert isinstance(xi, tuple)
+    assert len(xi) == 2
+    _, x_hi = xi
+    assert x_hi <= 22  # chosen window lies in the clean left region
+    assert win["sign_x"] == -1
+    defect = win["defect"]
+    assert isinstance(defect, float)
+    assert defect < 0.05
