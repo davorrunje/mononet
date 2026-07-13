@@ -130,7 +130,8 @@ def main() -> None:
                 )
                 print(
                     f"{method:14} n_obs={n_obs:4d} noise={noise:.2f} | "
-                    f"L2={agg['l2']:.3f} viol={agg['admissibility_violation']:.3f} "
+                    f"L1={agg['l1']:.3f} L2={agg['l2']:.3f} "
+                    f"viol={agg['admissibility_violation']:.3f} "
                     f"over={agg['overshoot']:.3f} oob={agg['oob_frac']:.3f}",
                     flush=True,
                 )

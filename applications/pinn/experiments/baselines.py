@@ -114,7 +114,7 @@ def main() -> None:
     }
     for n_obs in _N_OBS:
         for noise in _NOISE:
-            l2s, viols, overs = [], [], []
+            l1s, l2s, viols, overs = [], [], [], []
             for seed in range(args.seeds):
                 oc_raw, ov_raw = sampling.observations(
                     ref, xs, ts, n_obs=n_obs, noise_std=noise, seed=seed + 3
@@ -126,6 +126,7 @@ def main() -> None:
                 pred = _fit_predict(ocn, ov, grid, lam).reshape(
                     args.eval_nt, args.eval_nx
                 )
+                l1s.append(metrics.l1(pred, ref, dx=dx))
                 l2s.append(metrics.l2(pred, ref, dx=dx))
                 viols.append(
                     max(
@@ -140,6 +141,7 @@ def main() -> None:
                 "method": "rbf_smoother",
                 "n_obs": n_obs,
                 "noise": noise,
+                "l1": interquartile_mean(l1s),
                 "l2": interquartile_mean(l2s),
                 "admissibility_violation": interquartile_mean(viols),
                 "overshoot": interquartile_mean(overs),
@@ -147,7 +149,8 @@ def main() -> None:
             out["cells"].append(cell)
             print(
                 f"rbf_smoother n_obs={n_obs:4d} noise={noise:.2f} | "
-                f"L2={cell['l2']:.3f} viol={cell['admissibility_violation']:.3f} "
+                f"L1={cell['l1']:.3f} L2={cell['l2']:.3f} "
+                f"viol={cell['admissibility_violation']:.3f} "
                 f"over={cell['overshoot']:.3f}",
                 flush=True,
             )
