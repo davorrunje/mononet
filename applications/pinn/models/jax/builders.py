@@ -134,23 +134,20 @@ class HardMonoField(nnx.Module):
         )
         self.mono_input = MonoInput(mask)
         act = ActivationSpec(cfg.mono_activation)  # type: ignore[arg-type]
-        # MonoResidual stack (spec's ~4-layer design). The earlier near-linear
-        # gate-collapse in this sharp-feature regime is fixed upstream by PR #100
-        # (near-zero gate init + softplus gate); verified on the 1-D Heaviside,
-        # MonoResidual now fits sharper than a plain MonoLinear stack and improves
-        # the inverse reconstruction. ``n_blocks`` residual blocks + an identity
+        # Field architecture ablation (cfg.residual):
+        #  - True  -> MonoResidual blocks (spec's ~4-layer design; the earlier
+        #    near-linear gate collapse is fixed upstream by PR #100).
+        #  - False -> plain MonoLinear stack (the non-residual variant).
+        # Both are recorded/reproducible. ``n_blocks`` stack elements + identity
         # head. Mirrors the PyTorch builder.
+        block = MonoResidual if cfg.residual else MonoLinear
         self.n_layers = max(1, cfg.n_blocks)
-        self.layer0 = MonoResidual(
-            in_dim, cfg.width, mode=cfg.mode, activation=act, rngs=rngs
-        )  # type: ignore[arg-type]
+        self.layer0 = block(in_dim, cfg.width, mode=cfg.mode, activation=act, rngs=rngs)  # type: ignore[arg-type]
         for i in range(1, self.n_layers):
             setattr(
                 self,
                 f"layer{i}",
-                MonoResidual(
-                    cfg.width, cfg.width, mode=cfg.mode, activation=act, rngs=rngs
-                ),  # type: ignore[arg-type]
+                block(cfg.width, cfg.width, mode=cfg.mode, activation=act, rngs=rngs),  # type: ignore[arg-type]
             )
         self.head = MonoLinear(
             cfg.width, 1, mode=cfg.mode, activation="identity", rngs=rngs

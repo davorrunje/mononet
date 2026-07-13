@@ -28,6 +28,7 @@ import numpy.typing as npt
 from applications.pinn.experiments.config import RunConfig
 from applications.pinn.experiments.run import run_one
 from applications.pinn.experiments.search import search
+from applications.pinn.models.protocol import ModelConfig
 
 if TYPE_CHECKING:
     from applications.pinn.models.protocol import Backend, Method
@@ -69,6 +70,7 @@ def run_panel(
     steps: int = 8000,
     grad_clip: float = 1.0,
     n_boot: int = 2000,
+    residual: bool = True,
 ) -> dict[str, object]:
     """Tune + multi-seed IQM for all four methods on one ``(problem, tier)``.
 
@@ -90,6 +92,7 @@ def run_panel(
         tier=tier,
         steps=steps,
         grad_clip=grad_clip,
+        model=ModelConfig(residual=residual),
     )
     out: dict[str, object] = {
         "problem": problem,
@@ -98,6 +101,7 @@ def run_panel(
         "n_trials": n_trials,
         "steps": steps,
         "seeds": list(range(seeds)),
+        "field": "residual" if residual else "plain",
         "aggregate": "iqm+bootstrap95",
         "methods": {},
     }
@@ -149,6 +153,11 @@ def main() -> None:
     p.add_argument("--n-trials", type=int, default=20)
     p.add_argument("--seeds", type=int, default=10)
     p.add_argument("--steps", type=int, default=8000)
+    p.add_argument(
+        "--no-residual",
+        action="store_true",
+        help="Use a plain MonoLinear field instead of MonoResidual blocks.",
+    )
     p.add_argument("--out", required=True)
     args = p.parse_args()
     result = run_panel(
@@ -158,6 +167,7 @@ def main() -> None:
         n_trials=args.n_trials,
         seeds=args.seeds,
         steps=args.steps,
+        residual=not args.no_residual,
     )
     with Path(args.out).open("w") as f:
         json.dump(result, f, indent=2)

@@ -40,7 +40,7 @@ _KEYS = ("l2", "admissibility_violation", "overshoot", "oob_frac")
 
 
 def _base_config(
-    problem: str, method: Method, best: dict[str, Any], steps: int
+    problem: str, method: Method, best: dict[str, Any], steps: int, *, residual: bool
 ) -> RunConfig:
     """Rebuild a tuned RunConfig for ``method`` from its stored best params."""
     tmpl = RunConfig(
@@ -57,7 +57,7 @@ def _base_config(
         residual_weight=float(best["residual_weight"]),
         data_weight=float(best.get("data_weight", tmpl.data_weight)),
         soft_penalty=float(best.get("soft_penalty", tmpl.soft_penalty)),
-        model=replace(tmpl.model, width=int(best["width"])),
+        model=replace(tmpl.model, width=int(best["width"]), residual=residual),
     )
 
 
@@ -68,13 +68,20 @@ def main() -> None:
     p.add_argument("--out", default="applications/pinn/results/inverse-sweep.json")
     p.add_argument("--seeds", type=int, default=4)
     p.add_argument("--steps", type=int, default=6000)
+    p.add_argument(
+        "--no-residual",
+        action="store_true",
+        help="Use a plain MonoLinear field instead of MonoResidual blocks.",
+    )
     args = p.parse_args()
+    residual = not args.no_residual
 
     tuned = json.loads(Path(args.tuned).read_text())
     problem = str(tuned["problem"])
     print(
         f"== inverse sweep: {problem}, {len(_N_OBS)}x{len(_NOISE)} cells, "
-        f"{args.seeds} seeds, {args.steps} steps ==",
+        f"{args.seeds} seeds, {args.steps} steps, "
+        f"field={'residual' if residual else 'plain'} ==",
         flush=True,
     )
 
@@ -84,12 +91,13 @@ def main() -> None:
         "noise": list(_NOISE),
         "seeds": args.seeds,
         "steps": args.steps,
+        "field": "residual" if residual else "plain",
         "aggregate": "iqm",
         "cells": [],
     }
     for method in _METHODS:
         best = tuned["methods"][method]["best_params"]
-        base = _base_config(problem, method, best, args.steps)
+        base = _base_config(problem, method, best, args.steps, residual=residual)
         for n_obs in _N_OBS:
             for noise in _NOISE:
                 rows = [

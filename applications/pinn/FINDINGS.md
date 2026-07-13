@@ -17,9 +17,15 @@ Re-ran the inverse flagship with the MonoResidual field (`inverse-headline.json`
 vs the plain-MonoLinear version (L1 3.17, L2 0.79): MonoResidual improves L2 to
 0.714 → now **marginally best on both L1 and L2** *and* sole admissible (viol 0).
 Honest magnitude: L1 bands still overlap → parity-or-better + guaranteed
-admissibility, not a decisive accuracy win. Forward panel + sparsity×noise sweep
-re-runs with MonoResidual are in progress; paper §6.1/§6.2.1 flagged as pending
-refresh.
+admissibility, not a decisive accuracy win.
+
+**Forward tier (MonoResidual):** hard_monotone L1 8.06 / L2 1.64 (viol 0, over
+0.013) — *worse* than the plain-MonoLinear forward (L1 6.15 / L2 1.45). So the
+field choice **trades off by tier**: MonoResidual wins the inverse flagship, plain
+MonoLinear wins the residual-dominated forward tier. Both variants are now a config
+knob (`ModelConfig.residual`, `--no-residual`) and recorded reproducibly:
+canonical filenames = residual; `-plain` suffix = plain. Residual sweep + all
+plain-field panels/sweep are being generated next for the full ablation.
 
 ## 2026-07-13 — MonoResidual restored (PR #100 fixes the gate collapse)
 

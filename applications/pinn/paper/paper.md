@@ -214,20 +214,23 @@ residual must carry the solution, and minimizing it near a discontinuity rewards
 smearing the shock. It is a mechanism check, not a relevance claim (a TVD
 finite-volume scheme dominates forward 1-D problems).
 
+Hard-monotone field = `MonoResidual` (default). A residual-vs-plain-`MonoLinear`
+field ablation is being recorded (both variants are reproducible via the
+`--no-residual` flag; see FINDINGS) — on this residual-dominated tier the plain
+field is actually a bit more accurate, the mirror of the inverse result.
+
 | method | L¹ (IQM [95 %]) | L² | admiss. violation | overshoot |
 |---|---|---|---|---|
-| **hard-monotone (mononet)** | 6.15 [4.41, 8.37] | 1.45 | **0** | **0.003** |
-| vanilla | 5.12 [4.31, 6.31] | 1.06 | 0.232 | 0.127 |
-| soft | 5.50 [5.12, 6.96] | 1.15 | 0.106 | 0.019 |
-| weight-clip (inexpressive) | 46.0 [45.6, 46.3] | 3.79 | 0 | 0.423 |
+| **hard-monotone (mononet)** | 8.06 [5.73, 10.35] | 1.64 | **0** | **0.013** |
+| vanilla | 6.07 [5.12, 7.10] | 1.21 | 0.251 | 0.148 |
+| soft | 5.50 [5.17, 6.93] | 1.15 | 0.105 | 0.018 |
+| weight-clip (inexpressive) | 44.1 [43.7, 45.8] | 3.77 | 0 | 0.365 |
 
-> **Note:** these forward-tier numbers are the plain-`MonoLinear` field; a
-> MonoResidual re-run is in progress and will refresh this table.
-
-The hard-monotone PINN is the only **oscillation-free** solution (overshoot 0.003
-vs. vanilla's 0.127) with **zero** violation, at a ~20 % L¹/L² cost versus the
-unconstrained baselines — the expected structure-vs-accuracy trade when the
-residual alone must fit a shock.
+The hard-monotone PINN is the only **oscillation-free** solution (overshoot 0.013
+vs. vanilla's 0.148) with **zero** violation, but here it pays an accuracy cost
+(L¹ ~8 vs vanilla ~6) — the expected structure-vs-accuracy trade when the strong
+residual, not data, must fit the shock. This tier is a mechanism check; the
+relevance claim is the inverse flagship (§6.2).
 
 *Pending figures (see RUNBOOK): TV(t) curves; near-shock solution profiles.*
 

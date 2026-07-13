@@ -40,6 +40,10 @@ class ModelConfig:
     :param plain_activation: Activation for unconstrained sub-networks.
     :param mode: ``mononet`` construction mode (``"absolute"`` or ``"switch"``).
     :param seed: Seed for parameter initialisation.
+    :param residual: If ``True`` (default) the hard-monotone field uses
+        ``MonoResidual`` blocks; if ``False`` a plain ``MonoLinear`` stack. This
+        is the residual-vs-non-residual architecture ablation — both variants are
+        first-class and reproducible.
     """
 
     width: int = 32
@@ -50,6 +54,7 @@ class ModelConfig:
     plain_activation: str = "tanh"
     mode: Mode = "absolute"
     seed: int = 0
+    residual: bool = True
 
 
 def build(

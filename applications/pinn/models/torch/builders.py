@@ -130,11 +130,15 @@ class HardMonoField(nn.Module):
         )
         self.mono_input = MonoInput(mask)
         act = ActivationSpec(cfg.mono_activation)  # type: ignore[arg-type]
+        # Field architecture ablation (cfg.residual): MonoResidual blocks (True,
+        # default; gate collapse fixed upstream by PR #100) vs a plain MonoLinear
+        # stack (False). Both first-class and reproducible. Mirrors the JAX builder.
+        block = MonoResidual if cfg.residual else MonoLinear
         blocks: list[nn.Module] = [
-            MonoResidual(in_dim, cfg.width, mode=cfg.mode, activation=act)  # type: ignore[arg-type]
+            block(in_dim, cfg.width, mode=cfg.mode, activation=act)  # type: ignore[arg-type]
         ]
         blocks.extend(
-            MonoResidual(cfg.width, cfg.width, mode=cfg.mode, activation=act)  # type: ignore[arg-type]
+            block(cfg.width, cfg.width, mode=cfg.mode, activation=act)  # type: ignore[arg-type]
             for _ in range(cfg.n_blocks - 1)
         )
         blocks.append(MonoLinear(cfg.width, 1, mode=cfg.mode, activation="identity"))  # type: ignore[arg-type]

@@ -28,6 +28,9 @@ Run on `gpu-jax` (JAX GPU). Each panel tunes every method with an identical
 Optuna budget (once, seed 0), then evaluates the best config over 10 seeds and
 reports the **IQM** with a 95 % bootstrap band. ~30–40 min each on a modern GPU.
 
+Default field = `MonoResidual` (canonical filenames). Add `--no-residual` for the
+plain-`MonoLinear` field ablation (`-plain` suffix). Both are first-class.
+
 ```bash
 # Inverse flagship (traffic state estimation) — the headline table
 uv run python -m applications.pinn.experiments.headline \
@@ -38,10 +41,27 @@ uv run python -m applications.pinn.experiments.headline \
 uv run python -m applications.pinn.experiments.headline \
     --problem burgers_riemann --tier forward \
     --out applications/pinn/results/forward-mechanism.json
+
+# Plain-MonoLinear field ablation (both tiers)
+uv run python -m applications.pinn.experiments.headline --no-residual \
+    --problem lwr_riemann --tier inverse \
+    --out applications/pinn/results/inverse-headline-plain.json
+uv run python -m applications.pinn.experiments.headline --no-residual \
+    --problem burgers_riemann --tier forward \
+    --out applications/pinn/results/forward-mechanism-plain.json
+
+# Sparsity x noise sweep (residual + plain)
+uv run python -m applications.pinn.experiments.sweep_inverse \
+    --tuned applications/pinn/results/inverse-headline.json \
+    --out applications/pinn/results/inverse-sweep.json
+uv run python -m applications.pinn.experiments.sweep_inverse --no-residual \
+    --tuned applications/pinn/results/inverse-headline-plain.json \
+    --out applications/pinn/results/inverse-sweep-plain.json
 ```
 
-Both write per-method best params + per-seed metrics + IQM/band to the JSON.
-The `§6` tables in `paper/paper.md` are filled from these artifacts.
+Each writes per-method best params + per-seed metrics + IQM/band to the JSON;
+the JSON records `"field": "residual"|"plain"`. The `§6` tables in `paper/paper.md`
+are filled from these artifacts.
 
 ### Still to do (need a different environment / more compute)
 
