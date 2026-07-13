@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, cast
 
+import keras
 import numpy as np
 from keras import activations, ops
 
@@ -222,5 +223,116 @@ def replace_kernel_using_monotonicity_indicator(
         layer.kernel = old_kernel
 
 
-class MonoDense:  # placeholder, replaced in Task 4
-    """Placeholder replaced by the real layer in a later task."""
+class MonoDense(keras.layers.Dense):  # type: ignore[misc]
+    """Monotonic counterpart of ``keras.layers.Dense`` (legacy API).
+
+    Faithful reproduction of the original ``airtai/monotonic-nn`` layer. The
+    kernel is sign-constrained per :paramref:`monotonicity_indicator` and the
+    output is split into convex/concave/saturated activation groups.
+
+    :param units: Output dimensionality.
+    :param activation: Base activation (assumed convex, monotonically
+        increasing), e.g. ``"relu"`` or ``"elu"``; name or callable. ``None``
+        is linear.
+    :param monotonicity_indicator: Per-input sign in ``{-1, 0, 1}`` (``1``
+        increasing, ``-1`` decreasing, ``0`` non-monotonic). Scalar or array.
+    :param is_convex: Force an all-convex activation split.
+    :param is_concave: Force an all-concave activation split.
+    :param activation_weights: Relative sizes of the convex/concave/saturated
+        groups; ignored when ``is_convex`` or ``is_concave`` is set.
+    :raises ValueError: If both ``is_convex`` and ``is_concave`` are set, or if
+        ``activation_weights`` is not length 3 or has a negative entry.
+    """
+
+    def __init__(
+        self,
+        units: int,
+        *,
+        activation: str | Callable[[Any], Any] | None = None,
+        monotonicity_indicator: Any = 1,
+        is_convex: bool = False,
+        is_concave: bool = False,
+        activation_weights: tuple[float, float, float] = (7.0, 7.0, 2.0),
+        **kwargs: Any,
+    ) -> None:
+        """Construct a legacy MonoDense layer (emits a DeprecationWarning)."""
+        _warn_once()
+        if is_convex and is_concave:
+            raise ValueError(
+                "The model cannot be set to be both convex and concave "
+                "(only linear functions are both)."
+            )
+        if len(activation_weights) != 3:
+            raise ValueError(
+                "There must be exactly three components of activation_weights, "
+                f"but we have this instead: {activation_weights}."
+            )
+        if (np.array(activation_weights) < 0).any():
+            raise ValueError(
+                "Values of activation_weights must be non-negative, but we have "
+                f"this instead: {activation_weights}."
+            )
+
+        super().__init__(units=units, activation=None, **kwargs)
+
+        self.units = units
+        self.org_activation = activation
+        self.monotonicity_indicator = monotonicity_indicator
+        self.is_convex = is_convex
+        self.is_concave = is_concave
+        self.activation_weights = activation_weights
+
+        (
+            self.convex_activation,
+            self.concave_activation,
+            self.saturated_activation,
+        ) = get_activation_functions(self.org_activation)
+
+    def build(self, input_shape: Any) -> None:
+        """Create the Dense weights and normalise the indicator.
+
+        :param input_shape: Shape tuple; ``input_shape[-1]`` is the fan-in.
+        """
+        super().build(input_shape)
+        self.monotonicity_indicator = get_monotonicity_indicator(
+            monotonicity_indicator=self.monotonicity_indicator,
+            input_shape=input_shape,
+            units=self.units,
+        )
+
+    def call(self, inputs: Any) -> Any:
+        """Apply the sign-constrained affine map and grouped activations.
+
+        :param inputs: Input tensor of shape ``(batch, ..., fan_in)``.
+        :returns: Output tensor of shape ``(batch, ..., units)``.
+        """
+        constrained_kernel = apply_monotonicity_indicator_to_kernel(
+            ops.convert_to_tensor(self.kernel), self.monotonicity_indicator
+        )
+        h = ops.matmul(inputs, constrained_kernel)
+        if self.use_bias:
+            h = h + self.bias
+        return apply_activations(
+            h,
+            units=self.units,
+            convex_activation=self.convex_activation,
+            concave_activation=self.concave_activation,
+            saturated_activation=self.saturated_activation,
+            is_convex=self.is_convex,
+            is_concave=self.is_concave,
+            activation_weights=self.activation_weights,
+        )
+
+    def get_config(self) -> dict[str, Any]:
+        """Serialize the layer configuration.
+
+        :returns: Config dict with the original legacy keys.
+        """
+        return {
+            "units": self.units,
+            "activation": self.org_activation,
+            "monotonicity_indicator": self.monotonicity_indicator,
+            "is_convex": self.is_convex,
+            "is_concave": self.is_concave,
+            "activation_weights": self.activation_weights,
+        }
