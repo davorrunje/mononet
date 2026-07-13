@@ -62,11 +62,29 @@ Wire all into `benchmarks/search.py::_ALL_DATASETS` and the registry.
 `synth_<family>_c<level>`. This is the controlled measurement of depth-advantage vs target
 complexity.
 
+**The targets MUST be genuinely nonlinear (non-degeneracy requirement).** The #99 generator
+is degenerate under a `[0,1]`-input / non-negative-weight monotone construction: every ReLU/ELU
+preactivation stays strongly positive, so `act(z)=z`, every layer is affine, and the whole
+teacher collapses to a **linear** function (empirically `teacher_relu`/`teacher_elu` R²=1.00000
+against a linear fit *and byte-identical to each other*; `additive` R²≈0.98, `lattice` R²≈0.93).
+A near-linear target is trivially shallow-learnable, so "deep doesn't win" would be a
+target-linearity artifact, not evidence about monotone depth. The fixed generator must:
+- **Center the teacher's input sampling** (e.g. `x ~ U[−1,1]` or standard-normal) so ReLU/ELU
+  preactivations straddle 0 and the nonlinearity bites — this makes `teacher_relu` (sharp) and
+  `teacher_elu` (smooth) genuinely nonlinear *and genuinely different from each other*.
+  Monotonicity is preserved (non-negative weights + monotone activation hold for any input range;
+  all synthetic features remain non-decreasing).
+- **Strengthen `lattice`** (nested min/max of non-negative linear terms) — the cleanest
+  monotone-nonlinear, depth-relevant family, non-degenerate regardless of input sign; deepen the
+  min/max nesting so it is strongly nonlinear (the current R²≈0.93 is too shallow).
+- **Spread `additive` knots** across the (centered) input range so the ramps actually fire.
+- **Acceptance gate:** a committed test asserts each family at high `c` fits a linear model with
+  **R² < 0.7**, so a degenerate target can never ship again.
+
 **Registry change (generator-backed source).** `DatasetSpec` / `benchmarks/datasets/registry.py`
 / `loader.py` currently resolve datasets from committed CSVs. Add a **generator source**: a spec
 variant that carries a callable (family, c, sizes, seed) → `DatasetBundle` instead of a CSV path,
-so `search.py`/`run_dataset` pull `synth_*` through the same interface as real datasets. The
-`teacher_elu` fix (wire the activation switch so it differs from `teacher_relu`) lands here.
+so `search.py`/`run_dataset` pull `synth_*` through the same interface as real datasets.
 
 ## 4. Metric (ROC-AUC primary for classification)
 
@@ -178,8 +196,11 @@ results — CI never runs them):
 - Metric-aware gate: `deep-better` only when `Δ_lo > 0` **and** `Δ_point ≥ margin` for each metric;
   boundary cases per metric direction (higher-better AUC vs lower-better MSE).
 - Generator source: `load("synth_teacher_relu_cmid")` returns a monotone `DatasetBundle`;
-  `teacher_elu` targets **differ** from `teacher_relu` (guards the fixed bug); determinism (same
-  seed → same data).
+  determinism (same seed → same data).
+- **Non-degeneracy gate:** each family at high `c` fits a linear model with **R² < 0.7** (guards
+  against the linear-collapse found in #99); `teacher_elu` targets **differ** from `teacher_relu`
+  (`max|Δy| > 0` on centered inputs); every synthetic target is monotone non-decreasing in each
+  feature.
 - Launcher: datasets distributed round-robin over devices, `n_jobs=1` passed to each subprocess.
 - `search.py --smoke --dry-run` covers all datasets incl. `synth_*` without running training.
 - Full green: `pre-commit`, strict mypy (`--group bench`), ruff, docs build (`-W`).

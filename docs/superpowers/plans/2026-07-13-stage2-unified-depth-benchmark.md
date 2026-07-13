@@ -253,9 +253,22 @@ git commit -m "bench: metric-aware Stage-2 deep-vs-shallow gate (signed Δ + boo
 - Modify: `benchmarks/_common/search.py` (`_BUDGET` += synthetic preset)
 - Test: `tests/benchmarks/test_synthetic.py` (NEW), extend `tests/benchmarks/test_registry.py` if present
 
+> **REVISION (2026-07-13, post-implementation).** The registry-source infra (spec.py generator
+> field, registry dispatch, `_BUDGET`, 12 keys) is DONE (commit 57a7e70). But porting surfaced a
+> **degeneracy**: under `[0,1]`-input / non-negative-weight monotone construction all families are
+> near-linear (`teacher_relu`/`teacher_elu` R²=1.00000 *and byte-identical*; `additive` 0.98;
+> `lattice` 0.93) — useless as depth probes. Per spec §3 "genuinely nonlinear" requirement, the
+> remaining Task-3 work is a **rewrite of the family internals** (not a verbatim port):
+> - **Center the teacher input sampling** (`x ~ U[−1,1]` or standard-normal) so ReLU/ELU bite →
+>   `teacher_relu` (sharp) and `teacher_elu` (smooth) become nonlinear AND differ from each other.
+> - **Strengthen `lattice`** (deeper nested min/max) — the cleanest monotone-nonlinear family.
+> - **Spread `additive` knots** over the centered range.
+> - **Acceptance test:** each family at high `c` has linear-fit **R² < 0.7**; `teacher_elu` ≠
+>   `teacher_relu`; targets monotone non-decreasing; determinism holds. Keep the registry wiring.
+
 **Interfaces:**
 - Consumes: `DatasetBundle`, a seed, `(family, c, d, n_train, n_test)`.
-- Produces: `synthetic.synth_monotone(kind, c, ...)` → `DatasetBundle` (all features monotone-increasing, regression). Registry `load("synth_teacher_relu_cmid", data_dir=...)` returns the generated bundle (ignoring `data_dir`); `DATASETS` includes 12 `synth_*` keys. `teacher_relu` and `teacher_elu` produce **different** targets.
+- Produces: `synthetic.synth_monotone(kind, c, ...)` → `DatasetBundle` (all features monotone-increasing, regression; **genuinely nonlinear**, linear-fit R² < 0.7 at high c). Registry `load("synth_teacher_relu_cmid", data_dir=...)` returns the generated bundle (ignoring `data_dir`); `DATASETS` includes 12 `synth_*` keys. `teacher_relu` and `teacher_elu` produce **different** targets.
 
 - [ ] **Step 1: Port the generator + write the failing test**
 
