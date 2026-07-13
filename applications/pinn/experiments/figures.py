@@ -10,8 +10,10 @@ Two figure families:
    monotone ramp while the unconstrained/soft baselines oscillate across the shock,
    with the sparse noisy observations overlaid.
 
-Writes PNGs to ``applications/pinn/paper/figures/``. Reconstructions need a JAX
-backend (fast on ``gpu-jax``; fine on CPU for the six single-seed trainings).
+Each figure is written to ``applications/pinn/paper/figures/`` in **both** vector
+PDF (for LaTeX ``\includegraphics``) and PNG (for the markdown/Sphinx preview).
+Reconstructions need a JAX backend (fast on ``gpu-jax``; fine on CPU for the six
+single-seed trainings).
 
 Example::
 
@@ -26,6 +28,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import matplotlib as mpl
 import numpy as np
 
 from applications.pinn.core import plotting
@@ -33,10 +36,19 @@ from applications.pinn.experiments.config import RunConfig
 from applications.pinn.experiments.run import predict_field
 
 if TYPE_CHECKING:
+    from matplotlib.figure import Figure
+
     from applications.pinn.models.protocol import Method
+
+# Embed real (Type-42) fonts rather than Type-3 outlines -- required by most
+# publishers, and keeps text selectable/searchable in the vector PDF.
+mpl.rcParams["pdf.fonttype"] = 42
+mpl.rcParams["svg.fonttype"] = "none"
 
 _FIG_DIR = Path("applications/pinn/paper/figures")
 _RESULTS = Path("applications/pinn/results")
+# Vector PDF for LaTeX \includegraphics; PNG for the markdown/Sphinx preview.
+_FORMATS = ("pdf", "png")
 # Baselines shown in the paper (weight_clip is a diagnostic, omitted from figures).
 _METHODS: tuple[Method, ...] = ("hard_monotone", "vanilla", "soft")
 _LABELS = {
@@ -49,7 +61,16 @@ _STRESS_N_OBS = 80
 _STRESS_NOISE = 0.20
 
 
-def _crossover(sweep_path: Path, key: str, ylabel: str, title: str, out: Path) -> None:
+def _save(fig: Figure, stem: Path) -> None:
+    """Write ``fig`` as vector PDF (LaTeX) and PNG (preview) under ``stem``."""
+    for ext in _FORMATS:
+        out = stem.with_suffix(f".{ext}")
+        # dpi only affects the raster PNG; the PDF is vector regardless.
+        fig.savefig(out, dpi=200, bbox_inches="tight")
+    print(f"wrote {stem}.{{{','.join(_FORMATS)}}}", flush=True)
+
+
+def _crossover(sweep_path: Path, key: str, ylabel: str, title: str, stem: Path) -> None:
     """Build a per-method ``key``-vs-noise curve at ``_STRESS_N_OBS`` observations."""
     data = json.loads(sweep_path.read_text())
     noise = sorted({float(c["noise"]) for c in data["cells"]})
@@ -62,12 +83,11 @@ def _crossover(sweep_path: Path, key: str, ylabel: str, title: str, out: Path) -
         }
         series[_LABELS[method]] = np.array([vals[n] for n in noise])
     fig = plotting.metric_vs_noise(np.array(noise), series, ylabel=ylabel, title=title)
-    fig.savefig(out, dpi=150, bbox_inches="tight")
-    print(f"wrote {out}", flush=True)
+    _save(fig, stem)
 
 
 def _reconstruction(
-    problem: str, tuned_path: Path, pretty: str, out: Path, steps: int
+    problem: str, tuned_path: Path, pretty: str, stem: Path, steps: int
 ) -> None:
     """Train each method at the stress point and plot a fixed-time spatial slice."""
     tuned = json.loads(tuned_path.read_text())
@@ -116,8 +136,7 @@ def _reconstruction(
             f"(n_obs={_STRESS_N_OBS}, noise={_STRESS_NOISE})"
         ),
     )
-    fig.savefig(out, dpi=150, bbox_inches="tight")
-    print(f"wrote {out}", flush=True)
+    _save(fig, stem)
 
 
 def main() -> None:
@@ -147,21 +166,21 @@ def main() -> None:
             "l1",
             "L1 error (whole field)",
             f"{pretty}: whole-field L1 vs noise (n_obs={_STRESS_N_OBS})",
-            _FIG_DIR / f"crossover-{tag}-l1.png",
+            _FIG_DIR / f"crossover-{tag}-l1",
         )
         _crossover(
             path,
             "l2",
             "L2 error (front-weighted)",
             f"{pretty}: front-weighted L2 vs noise (n_obs={_STRESS_N_OBS})",
-            _FIG_DIR / f"crossover-{tag}-l2.png",
+            _FIG_DIR / f"crossover-{tag}-l2",
         )
         _crossover(
             path,
             "admissibility_violation",
             "admissibility violation",
             f"{pretty}: admissibility violation vs noise (n_obs={_STRESS_N_OBS})",
-            _FIG_DIR / f"admissibility-{tag}.png",
+            _FIG_DIR / f"admissibility-{tag}",
         )
 
     if args.no_reconstructions:
@@ -176,7 +195,7 @@ def main() -> None:
             print(f"skip reconstruction: {tpath} missing", flush=True)
             continue
         _reconstruction(
-            problem, tpath, pretty, _FIG_DIR / f"reconstruction-{tag}.png", args.steps
+            problem, tpath, pretty, _FIG_DIR / f"reconstruction-{tag}", args.steps
         )
 
 
