@@ -25,9 +25,18 @@ weights trainable while still starting ``F ~= 0``. So the fix is near-zero init
 (A) + softplus gate (B); exact-zero is itself a trap.
 
 Run: ``uv run --extra torch --group bench python benchmarks/monoresidual_gate_ablation.py``
+
+Pass ``--out PATH`` to additionally write the six rows as JSON (consumed by
+``tests/benchmarks/test_monoresidual_gate_evidence.py`` and the docs); the
+default (no ``--out``) invocation keeps printing only, as before.
 """
 
 from __future__ import annotations
+
+import argparse
+import json
+import math
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -39,6 +48,17 @@ from mononet.torch import MonoLinear
 _D, _W = 6, 32
 _GATE_EPS = 0.001
 _NEAR_ZERO_SCALE = 1e-3
+_MSE_CAP = 1.0e6
+
+
+def _finite(value: float, cap: float = _MSE_CAP) -> float:
+    """Clamp non-finite or blown-up values to a large sentinel for JSON safety.
+
+    :param value: Raw scalar (may be ``nan``/``inf`` on a diverging run).
+    :param cap: Sentinel magnitude substituted for non-finite/over-cap values.
+    :returns: ``value`` if finite and within ``cap``, else ``cap``.
+    """
+    return cap if (not math.isfinite(value) or abs(value) > cap) else value
 
 
 def _teacher(x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
@@ -94,15 +114,20 @@ def _run(
     y_tr: torch.Tensor,
     x_te: torch.Tensor,
     y_te: torch.Tensor,
+    device: torch.device,
     depth: int = 16,
     steps: int = 400,
-) -> None:
-    """Train one deep stack; print gate opening, loss, and F-weight movement."""
+) -> dict[str, float | str | int]:
+    """Train one deep stack; print and return gate/loss/F-weight-movement summary.
+
+    :returns: A row dict with keys ``a_mode``, ``gate``, ``train``, ``test``,
+        ``g_beta_min``, ``g_beta_max``, ``f_moved``, ``n_blocks``.
+    """
     net = nn.Sequential(
         MonoLinear(_D, _W, mode="absolute", activation="elu"),
         *[_Block(a_mode=a_mode, softplus_gate=softplus_gate) for _ in range(depth)],
         MonoLinear(_W, 1, mode="absolute"),
-    )
+    ).to(device)
     blocks = [m for m in net if isinstance(m, _Block)]
     w0 = [float(b.f_out.weight.detach().abs().sum()) for b in blocks]
     opt = torch.optim.Adam(net.parameters(), 1e-3)
@@ -115,7 +140,7 @@ def _run(
         opt.step()
     with torch.no_grad():
         test = float(loss_fn(net(x_te), y_te))
-    gates = [float(b.g_beta()) for b in blocks]
+        gates = [float(b.g_beta()) for b in blocks]
     moved = sum(
         1
         for b, w in zip(blocks, w0, strict=True)
@@ -127,21 +152,40 @@ def _run(
         f"g_beta[{min(gates):.3f},{max(gates):.3f}] | "
         f"F-weights-moved {moved}/{len(blocks)}"
     )
+    return {
+        "a_mode": a_mode,
+        "gate": "softplus" if softplus_gate else "scaled_elu",
+        "train": round(_finite(float(loss)), 6),
+        "test": round(_finite(test), 6),
+        "g_beta_min": round(min(gates), 6),
+        "g_beta_max": round(max(gates), 6),
+        "f_moved": moved,
+        "n_blocks": len(blocks),
+    }
 
 
-def main() -> None:
-    """Run the ablation grid and print the table."""
+def main(out: Path | None = None) -> None:
+    """Run the ablation grid, print the table, and optionally write JSON.
+
+    :param out: When given, write the six result rows to this path as JSON.
+        The default (`None`) keeps the original print-only behaviour.
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(0)
     rng = np.random.default_rng(0)
     x_tr_np = rng.uniform(0, 1, (16000, _D))
     y_raw = _teacher(x_tr_np, np.random.default_rng(0))
     mu, sd = y_raw.mean(), (y_raw.std() or 1.0)
     x_te_np = rng.uniform(0, 1, (4000, _D))
-    x_tr = torch.tensor(x_tr_np, dtype=torch.float32)
-    y_tr = torch.tensor((y_raw - mu) / sd, dtype=torch.float32).unsqueeze(1)
-    x_te = torch.tensor(x_te_np, dtype=torch.float32)
+    x_tr = torch.tensor(x_tr_np, dtype=torch.float32, device=device)
+    y_tr = torch.tensor(
+        (y_raw - mu) / sd, dtype=torch.float32, device=device
+    ).unsqueeze(1)
+    x_te = torch.tensor(x_te_np, dtype=torch.float32, device=device)
     y_te = torch.tensor(
-        (_teacher(x_te_np, np.random.default_rng(0)) - mu) / sd, dtype=torch.float32
+        (_teacher(x_te_np, np.random.default_rng(0)) - mu) / sd,
+        dtype=torch.float32,
+        device=device,
     ).unsqueeze(1)
 
     print(  # noqa: T201
@@ -156,7 +200,7 @@ def main() -> None:
         ("exactzero", True),  # exact-zero + B: gate opens but F still frozen
         ("nearzero", True),  # near-zero + B: best
     ]
-    for a_mode, softplus_gate in grid:
+    rows = [
         _run(
             a_mode=a_mode,
             softplus_gate=softplus_gate,
@@ -164,8 +208,18 @@ def main() -> None:
             y_tr=y_tr,
             x_te=x_te,
             y_te=y_te,
+            device=device,
         )
+        for a_mode, softplus_gate in grid
+    ]
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(rows, indent=2) + "\n")
+        print(f"wrote {out}")  # noqa: T201
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out", type=Path, default=None, help="Write rows as JSON.")
+    args = parser.parse_args()
+    main(args.out)
