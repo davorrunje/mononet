@@ -1,0 +1,26 @@
+[
+  {
+    "scale": 0.1,
+    "init_f_rms_last": 0.005004,
+    "init_block_out_rms_last": 0.173122,
+    "train_mse": 0.000987
+  },
+  {
+    "scale": 1.0,
+    "init_f_rms_last": 0.025032,
+    "init_block_out_rms_last": 1.266433,
+    "train_mse": 0.064606
+  },
+  {
+    "scale": 10.0,
+    "init_f_rms_last": 0.146488,
+    "init_block_out_rms_last": 10.315062,
+    "train_mse": 3.126286
+  },
+  {
+    "scale": 100.0,
+    "init_f_rms_last": 1.095768,
+    "init_block_out_rms_last": 100.986954,
+    "train_mse": 2297.101074
+  }
+]

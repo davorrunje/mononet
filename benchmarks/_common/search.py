@@ -118,6 +118,7 @@ def search(
             residual=residual,
             epochs=epochs,  # type: ignore[arg-type]
             metric=metric,  # type: ignore[arg-type]
+            n_train=int(bundle.X_train.shape[0]),
             deep=deep,
         )
         cfg = dataclasses.replace(cfg, seeds=tuple(range(search_seeds)))

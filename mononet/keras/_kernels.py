@@ -43,7 +43,7 @@ def concave_reflection(name: str, h: Any) -> Any:
 def gate(token: str, raw: Any) -> Any:
     """Resolve and apply a gate token to a raw (unconstrained) parameter.
 
-    :param token: One of ``shifted_elu`` or ``scaled_elu``.
+    :param token: One of ``shifted_elu``, ``scaled_elu``, or ``softplus``.
     :param raw: Raw (unconstrained) gate parameter tensor.
     :returns: Strictly-positive gate value, same shape as `raw`.
     :raises ValueError: If `token` is not a supported gate token.
@@ -53,6 +53,8 @@ def gate(token: str, raw: Any) -> Any:
     if token == "scaled_elu":
         eps = 1e-3
         return ops.maximum(raw, 0.0) + eps * ops.exp(ops.minimum(raw, 0.0) / eps)
+    if token == "softplus":
+        return ops.softplus(raw)
     raise ValueError(f"unknown gate token {token!r}")
 
 
@@ -104,7 +106,7 @@ def monotonic_residual(
     activation_name: str,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
-    beta_gate: str = "scaled_elu",
+    beta_gate: str = "softplus",
     skip_weight: Any | None = None,
 ) -> Any:
     """Keras dual-gated monotone residual kernel.
@@ -120,7 +122,7 @@ def monotonic_residual(
         :func:`monotonic_dense`.
     :param convex_fraction: Convex fraction for ``absolute`` mode.
     :param alpha_gate: Gate token for the skip path (default ``shifted_elu``).
-    :param beta_gate: Gate token for the dense path (default ``scaled_elu``).
+    :param beta_gate: Gate token for the dense path (default ``softplus``).
     :param skip_weight: Optional projection log-weight matrix of shape
         ``(in_features, units)``; when provided the skip path is
         ``x @ exp(skip_weight)``.

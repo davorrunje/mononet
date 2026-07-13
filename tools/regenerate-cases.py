@@ -150,12 +150,14 @@ def _dense_cases() -> None:
 
 def _residual_cases() -> None:
     grid = [
-        ("4x3x3-identity-switch", 4, 3, 3, None, "switch", "relu"),
-        ("4x2x5-proj-switch", 4, 2, 5, (2, 5), "switch", "relu"),
-        ("6x4x4-identity-abs", 6, 4, 4, None, "absolute", "elu"),
-        ("5x3x3-identity-abs-id", 5, 3, 3, None, "absolute", "identity"),
+        ("4x3x3-identity-switch", 4, 3, 3, None, "switch", "relu", "scaled_elu"),
+        ("4x2x5-proj-switch", 4, 2, 5, (2, 5), "switch", "relu", "scaled_elu"),
+        ("6x4x4-identity-abs", 6, 4, 4, None, "absolute", "elu", "scaled_elu"),
+        ("5x3x3-identity-abs-id", 5, 3, 3, None, "absolute", "identity", "scaled_elu"),
+        ("6x4x4-identity-abs-softplus", 6, 4, 4, None, "absolute", "elu", "softplus"),
+        ("4x2x5-proj-switch-softplus", 4, 2, 5, (2, 5), "switch", "relu", "softplus"),
     ]
-    for name, b, n, m, proj, mode, act in grid:
+    for name, b, n, m, proj, mode, act, beta_gate in grid:
         rng = np.random.default_rng(_seed(name))
         x = rng.normal(size=(b, n))
         w = rng.normal(size=(n, m))
@@ -175,6 +177,7 @@ def _residual_cases() -> None:
             _x: np.ndarray = x,  # type: ignore[type-arg]
             _mode: str = mode,
             _spec: ActivationSpec = spec,
+            _beta_gate: str = beta_gate,
         ) -> np.ndarray:  # type: ignore[type-arg]
             return ref.monotonic_residual(
                 _x,
@@ -184,6 +187,7 @@ def _residual_cases() -> None:
                 beta,
                 mode=_mode,
                 activation=_spec,
+                beta_gate=_beta_gate,
                 skip_weight=skip,
             )
 
@@ -215,7 +219,7 @@ def _residual_cases() -> None:
                     "activation": act,
                     "convex_fraction": 0.5,
                     "alpha_gate": "shifted_elu",
-                    "beta_gate": "scaled_elu",
+                    "beta_gate": beta_gate,
                     "has_projection": skip is not None,
                     "dtype": "float64",
                 },

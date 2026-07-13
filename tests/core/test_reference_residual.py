@@ -14,6 +14,7 @@ def test_warm_start_is_near_identity() -> None:
     x = rng.normal(size=(4, 3)).astype(np.float64)
     w = rng.normal(size=(3, 3)).astype(np.float64)
     b = np.zeros(3)
+    # near-identity holds only for the eps-gate; pin it explicitly here
     y = ref.monotonic_residual(
         x,
         w,
@@ -22,6 +23,7 @@ def test_warm_start_is_near_identity() -> None:
         np.array(0.0),
         mode="switch",
         activation=ActivationSpec("relu"),
+        beta_gate="scaled_elu",
     )
     # alpha gate = 1, beta gate = eps ~= 0 -> y ~= identity skip
     np.testing.assert_allclose(y, x, atol=5e-3)
