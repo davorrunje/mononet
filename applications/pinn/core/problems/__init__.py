@@ -7,7 +7,10 @@ Follow-up papers add ``hjb`` / ``fokker_planck`` / ``eikonal`` modules here.
 
 from __future__ import annotations
 
-from applications.pinn.core.problems import conservation  # noqa: F401  (registers)
+from applications.pinn.core.problems import (
+    conservation,  # noqa: F401  (registers)
+    traffic_real,  # noqa: F401  (registers)
+)
 from applications.pinn.core.problems.base import (
     Problem,
     available,
