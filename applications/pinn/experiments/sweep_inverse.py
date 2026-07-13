@@ -97,11 +97,27 @@ def main() -> None:
         "aggregate": "iqm",
         "cells": [],
     }
+    # Resume/merge: keep already-computed cells from a matching prior run so
+    # extending the grid (e.g. adding a noise level) only computes the new cells.
+    done: set[tuple[str, int, float]] = set()
+    outp = Path(args.out)
+    if outp.exists():
+        prev = json.loads(outp.read_text())
+        if prev.get("field") == out["field"] and prev.get("seeds") == args.seeds:
+            for c in prev["cells"]:
+                out["cells"].append(c)
+                done.add((str(c["method"]), int(c["n_obs"]), float(c["noise"])))
+            print(
+                f"resume: {len(done)} existing cells kept; computing only new ones",
+                flush=True,
+            )
     for method in _METHODS:
         best = tuned["methods"][method]["best_params"]
         base = _base_config(problem, method, best, args.steps, residual=residual)
         for n_obs in _N_OBS:
             for noise in _NOISE:
+                if (method, n_obs, noise) in done:
+                    continue
                 rows = [
                     run_one(replace(base, seed=s, n_obs=n_obs, noise_std=noise))
                     for s in range(args.seeds)
