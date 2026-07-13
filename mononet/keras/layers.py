@@ -122,7 +122,10 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         if self.near_zero_scale is not None:
             self.w.assign(self.w * self.near_zero_scale)
             if self.b is not None:
-                self.b.assign(ops.zeros_like(self.b))
+                # Multiply the Variable (Variable.__mul__ returns a backend
+                # tensor); ``ops.zeros_like(self.b)`` would pass the raw keras
+                # Variable to the backend and fail dtype conversion under JAX.
+                self.b.assign(self.b * 0.0)
         super().build(input_shape)
 
     def call(self, inputs: Any) -> Any:

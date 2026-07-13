@@ -78,3 +78,19 @@ def test_near_zero_scale_is_user_tunable() -> None:
         )
     )
     assert float(jnp.abs(zero.weight[...]).sum()) == 0.0
+
+
+def test_near_zero_scale_with_bias_false() -> None:
+    # covers the no-bias branch of near-zero init: weight scaled, no bias to zero
+    layer = MonoLinear(
+        4,
+        4,
+        mode="absolute",
+        activation="elu",
+        bias=False,
+        near_zero_scale=1e-3,
+        rngs=nnx.Rngs(0),
+    )
+    assert layer.bias is None
+    assert float(jnp.abs(layer.weight[...]).sum()) > 0.0  # scaled but nonzero
+    layer(jnp.zeros((2, 4)))  # forward runs without a bias

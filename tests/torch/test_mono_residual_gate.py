@@ -66,3 +66,13 @@ def test_near_zero_scale_is_user_tunable() -> None:
         MonoResidual(32, 32, mode="absolute", activation="elu", near_zero_scale=0.0)
     )
     assert float(zero.weight.detach().abs().sum()) == 0.0
+
+
+def test_near_zero_scale_with_bias_false() -> None:
+    # covers the no-bias branch of near-zero init: weight scaled, no bias to zero
+    layer = MonoLinear(
+        4, 4, mode="absolute", activation="elu", bias=False, near_zero_scale=1e-3
+    )
+    assert layer.bias is None
+    assert float(layer.weight.detach().abs().sum()) > 0.0  # scaled but nonzero
+    layer(torch.zeros(2, 4))  # forward runs without a bias

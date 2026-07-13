@@ -86,3 +86,13 @@ def test_near_zero_scale_is_user_tunable() -> None:
     zero_block(np.zeros((1, 32), dtype="float32"))
     zero = _last_dense(zero_block)
     assert float(ops.convert_to_numpy(ops.sum(ops.abs(zero.w)))) == 0.0
+
+
+def test_near_zero_scale_with_bias_false() -> None:
+    # covers the no-bias branch of near-zero init: weight scaled, no bias to zero
+    layer = MonoDense(
+        4, mode="absolute", activation="elu", bias=False, near_zero_scale=1e-3
+    )
+    layer(np.zeros((2, 4), dtype="float32"))  # triggers build with no bias
+    assert layer.b is None
+    assert float(ops.convert_to_numpy(ops.sum(ops.abs(layer.w)))) > 0.0

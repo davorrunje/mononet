@@ -165,6 +165,7 @@ module = [
     "mononet.jax.layers",
     "mononet.keras.layers",
     "benchmarks._common.model_builder",
+    "benchmarks.monoresidual_gate_ablation",
 ]
 disallow_subclassing_any = false
 
