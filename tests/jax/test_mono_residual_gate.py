@@ -15,7 +15,9 @@ def _last_linear(block: MonoResidual) -> MonoLinear:
     f = block.F
     if isinstance(f, MonoLinear):
         return f
-    last = f.layers[-1]  # type: ignore[attr-defined]  # nnx.Sequential
+    # f is nnx.Sequential here; mypy doesn't narrow unions of nnx.Module
+    assert hasattr(f, "layers"), f"Expected f to have 'layers', got {type(f)}"
+    last = f.layers[-1]  # type: ignore[attr-defined]
     assert isinstance(last, MonoLinear)
     return last
 

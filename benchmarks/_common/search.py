@@ -12,7 +12,7 @@ import numpy as np
 import optuna
 
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
-from benchmarks._common.results import Aggregate, aggregate
+from benchmarks._common.results import Aggregate, ResultRow, aggregate
 from benchmarks._common.runner import run
 from benchmarks._common.search_spaces import suggest_config
 from benchmarks._common.splits import cv_splits
@@ -39,7 +39,7 @@ def flavor_name(mode: str, residual: bool, deep: bool = False) -> str:
 
 
 def _primary_metric(bundle: DatasetBundle) -> str:
-    return "accuracy" if bundle.task == "binary_classification" else "mse"
+    return "roc_auc" if bundle.task == "binary_classification" else "mse"
 
 
 def _lower_is_better(metric: str) -> bool:
@@ -160,9 +160,20 @@ def final_eval(
     metric: str | None = None,
     seeds: Iterable[int] = range(10),
     epochs: int = 50,
-) -> Aggregate:
-    """Refit best HPs on the full train split; report TEST mean±std over all seeds."""
+) -> tuple[Aggregate, list[ResultRow]]:
+    """Refit best HPs on the full train split; report TEST mean±std over all seeds.
+
+    :returns: ``(agg, rows)`` — the primary-metric :class:`Aggregate` and the
+        raw per-seed :class:`ResultRow` list backing it. Each row's ``scores``
+        holds every metric computed for that seed (e.g. ``roc_auc`` *and*
+        ``accuracy`` for classification, per the `metrics` tuple below), so
+        callers can aggregate secondary metrics (see `_secondary_metrics`)
+        without a second training run.
+    """
     metric = metric or _primary_metric(bundle)
+    metrics: tuple[str, ...] = (
+        ("roc_auc", "accuracy") if metric == "roc_auc" else (metric,)
+    )
     width = int(best_params["width"])
     cfg = BenchmarkConfig(
         dataset=bundle.name,
@@ -183,12 +194,51 @@ def final_eval(
         epochs=epochs,
         early_stopping=None,
         seeds=tuple(seeds),
-        metrics=(metric,),  # type: ignore[arg-type]
+        metrics=metrics,  # type: ignore[arg-type]
     )
     rows = run(cfg, bundle)
-    return aggregate(
+    agg = aggregate(
         rows, metric=metric, lower_is_better=_lower_is_better(metric), top_k=len(rows)
     )
+    return agg, rows
+
+
+def _secondary_metrics(
+    rows: list[ResultRow], primary_metric: str
+) -> dict[str, dict[str, Any]]:
+    """Aggregate every metric in ``rows[0].scores`` other than ``primary_metric``.
+
+    Shared by `run_dataset` and the size-ladder's `run_ladder` so both persist
+    secondary metrics (e.g. classification ``accuracy`` alongside the primary
+    ``roc_auc``) the same way, reusing :func:`aggregate` per metric.
+
+    :param rows: Per-seed result rows (from `final_eval`, possibly
+        concatenated across several `final_eval` calls, e.g. one per
+        size-ladder seed); each row's ``scores`` holds every metric computed
+        for that run.
+    :param primary_metric: The metric already reported under ``test_*``;
+        excluded here to avoid duplicating it.
+    :returns: ``{metric: {"iqm", "mean", "std", "median", "values"}}`` for
+        every other metric present in ``rows``; empty when there is none
+        (e.g. regression, which has a single metric).
+    """
+    if not rows:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for m in rows[0].scores:
+        if m == primary_metric:
+            continue
+        agg = aggregate(
+            rows, metric=m, lower_is_better=_lower_is_better(m), top_k=len(rows)
+        )
+        out[m] = {
+            "iqm": agg.iqm,
+            "mean": agg.mean,
+            "std": agg.std,
+            "median": agg.median,
+            "values": list(agg.values),
+        }
+    return out
 
 
 # (mode, residual, deep) triples. Deep implies residual=True with a larger
@@ -220,25 +270,53 @@ _BUDGET: dict[str, tuple[int, range, int]] = {
     "german": (25, range(10), 5),
     "lc": (25, range(10), 1),
 }
+# Cheap budget for every generator-backed `synth_*` depth-probe dataset
+# (#99): small trial/seed counts since generation (and eval) is fast and
+# these are ablations, not headline results.
+_SYNTH_BUDGET: tuple[int, range, int] = (25, range(5), 1)
+
+
+def _budget_for(dataset: str) -> tuple[int, range, int]:
+    """Resolve the ``(n_trials, final_seeds, n_splits)`` budget for *dataset*.
+
+    :param dataset: Dataset key.
+    :returns: Explicit :data:`_BUDGET` entry; :data:`_SYNTH_BUDGET` for any
+        ``synth_*`` key; else the global default.
+    """
+    if dataset.startswith("synth_"):
+        return _SYNTH_BUDGET
+    return _BUDGET.get(dataset, (50, range(10), 5))
 
 
 def _count_collapses(
-    values: tuple[float, ...], *, task: str, base_rate: float, lower_is_better: bool
+    values: tuple[float, ...],
+    *,
+    task: str,
+    base_rate: float,
+    lower_is_better: bool,
+    metric: str,
 ) -> int:
     """Count collapsed/degenerate seeds among ``values``.
 
-    Classification: seeds at or below ``base_rate + 0.02`` (constant-prediction
-    collapse). Regression: gross bad-side Tukey outliers (beyond ``q75 + 3*IQR``).
+    Classification: seeds at or below a metric-aware constant-prediction floor.
+    A collapsed (constant/random) classifier scores ``base_rate`` on
+    ``accuracy`` but ``0.5`` on ``roc_auc`` (chance AUC is 0.5 regardless of
+    class imbalance), so the floor is ``0.5 + 0.02`` for ``roc_auc`` and
+    ``base_rate + 0.02`` for ``accuracy``. Regression: gross bad-side Tukey
+    outliers (beyond ``q75 + 3*IQR``).
 
     :param values: Per-seed metric values.
     :param task: ``binary_classification`` or ``regression``.
     :param base_rate: Majority-class fraction (classification only).
     :param lower_is_better: Metric direction.
+    :param metric: Primary metric name; selects the classification collapse
+        floor (``roc_auc`` -> 0.5, ``accuracy`` -> ``base_rate``).
     :returns: Number of collapsed seeds.
     """
     arr = np.asarray(values, dtype=np.float64)
     if task == "binary_classification":
-        return int((arr <= base_rate + 0.02).sum())
+        floor = 0.5 if metric == "roc_auc" else base_rate
+        return int((arr <= floor + 0.02).sum())
     q25, q75 = np.percentile(arr, [25, 75])
     iqr = q75 - q25
     return int((arr > q75 + 3.0 * iqr).sum())
@@ -261,13 +339,14 @@ def run_dataset(
 ) -> list[Path]:
     """Search + final_eval each flavor of one dataset; write per-flavor JSON.
 
-    Budget falls back to the per-dataset `_BUDGET` defaults when not overridden.
+    Budget falls back to `_budget_for(dataset)` when not overridden — the
+    per-dataset `_BUDGET` defaults, or the `_SYNTH_BUDGET` preset for `synth_*`.
     Returns the written JSON paths.
     """
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
 
-    b_trials, b_seeds, b_splits = _BUDGET.get(dataset, (50, range(10), 5))
+    b_trials, b_seeds, b_splits = _budget_for(dataset)
     n_trials = b_trials if n_trials is None else n_trials
     final_seeds = b_seeds if final_seeds is None else final_seeds
     n_splits = b_splits if n_splits is None else n_splits
@@ -295,7 +374,7 @@ def run_dataset(
             search_seeds=search_seeds,
             storage=storage,
         )
-        agg = final_eval(
+        agg, eval_rows = final_eval(
             bundle,
             study.best_params,
             mode=mode,
@@ -321,11 +400,15 @@ def run_dataset(
             "test_median": agg.median,
             "test_iqm": agg.iqm,
             "test_values": list(agg.values),
+            # Secondary metrics (e.g. accuracy alongside roc_auc); empty for
+            # regression datasets, which have a single metric.
+            "secondary": _secondary_metrics(eval_rows, agg.metric),
             "n_collapse": _count_collapses(
                 agg.values,
                 task=bundle.task,
                 base_rate=base_rate,
                 lower_is_better=_lower_is_better(agg.metric),
+                metric=agg.metric,
             ),
             "n_seeds": agg.n_seeds,
         }

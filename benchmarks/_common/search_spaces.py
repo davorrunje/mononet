@@ -26,7 +26,7 @@ def suggest_config(
     mode: Literal["switch", "absolute"],
     residual: bool,
     epochs: int,
-    metric: Literal["accuracy", "rmse", "mse"],
+    metric: Literal["accuracy", "rmse", "mse", "roc_auc"],
     n_train: int,
     deep: bool = False,
 ) -> BenchmarkConfig:
@@ -42,7 +42,9 @@ def suggest_config(
     :param residual: Whether to use residual connections.
     :param epochs: Number of training epochs per trial.
     :param metric: Primary metric; propagated into `cfg.metrics` so the
-        objective's metric and the training config always agree.
+        objective's metric and the training config always agree. When
+        `"roc_auc"`, `cfg.metrics` also includes `"accuracy"` so it is still
+        reported alongside the primary metric.
     :param n_train: Number of rows in the training set; selects the ``batch_size``
         band (large-batch band if ``n_train >= _LARGE_BATCH_THRESHOLD``).
     :param deep: When ``True``, draw ``depth`` from the deep categorical band
@@ -67,6 +69,9 @@ def suggest_config(
     convex_fraction = (
         trial.suggest_float("convex_fraction", 0.0, 1.0) if mode == "absolute" else 0.5
     )
+    metrics: tuple[Literal["accuracy", "rmse", "mse", "roc_auc"], ...] = (
+        ("roc_auc", "accuracy") if metric == "roc_auc" else (metric,)
+    )
     return BenchmarkConfig(
         dataset=dataset,
         backend=backend,
@@ -84,5 +89,5 @@ def suggest_config(
         epochs=epochs,
         early_stopping=None,
         seeds=(0,),
-        metrics=(metric,),
+        metrics=metrics,
     )

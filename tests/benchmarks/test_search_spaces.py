@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def _cfg(
     mode: Literal["switch", "absolute"],
     residual: bool,
-    metric: Literal["accuracy", "rmse", "mse"] = "mse",
+    metric: Literal["accuracy", "rmse", "mse", "roc_auc"] = "mse",
     deep: bool = False,
     n_train: int = 10_000,
 ) -> BenchmarkConfig:
@@ -65,6 +65,14 @@ def test_switch_uses_fixed_convex_fraction() -> None:
     assert cfg.convex_fraction == 0.5
     assert "convex_fraction" not in trial.params
     assert cfg.metrics == ("accuracy",)
+
+
+def test_roc_auc_primary_also_reports_accuracy() -> None:
+    # When roc_auc is the search objective, accuracy must still be reported
+    # alongside it (the primary metric switched away from accuracy, but
+    # accuracy is not dropped from the results).
+    cfg = _cfg("switch", residual=True, metric="roc_auc")
+    assert cfg.metrics == ("roc_auc", "accuracy")
 
 
 def test_deep_samples_depth_from_high_band() -> None:

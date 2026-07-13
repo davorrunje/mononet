@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from benchmarks._common.results import interquartile_mean
+from benchmarks._common.results import bootstrap_delta
+from benchmarks._common.search import _lower_is_better
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -20,9 +21,14 @@ def delta_by_n(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
     The band resamples the deep and shallow per-seed value vectors independently
     (`_BOOT` draws, seed `_BOOT_SEED`) and takes the 2.5/97.5 percentiles of the
-    bootstrapped IQM difference.
+    bootstrapped IQM difference, via the shared
+    :func:`benchmarks._common.results.bootstrap_delta`. Metric direction
+    (``lower_is_better``) is derived per record from its ``test_metric`` via
+    :func:`benchmarks._common.search._lower_is_better` — this report is not
+    accuracy-style-only: size-ladderable regression datasets (e.g. ``blog``)
+    report ``mse``, where lower is better, and hardcoding ``False`` would flip
+    the sign of Δ.
     """
-    rng = np.random.default_rng(_BOOT_SEED)
     by_n: dict[int, dict[str, dict[str, Any]]] = {}
     for r in records:
         by_n.setdefault(int(r["n"]), {})[r["arm"]] = r
@@ -33,22 +39,18 @@ def delta_by_n(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         dv = np.asarray(deep["test_values"], dtype=np.float64)
         sv = np.asarray(shallow["test_values"], dtype=np.float64)
-        boot = np.array(
-            [
-                interquartile_mean(rng.choice(dv, len(dv), replace=True))
-                - interquartile_mean(rng.choice(sv, len(sv), replace=True))
-                for _ in range(_BOOT)
-            ]
+        lower_is_better = _lower_is_better(str(deep["test_metric"]))
+        point, lo, hi = bootstrap_delta(
+            dv, sv, lower_is_better=lower_is_better, n_boot=_BOOT, seed=_BOOT_SEED
         )
-        lo, hi = np.percentile(boot, [2.5, 97.5])
         out.append(
             {
                 "n": n,
                 "deep_iqm": float(deep["test_iqm"]),
                 "shallow_iqm": float(shallow["test_iqm"]),
-                "delta": float(deep["test_iqm"]) - float(shallow["test_iqm"]),
-                "delta_lo": float(lo),
-                "delta_hi": float(hi),
+                "delta": point,
+                "delta_lo": lo,
+                "delta_hi": hi,
             }
         )
     return out

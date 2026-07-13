@@ -259,11 +259,29 @@ def _evaluate(
     y_pred = _predict(model, cfg, bundle)
     y_true = bundle.y_test
     binary = bundle.task == "binary_classification"
+    return _score_predictions(y_pred, y_true, binary=binary, metrics=cfg.metrics)
 
+
+def _score_predictions(
+    y_pred: np.ndarray,  # type: ignore[type-arg]
+    y_true: np.ndarray,  # type: ignore[type-arg]
+    *,
+    binary: bool,
+    metrics: tuple[str, ...],
+) -> dict[str, float]:
+    """Compute the requested metrics from predictions and targets.
+
+    :param y_pred: Model predictions (probability-scale for classification).
+    :param y_true: Ground-truth targets.
+    :param binary: Whether the task is binary classification.
+    :param metrics: Metric names to compute.
+    :returns: Dict mapping metric name to scalar value.
+    :raises ValueError: If a classification-only metric is requested for a
+        non-binary task, or an unknown metric name is given.
+    """
     scores: dict[str, float] = {}
     mse_val: float | None = None
-
-    for metric in cfg.metrics:
+    for metric in metrics:
         if metric == "mse":
             mse_val = float(np.mean((y_pred - y_true) ** 2))
             scores["mse"] = mse_val
@@ -274,11 +292,17 @@ def _evaluate(
         elif metric == "accuracy":
             if not binary:
                 raise ValueError("accuracy metric requires binary_classification task")
-            preds_bin = (y_pred >= 0.5).astype(np.float64)
-            scores["accuracy"] = float(np.mean(preds_bin == y_true))
+            scores["accuracy"] = float(
+                np.mean((y_pred >= 0.5).astype(np.float64) == y_true)
+            )
+        elif metric == "roc_auc":
+            if not binary:
+                raise ValueError("roc_auc metric requires binary_classification task")
+            from sklearn.metrics import roc_auc_score
+
+            scores["roc_auc"] = float(roc_auc_score(y_true, y_pred))
         else:
             raise ValueError(f"Unknown metric: {metric!r}")
-
     return scores
 
 
