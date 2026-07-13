@@ -3,9 +3,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from applications.pinn.data import ngsim
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_edie_fields_single_vehicle_constant_speed() -> None:
@@ -69,3 +74,40 @@ def test_window_scan_finds_monotone_subregion() -> None:
     defect = win["defect"]
     assert isinstance(defect, float)
     assert defect < 0.05
+
+
+def test_build_dataset_writes_npz(tmp_path: Path) -> None:
+    """build_dataset turns a synthetic raw CSV into a well-formed derived npz."""
+    import csv
+
+    raw = tmp_path / "raw.csv"
+    # Two lanes; a monotone-decreasing density wave in lane 1 via staggered entries.
+    rows: list[tuple[str, ...]] = [
+        ("Vehicle_ID", "Global_Time", "Local_Y", "v_Vel", "Lane_ID")
+    ]
+    vid = 0
+    for start in np.linspace(0.0, 50.0, 60):  # many vehicles -> density
+        vid += 1  # noqa: SIM113
+        for k in range(40):
+            tt = start + k * 0.1
+            yy = 10.0 * (tt - start)  # 10 m/s
+            rows.append((str(vid), str(tt * 1000.0), str(yy), str(10.0), str(1)))
+    with raw.open("w", newline="") as f:
+        csv.writer(f).writerows(rows)
+    out = tmp_path / "wave.npz"
+    summary = ngsim.build_dataset(raw, out, lane=1, dx=5.0, dt=1.0, tau=0.9)
+    assert out.exists()
+    d = np.load(out, allow_pickle=True)
+    for key in (
+        "x",
+        "t",
+        "rho",
+        "q",
+        "v_max",
+        "rho_max",
+        "sign_x",
+        "monotonicity_defect",
+    ):
+        assert key in d
+    assert d["rho"].ndim == 2
+    assert summary["nx"] == d["rho"].shape[1]

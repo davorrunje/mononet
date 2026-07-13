@@ -55,3 +55,6 @@
 
 # Benchmark datasets (redistributable only) — stored via Git LFS
 benchmarks/data/** filter=lfs diff=lfs merge=lfs -text
+
+# PINN derived datasets (small; raw NGSIM is gitignored) -- Git LFS
+applications/pinn/data/*.npz filter=lfs diff=lfs merge=lfs -text

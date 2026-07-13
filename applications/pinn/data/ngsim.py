@@ -14,6 +14,11 @@ Example::
 
 from __future__ import annotations
 
+import argparse
+import csv
+from pathlib import Path
+from typing import cast
+
 import numpy as np
 import numpy.typing as npt
 
@@ -149,3 +154,107 @@ def window_scan(
     if best is None:
         raise ValueError(f"no window with defect < {tau}; widen tau or use xi=x-ct")
     return best
+
+
+_RAW_COLUMNS = ("Vehicle_ID", "Global_Time", "Local_Y", "v_Vel", "Lane_ID")
+
+
+def _load_raw(raw_csv: Path, lane: int) -> tuple[Array, Array, Array]:
+    """Load (vehicle_id, t seconds, x metres) for one lane from an NGSIM CSV."""
+    vids, ts, xs = [], [], []
+    with Path(raw_csv).open(newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if int(float(row["Lane_ID"])) != lane:
+                continue
+            vids.append(float(row["Vehicle_ID"]))
+            ts.append(float(row["Global_Time"]) / 1000.0)  # ms -> s
+            xs.append(float(row["Local_Y"]))  # already metres in re-metricated NGSIM
+    return (
+        np.asarray(vids, dtype=np.float64),
+        np.asarray(ts, dtype=np.float64),
+        np.asarray(xs, dtype=np.float64),
+    )
+
+
+def build_dataset(
+    raw_csv: str | Path,
+    out_npz: str | Path,
+    *,
+    lane: int = 1,
+    dx: float = 20.0,
+    dt: float = 5.0,
+    tau: float = 0.05,
+) -> dict[str, object]:
+    """Build the derived ``.npz`` from a raw NGSIM CSV.
+
+    Pipeline: load one lane -> Edie-aggregate the full section -> scan for the
+    monotone window -> crop -> calibrate Greenshields on the window -> write npz.
+
+    :param raw_csv: Path to the raw NGSIM trajectory CSV.
+    :param out_npz: Output path for the derived artifact.
+    :param lane: Lane id to select.
+    :param dx: Spatial cell size (metres).
+    :param dt: Temporal cell size (seconds).
+    :param tau: Monotonicity-defect threshold for the window scan.
+    :returns: A summary dict (window, defect, FD params, grid shape).
+    """
+    vid, t, x = _load_raw(Path(raw_csv), lane)
+    x_edges = np.arange(x.min(), x.max() + dx, dx)
+    t_edges = np.arange(t.min(), t.max() + dt, dt)
+    rho, q = edie_fields(vid, t, x, x_edges=x_edges, t_edges=t_edges)
+    x_c = 0.5 * (x_edges[:-1] + x_edges[1:])
+    t_c = 0.5 * (t_edges[:-1] + t_edges[1:])
+    win = window_scan(rho, x_c, t_c, tau=tau)
+    xi = cast("tuple[int, int]", win["xi"])
+    ti = cast("tuple[int, int]", win["ti"])
+    x_lo, x_hi = xi
+    t_lo, t_hi = ti
+    rho_w = rho[t_lo:t_hi, x_lo:x_hi]  # type: ignore[index]
+    q_w = q[t_lo:t_hi, x_lo:x_hi]  # type: ignore[index]
+    x_w = x_c[x_lo:x_hi] - x_c[x_lo]  # re-origin to 0
+    t_w = t_c[t_lo:t_hi] - t_c[t_lo]
+    fd = calibrate_greenshields(rho_w, q_w)
+    provenance = (
+        f"NGSIM I-80, lane={lane}, dx={dx}m, dt={dt}s, "
+        f"window x[{x_lo}:{x_hi}] t[{t_lo}:{t_hi}], tau={tau}"
+    )
+    np.savez(
+        out_npz,
+        x=x_w,
+        t=t_w,
+        rho=rho_w,
+        q=q_w,
+        v_max=fd["v_max"],
+        rho_max=fd["rho_max"],
+        sign_x=int(win["sign_x"]),  # type: ignore[call-overload]
+        monotonicity_defect=float(win["defect"]),  # type: ignore[arg-type]
+        provenance=provenance,
+    )
+    return {
+        "nx": rho_w.shape[1],
+        "nt": rho_w.shape[0],
+        "window": win,
+        "fd": fd,
+        "out": str(out_npz),
+    }
+
+
+def main() -> None:
+    """CLI: build the derived NGSIM ``.npz`` from a raw trajectory CSV."""
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--raw", required=True)
+    p.add_argument("--out", default="applications/pinn/data/ngsim-i80-wave.npz")
+    p.add_argument("--lane", type=int, default=1)
+    p.add_argument("--dx", type=float, default=20.0)
+    p.add_argument("--dt", type=float, default=5.0)
+    p.add_argument("--tau", type=float, default=0.05)
+    args = p.parse_args()
+    summary = build_dataset(
+        args.raw, args.out, lane=args.lane, dx=args.dx, dt=args.dt, tau=args.tau
+    )
+    print(f"== wrote {args.out}: {summary} ==", flush=True)  # noqa: T201
+
+
+if __name__ == "__main__":
+    main()
