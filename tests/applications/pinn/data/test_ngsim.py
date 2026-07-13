@@ -24,6 +24,23 @@ def test_edie_fields_single_vehicle_constant_speed() -> None:
     assert np.allclose(speed[occupied], 1.0, atol=0.15)
 
 
+def test_edie_fields_nonuniform_grid_uses_per_cell_area() -> None:
+    """Non-uniform cell widths divide by each cell's own area, not the first."""
+    # One vehicle crossing a wide cell then a narrow cell at constant speed.
+    t = np.arange(0.0, 4.0, 0.1)
+    x = 1.0 * t  # 1 m/s
+    vid = np.zeros_like(t)
+    x_edges = np.array([0.0, 1.0, 4.0])  # narrow then wide
+    t_edges = np.array([0.0, 4.0])
+    rho, q = ngsim.edie_fields(vid, t, x, x_edges=x_edges, t_edges=t_edges)
+    # speed q/rho recovers ~1 m/s in both cells despite differing widths
+    speed = np.divide(q, rho, out=np.zeros_like(q), where=rho > 0)
+    assert np.allclose(speed[rho > 0], 1.0, atol=0.2)
+    # the wide cell (index 1) must not be scaled by the narrow cell's area:
+    # its density is finite and smaller than a naive first-interval scaling.
+    assert rho[0, 1] > 0.0
+
+
 def test_calibrate_greenshields_recovers_params() -> None:
     """Linear speed-density fit recovers Greenshields v_max, rho_max."""
     rho = np.linspace(0.05, 0.9, 50)

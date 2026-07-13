@@ -34,6 +34,7 @@ def edie_fields(
     give total travelled distance ``d(A)`` and total travel time ``t(A)``, then
     ``rho = t(A)/|A|`` and ``q = d(A)/|A|``. Each consecutive trajectory sample
     pair contributes its distance and time increment to the cell of its midpoint.
+    Each cell is divided by its own area (handling non-uniform grids correctly).
 
     :param vehicle_id: Per-sample vehicle id (used to break increments between
         vehicles).
@@ -57,7 +58,8 @@ def edie_fields(
     cell = ti[inside] * nx + xi[inside]
     dist = np.bincount(cell, weights=dx_inc[inside], minlength=nt * nx)
     time = np.bincount(cell, weights=dt_inc[inside], minlength=nt * nx)
-    cell_area = float(np.diff(x_edges)[0] * np.diff(t_edges)[0])
+    # Per-cell area (handles non-uniform edges correctly).
+    cell_area = np.outer(np.diff(t_edges), np.diff(x_edges)).ravel()
     rho = (time / cell_area).reshape(nt, nx)
     q = (dist / cell_area).reshape(nt, nx)
     return rho, q
