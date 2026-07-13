@@ -169,6 +169,9 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
     :param units: Output width; must equal input width if no skip projection is
         desired.
     :param F: Inner monotone layer; defaults to a fresh :class:`MonoDense`.
+        A custom ``F`` is not near-zero-initialised; for deep stacks initialise
+        its last layer near zero (or pass ``beta_gate="scaled_elu"``) to avoid
+        divergence at init.
     :param mode: Forwarded to the default ``F``. ``absolute`` (default) or
         ``switch``.
     :param activation: Forwarded to the default ``F`` (default ``None``).

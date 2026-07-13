@@ -129,7 +129,10 @@ class MonoResidual(nn.Module):
     :param units: Output feature count.
     :param F: Monotone sub-module, a `units -> Module` factory, or `None`
         (default: build from `sub_depth`). A custom `F` carries the caller's
-        responsibility for monotonicity. Mutually exclusive with `sub_depth`.
+        responsibility for monotonicity; it is not near-zero-initialised, so for
+        deep stacks initialise its last layer near zero (or pass
+        ``beta_gate="scaled_elu"``) to avoid divergence at init. Mutually
+        exclusive with `sub_depth`.
     :param mode: Mode for the default `F`. `"absolute"` (default) or
         `"switch"`.
     :param activation: Activation for the default `F` (default `None`).

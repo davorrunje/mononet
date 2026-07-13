@@ -148,6 +148,9 @@ class MonoResidual(nnx.Module):
     :param units: Number of output units.
     :param F: Inner monotone sublayer; defaults to a stack of ``sub_depth``
         :class:`MonoLinear` layers. May also be a callable ``(units) -> Module``.
+        A custom ``F`` is not near-zero-initialised; for deep stacks initialise
+        its last layer near zero (or pass ``beta_gate="scaled_elu"``) to avoid
+        divergence at init.
     :param mode: ``absolute`` (default) or ``switch``.
     :param activation: Base activation name or spec for the default ``F``
         (default ``None``). Required when ``F`` is not provided; mutually

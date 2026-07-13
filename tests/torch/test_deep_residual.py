@@ -8,6 +8,7 @@ from benchmarks._common.init_diagnostics import (  # noqa: E402
     build_residual_stack,
     synthetic_monotone,
 )
+from mononet.torch import MonoResidual, _kernels  # noqa: E402
 
 
 def _final_mse(
@@ -44,9 +45,6 @@ def test_deep_residual_stays_bounded_where_plain_diverges() -> None:
     plain = _final_mse(None)
     assert residual < 2.0, f"residual d32 not bounded: {residual}"
     assert plain > 100.0, f"plain d32 did not diverge: {plain}"
-
-
-from mononet.torch import MonoResidual, _kernels  # noqa: E402
 
 
 def _train_default_deep(
