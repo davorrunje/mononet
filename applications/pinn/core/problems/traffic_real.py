@@ -15,7 +15,6 @@ from typing import ClassVar
 
 import numpy as np
 import numpy.typing as npt
-from scipy.interpolate import RegularGridInterpolator
 
 from applications.pinn.core import exact
 from applications.pinn.core.admissibility import AdmissibilitySpec
@@ -37,6 +36,8 @@ class NgsimWave:
 
         :param npz_path: Path to the ``.npz`` written by the ngsim preprocessor.
         """
+        from scipy.interpolate import RegularGridInterpolator
+
         d = np.load(npz_path, allow_pickle=True)
         self._x = d["x"].astype(np.float64)
         self._t = d["t"].astype(np.float64)

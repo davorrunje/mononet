@@ -141,7 +141,8 @@ def window_scan(
                 for t_hi in range(t_lo + min_nt, nt + 1, 2):
                     win = rho[t_lo:t_hi, x_lo:x_hi]
                     sign = -1 if win[:, -1].mean() < win[:, 0].mean() else 1
-                    if _defect(win, sign) < tau:
+                    defect = _defect(win, sign)
+                    if defect < tau:
                         area = (x_hi - x_lo) * (t_hi - t_lo)
                         if area > best_area:
                             best_area = area
@@ -149,14 +150,11 @@ def window_scan(
                                 "xi": (x_lo, x_hi),
                                 "ti": (t_lo, t_hi),
                                 "sign_x": sign,
-                                "defect": _defect(win, sign),
+                                "defect": defect,
                             }
     if best is None:
         raise ValueError(f"no window with defect < {tau}; widen tau or use xi=x-ct")
     return best
-
-
-_RAW_COLUMNS = ("Vehicle_ID", "Global_Time", "Local_Y", "v_Vel", "Lane_ID")
 
 
 def _load_raw(raw_csv: Path, lane: int) -> tuple[Array, Array, Array]:
@@ -210,8 +208,8 @@ def build_dataset(
     ti = cast("tuple[int, int]", win["ti"])
     x_lo, x_hi = xi
     t_lo, t_hi = ti
-    rho_w = rho[t_lo:t_hi, x_lo:x_hi]  # type: ignore[index]
-    q_w = q[t_lo:t_hi, x_lo:x_hi]  # type: ignore[index]
+    rho_w = rho[t_lo:t_hi, x_lo:x_hi]
+    q_w = q[t_lo:t_hi, x_lo:x_hi]
     x_w = x_c[x_lo:x_hi] - x_c[x_lo]  # re-origin to 0
     t_w = t_c[t_lo:t_hi] - t_c[t_lo]
     fd = calibrate_greenshields(rho_w, q_w)
