@@ -84,3 +84,25 @@ def test_observations_deterministic_and_noise_reproducible() -> None:
     )
     assert np.array_equal(c1, c2)
     assert np.array_equal(v1, v2)
+
+
+def test_detector_observations_disjoint_all_times() -> None:
+    """Detectors are fixed x-lines over all times; holdout x's are disjoint."""
+    x = np.linspace(0.0, 1.0, 20)
+    t = np.linspace(0.0, 1.0, 8)
+    field = np.outer(t, x)
+    oc, ov, hc, _hv = sampling.detector_observations(
+        field, x, t, n_detectors=3, n_holdout=2, seed=0
+    )
+    assert oc.shape == (3 * len(t), 2)
+    assert hc.shape == (2 * len(t), 2)
+    # each detector contributes exactly len(t) rows (all times)
+    obs_x = np.unique(oc[:, 0])
+    hold_x = np.unique(hc[:, 0])
+    assert len(obs_x) == 3
+    assert len(hold_x) == 2
+    assert not set(obs_x.tolist()) & set(hold_x.tolist())  # disjoint
+    # values match the field at those (x, t)
+    assert np.isclose(
+        ov[0], field[np.where(t == oc[0, 1])[0][0], np.where(x == oc[0, 0])[0][0]]
+    )

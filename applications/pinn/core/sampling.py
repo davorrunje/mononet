@@ -129,3 +129,48 @@ def observations(
     coords = np.column_stack([x_values[xi], t_values[ti]])
     values = field[ti, xi] + noise_std * gen.standard_normal(n_obs)
     return coords, values
+
+
+def detector_observations(
+    field: Array,
+    x_values: Array,
+    t_values: Array,
+    *,
+    n_detectors: int,
+    n_holdout: int,
+    seed: int,
+) -> tuple[Array, Array, Array, Array]:
+    """Sample virtual loop detectors: fixed x-positions observed at all times.
+
+    Emulates a sparse set of stationary sensors along the road. ``n_detectors``
+    positions are used for fitting; a disjoint ``n_holdout`` set is reserved for
+    held-out-detector scoring (predicting where the model never observed). Values
+    are read from ``field`` as-is (real data already carries its own noise).
+
+    :param field: Reference field ``(len(t_values), len(x_values))``.
+    :param x_values: Spatial grid axis.
+    :param t_values: Temporal grid axis.
+    :param n_detectors: Number of fit detectors.
+    :param n_holdout: Number of disjoint held-out detectors.
+    :param seed: RNG seed.
+    :returns: ``(obs_coords, obs_vals, holdout_coords, holdout_vals)`` with coords
+        of shape ``(count * len(t_values), 2)`` (columns ``[x, t]``).
+    """
+    gen = seeding.rng(seed)
+    nx = len(x_values)
+    chosen = gen.choice(nx, size=n_detectors + n_holdout, replace=False)
+    det_xi = chosen[:n_detectors].astype(int)
+    hold_xi = chosen[n_detectors:].astype(int)
+
+    def _lines(xis: npt.NDArray[np.int_]) -> tuple[Array, Array]:
+        coords, vals = [], []
+        for xi in xis:
+            coords.append(
+                np.column_stack([np.full(len(t_values), x_values[xi]), t_values])
+            )
+            vals.append(field[:, xi])
+        return np.vstack(coords), np.concatenate(vals)
+
+    oc, ov = _lines(det_xi)
+    hc, hv = _lines(hold_xi)
+    return oc, ov, hc, hv
