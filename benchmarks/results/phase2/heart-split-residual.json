@@ -1,6 +1,6 @@
 {
   "dataset": "heart",
-  "flavor": "switch-residual",
+  "flavor": "split-residual",
   "best_params": {
     "width": 21,
     "depth": 3,

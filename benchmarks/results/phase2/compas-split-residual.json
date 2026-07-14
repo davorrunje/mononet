@@ -1,6 +1,6 @@
 {
   "dataset": "compas",
-  "flavor": "switch-residual",
+  "flavor": "split-residual",
   "best_params": {
     "width": 16,
     "depth": 2,

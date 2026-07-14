@@ -1,6 +1,6 @@
 {
   "dataset": "blog",
-  "flavor": "absolute-residual",
+  "flavor": "mixed-residual",
   "best_params": {
     "width": 21,
     "depth": 1,
