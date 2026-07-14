@@ -91,6 +91,7 @@ synthetic Riemann problems above. Runs on CPU; no GPU needed.
 
 ```bash
 # 0. Obtain raw NGSIM I-80 trajectories -> applications/pinn/data/raw/i80.csv
+#    Full download instructions, source, schema + units: applications/pinn/data/README.md
 #    (manual; canonical hosts are unreachable from the dev container). Gitignored.
 
 # 1. Build the derived dataset (Edie field + window scan + FD) -> LFS .npz
