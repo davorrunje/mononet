@@ -110,21 +110,22 @@ def ablation_cells(focused: bool = True) -> list[Cell]:
 
 
 def _load_bundle(dataset: str) -> DatasetBundle:
-    """Load a dataset bundle, resolving the data dir per source kind.
+    """Load a dataset bundle from the default dataset cache.
 
-    Generator-backed synthetic datasets ignore ``data_dir``; real datasets are
-    resolved (and asserted present) via :func:`require_dataset`.
+    Generator-backed synthetic datasets ignore ``data_dir``; real datasets
+    (heart, auto) read their train/test CSVs from :func:`default_dest` — where
+    :mod:`benchmarks.datasets.download` places the Zenodo files. (Respects
+    ``$MONONET_DATA_DIR`` via ``default_dest``.)
 
     :param dataset: Dataset key.
     :returns: The loaded :class:`DatasetBundle`.
+    :raises FileNotFoundError: If a real dataset's CSVs are absent (run
+        ``python -m benchmarks.datasets.download``).
     """
     from benchmarks.datasets.download import default_dest
-    from benchmarks.datasets.registry import DATASETS, load
-    from benchmarks.datasets.sources import require_dataset
+    from benchmarks.datasets.registry import load
 
-    if DATASETS[dataset].generator is not None:
-        return load(dataset, data_dir=default_dest())
-    return load(dataset, data_dir=require_dataset(dataset))
+    return load(dataset, data_dir=default_dest())
 
 
 def _subsample(bundle: DatasetBundle, n: int) -> DatasetBundle:
