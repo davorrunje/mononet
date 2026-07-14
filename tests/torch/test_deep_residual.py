@@ -18,7 +18,7 @@ def _final_mse(
     x_np, y_np = synthetic_monotone(512, 8, seed=seed)
     x = torch.tensor(x_np, dtype=torch.float64)
     y = torch.tensor(y_np, dtype=torch.float64).unsqueeze(1)
-    net = build_residual_stack("absolute", depth, sub_depth)
+    net = build_residual_stack("mixed", depth, sub_depth)
     opt = torch.optim.Adam(net.parameters(), lr=1e-2)
     loss_val = float("inf")
     for _ in range(epochs):
@@ -54,7 +54,7 @@ def _train_default_deep(
     x_np, y_np = synthetic_monotone(512, 8, seed=seed)
     x = torch.tensor(x_np, dtype=torch.float64)
     y = torch.tensor(y_np, dtype=torch.float64).unsqueeze(1)
-    net = build_residual_stack("absolute", depth, 2)  # sub_depth=2, A+B defaults
+    net = build_residual_stack("mixed", depth, 2)  # sub_depth=2, A+B defaults
     blocks = [m for m in net.modules() if isinstance(m, MonoResidual)]
     w0 = [float(_last_weight_abs_sum(b)) for b in blocks]
     opt = torch.optim.Adam(net.parameters(), lr=1e-2)

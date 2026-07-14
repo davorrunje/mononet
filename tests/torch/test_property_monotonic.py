@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 @settings(deadline=None, max_examples=50)
 @given(
-    mode=st.sampled_from(["switch", "absolute"]),
+    mode=st.sampled_from(["split", "mixed"]),
     seed=st.integers(0, 10_000),
 )
 def test_mono_linear_nondecreasing(mode: Mode, seed: int) -> None:
@@ -38,7 +38,7 @@ def test_mono_linear_nondecreasing(mode: Mode, seed: int) -> None:
 @given(seed=st.integers(0, 10_000))
 def test_mono_residual_nondecreasing(seed: int) -> None:
     torch.manual_seed(seed)
-    block = MonoResidual(3, 3, mode="switch", activation="relu")
+    block = MonoResidual(3, 3, mode="split", activation="relu")
     # perturb the gate raws away from the warm start
     with torch.no_grad():
         block.beta.add_(torch.rand(()) * 2)
