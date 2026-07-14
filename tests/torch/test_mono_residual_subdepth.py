@@ -8,9 +8,7 @@ from mononet.torch import MonoLinear, MonoResidual  # noqa: E402
 
 
 def test_default_builds_two_monolinears() -> None:
-    layer = MonoResidual(
-        8, 8, mode="mixed", activation="elu"
-    )  # default sub_depth -> 2
+    layer = MonoResidual(8, 8, mode="mixed", activation="elu")  # default sub_depth -> 2
     assert isinstance(layer.F, torch.nn.Sequential)
     assert sum(isinstance(m, MonoLinear) for m in layer.F) == 2
 

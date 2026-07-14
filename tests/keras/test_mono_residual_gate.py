@@ -66,9 +66,7 @@ def test_near_zero_scale_is_user_tunable() -> None:
     small = _last_dense(small_block)
 
     keras.utils.set_random_seed(0)
-    big_block = MonoResidual(
-        32, mode="mixed", activation="elu", near_zero_scale=2e-3
-    )
+    big_block = MonoResidual(32, mode="mixed", activation="elu", near_zero_scale=2e-3)
     big_block(np.zeros((1, 32), dtype="float32"))
     big = _last_dense(big_block)
 
@@ -80,9 +78,7 @@ def test_near_zero_scale_is_user_tunable() -> None:
 
     # 0.0 reproduces exact-zero
     keras.utils.set_random_seed(0)
-    zero_block = MonoResidual(
-        32, mode="mixed", activation="elu", near_zero_scale=0.0
-    )
+    zero_block = MonoResidual(32, mode="mixed", activation="elu", near_zero_scale=0.0)
     zero_block(np.zeros((1, 32), dtype="float32"))
     zero = _last_dense(zero_block)
     assert float(ops.convert_to_numpy(ops.sum(ops.abs(zero.w)))) == 0.0
