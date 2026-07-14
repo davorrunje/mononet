@@ -74,6 +74,62 @@ def _best_lambda(obs_coords: Array, obs_vals: Array, seed: int) -> float:
     return best_lam
 
 
+def adaptive_smoothing(
+    obs_coords: Array,
+    obs_vals: Array,
+    grid_x: Array,
+    grid_t: Array,
+    *,
+    v_free: float,
+    v_cong: float,
+    sigma: float = 60.0,
+    tau: float = 30.0,
+    v_thr: float = 15.0,
+    dv: float = 5.0,
+) -> Array:
+    """Treiber-Helbing Adaptive Smoothing Method (the standard non-PINN TSE baseline).
+
+    Reconstructs a field from sparse detector data by smoothing along the two
+    characteristic directions -- free-flow (``+v_free``) and congested
+    (``v_cong``, negative) -- and blending them by a speed-based congestion weight.
+    Each grid point is an anisotropic Gaussian-weighted average of observations
+    shifted along each characteristic.
+
+    :param obs_coords: Observation coordinates ``(N, 2)`` columns ``[x, t]``.
+    :param obs_vals: Observation values ``(N,)``.
+    :param grid_x: Output spatial axis.
+    :param grid_t: Output temporal axis.
+    :param v_free: Free-flow characteristic speed (m/s, > 0).
+    :param v_cong: Congested characteristic (backward) speed (m/s, < 0).
+    :param sigma: Spatial smoothing width (m).
+    :param tau: Temporal smoothing width (s).
+    :param v_thr: Speed threshold for the congestion weight (m/s).
+    :param dv: Transition width of the congestion weight (m/s).
+    :returns: Reconstructed field ``(len(grid_t), len(grid_x))``.
+    """
+    o_x, o_t = obs_coords[:, 0], obs_coords[:, 1]
+    gx, gt = np.meshgrid(grid_x, grid_t)  # (nt, nx)
+    shape = gx.shape
+    gxf, gtf = gx.ravel(), gt.ravel()
+
+    def _filter(speed: float) -> Array:
+        # weight obs by distance along the characteristic x - speed*t
+        dx = gxf[:, None] - o_x[None, :]
+        dt = gtf[:, None] - o_t[None, :]
+        w = np.exp(-np.abs(dt) / tau - np.abs(dx - speed * dt) / sigma)
+        num = (w * obs_vals[None, :]).sum(axis=1)
+        den = w.sum(axis=1) + 1e-12
+        return np.asarray(num / den, dtype=np.float64)
+
+    free = _filter(v_free)
+    cong = _filter(v_cong)
+    # congestion weight: lean congested where the (congested-estimate) speed is low.
+    # here we blend on the field value proxy via a logistic of the two estimates.
+    w_cong = 0.5 * (1.0 + np.tanh((cong - free) / (dv / max(v_thr, 1e-6) + 1e-6)))
+    field = w_cong * cong + (1.0 - w_cong) * free
+    return np.asarray(field.reshape(shape), dtype=np.float64)
+
+
 def main() -> None:
     """CLI entry point."""
     p = argparse.ArgumentParser(description=__doc__)
