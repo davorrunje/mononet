@@ -84,8 +84,6 @@ def render_verdict(ds: str, d: dict[str, dict[str, Any]], lower: bool) -> str:
     :param lower: Whether lower metric is better.
     :returns: A Markdown table row ``| ds | Δ | 95% CI | verdict |``.
     """
-    import numpy as np
-
     from benchmarks._common.results import bootstrap_delta
 
     alt = d.get("alternate-plain")

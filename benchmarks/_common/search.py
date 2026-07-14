@@ -106,6 +106,13 @@ def search(
     collapses (which a single-seed CV misses), and the variance penalty steers
     the search away from fragile HP regions that train well on average but
     collapse on some seeds. See [[stage2-collapse-investigation]].
+
+    :param search_activation: When ``True``, sample ``activation`` from
+        ``{"relu", "elu", "softplus", "selu"}``; otherwise fix it to ``"elu"``.
+    :param max_depth: Upper bound of the shallow ``depth`` range (``[1,
+        max_depth]``) used when ``deep`` is `False`.
+    :param embed_layers: Number of non-monotone `Dense` layers in
+        ``cfg.embed_hidden``, each sized ``width``.
     """
     metric = metric or _primary_metric(bundle)
     lower = _lower_is_better(metric)
@@ -170,6 +177,8 @@ def final_eval(
 ) -> tuple[Aggregate, list[ResultRow]]:
     """Refit best HPs on the full train split; report TEST mean±std over all seeds.
 
+    :param embed_layers: Number of non-monotone `Dense` layers in
+        ``cfg.embed_hidden``, each sized ``width``.
     :returns: ``(agg, rows)`` — the primary-metric :class:`Aggregate` and the
         raw per-seed :class:`ResultRow` list backing it. Each row's ``scores``
         holds every metric computed for that seed (e.g. ``roc_auc`` *and*
@@ -353,6 +362,13 @@ def run_dataset(
     Budget falls back to `_budget_for(dataset)` when not overridden — the
     per-dataset `_BUDGET` defaults, or the `_SYNTH_BUDGET` preset for `synth_*`.
     Returns the written JSON paths.
+
+    :param search_activation: When ``True``, sample ``activation`` from
+        ``{"relu", "elu", "softplus", "selu"}``; otherwise fix it to ``"elu"``.
+    :param max_depth: Upper bound of the shallow ``depth`` range (``[1,
+        max_depth]``) used when ``deep`` is `False`.
+    :param embed_layers: Number of non-monotone `Dense` layers in
+        ``cfg.embed_hidden``, each sized ``width``.
     """
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
