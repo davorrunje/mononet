@@ -38,6 +38,32 @@ def flavor_name(mode: str, residual: bool, deep: bool = False) -> str:
     return f"{mode}-{'residual' if residual else 'plain'}"
 
 
+def _run_flavor_label(
+    mode: str, residual: bool, deep: bool, *, fixed_convex: bool
+) -> str:
+    """Flavor label for a search run, accounting for a fixed ``convex_fraction``.
+
+    Identical to `flavor_name` except when ``fixed_convex`` is `True` and
+    ``mode == "mixed"``: the ``"mixed"`` segment is replaced with
+    ``"mixed-fixed"`` (e.g. ``"mixed-plain"`` -> ``"mixed-fixed-plain"``), so
+    the "mixed with convex_fraction pinned at 0.5" ablation gets its own
+    label distinct from the searched-``convex_fraction`` ``"mixed"`` flavor.
+    Has no effect on ``"split"``/``"alternate"``, whose ``convex_fraction`` is
+    already fixed regardless of this flag.
+
+    :param mode: Monotonicity mode (``"split"``, ``"mixed"``, or ``"alternate"``).
+    :param residual: Whether the stack uses residual blocks.
+    :param deep: Whether this is the deep-depth-band flavor.
+    :param fixed_convex: Whether ``convex_fraction`` was held fixed at ``0.5``
+        rather than searched (only meaningful for ``mode == "mixed"``).
+    :returns: The flavor label string.
+    """
+    name = flavor_name(mode, residual, deep)
+    if fixed_convex and mode == "mixed":
+        return name.replace("mixed", "mixed-fixed", 1)
+    return name
+
+
 def _primary_metric(bundle: DatasetBundle) -> str:
     return "roc_auc" if bundle.task == "binary_classification" else "mse"
 
@@ -96,6 +122,7 @@ def search(
     search_activation: bool = False,
     max_depth: int = 4,
     embed_layers: int = 1,
+    search_convex_fraction: bool = True,
 ) -> StudyResult:
     """Tune (dataset, flavor) HPs by a **stability-aware** k-fold CV objective.
 
@@ -113,11 +140,19 @@ def search(
         max_depth]``) used when ``deep`` is `False`.
     :param embed_layers: Number of non-monotone `Dense` layers in
         ``cfg.embed_hidden``, each sized ``width``.
+    :param search_convex_fraction: When ``False`` and ``mode == "mixed"``,
+        fix ``convex_fraction`` at ``0.5`` instead of searching it (the
+        "mixed-fixed" flavor); the study name and returned
+        `StudyResult.flavor` get the ``"mixed-fixed"`` label
+        (see `_run_flavor_label`). No effect on other modes.
     """
     metric = metric or _primary_metric(bundle)
     lower = _lower_is_better(metric)
     direction = "minimize" if lower else "maximize"
     folds = _fold_bundles(bundle, n_splits=n_splits, seed=seed)
+    run_flavor = _run_flavor_label(
+        mode, residual, deep, fixed_convex=not search_convex_fraction
+    )
 
     def objective(trial: optuna.Trial) -> float:
         cfg: BenchmarkConfig = suggest_config(
@@ -133,6 +168,7 @@ def search(
             search_activation=search_activation,
             max_depth=max_depth,
             embed_layers=embed_layers,
+            search_convex_fraction=search_convex_fraction,
         )
         cfg = dataclasses.replace(cfg, seeds=tuple(range(search_seeds)))
         scores: list[float] = []
@@ -147,7 +183,7 @@ def search(
         return float(arr.mean() + arr.std()) if lower else float(arr.mean() - arr.std())
 
     study = optuna.create_study(
-        study_name=f"{bundle.name}-{flavor_name(mode, residual, deep)}",
+        study_name=f"{bundle.name}-{run_flavor}",
         direction=direction,
         sampler=optuna.samplers.TPESampler(seed=seed),
         storage=storage,
@@ -156,7 +192,7 @@ def search(
     study.optimize(objective, n_trials=n_trials, n_jobs=n_jobs)
     return StudyResult(
         dataset=bundle.name,
-        flavor=flavor_name(mode, residual, deep),
+        flavor=run_flavor,
         best_params=dict(study.best_params),
         best_value=float(study.best_value),
         n_trials=len(study.trials),
@@ -360,6 +396,7 @@ def run_dataset(
     search_activation: bool = False,
     max_depth: int = 4,
     embed_layers: int = 1,
+    search_convex_fraction: bool = True,
 ) -> list[Path]:
     """Search + final_eval each flavor of one dataset; write per-flavor JSON.
 
@@ -373,6 +410,11 @@ def run_dataset(
         max_depth]``) used when ``deep`` is `False`.
     :param embed_layers: Number of non-monotone `Dense` layers in
         ``cfg.embed_hidden``, each sized ``width``.
+    :param search_convex_fraction: When ``False``, every ``mode == "mixed"``
+        flavor in ``flavors`` is run with ``convex_fraction`` fixed at ``0.5``
+        (the "mixed-fixed" flavor) instead of searched; propagated into
+        `search`, and reflected in the output filename and ``rec["flavor"]``
+        via `_run_flavor_label`.
     """
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
@@ -388,7 +430,9 @@ def run_dataset(
     bundle = load(dataset, data_dir=data_dir)
     written: list[Path] = []
     for mode, residual, deep in flavors:
-        fname = flavor_name(mode, residual, deep)
+        fname = _run_flavor_label(
+            mode, residual, deep, fixed_convex=not search_convex_fraction
+        )
         storage = (
             f"sqlite:///{storage_dir}/{dataset}-{fname}.db" if storage_dir else None
         )
@@ -407,6 +451,7 @@ def run_dataset(
             search_activation=search_activation,
             max_depth=max_depth,
             embed_layers=embed_layers,
+            search_convex_fraction=search_convex_fraction,
         )
         agg, eval_rows = final_eval(
             bundle,

@@ -67,6 +67,60 @@ def test_split_uses_fixed_convex_fraction() -> None:
     assert cfg.metrics == ("accuracy",)
 
 
+def test_fixed_convex_fraction_disables_search_for_mixed() -> None:
+    study = optuna.create_study()
+    trial = study.ask()
+    cfg = suggest_config(
+        trial,
+        dataset="syn",
+        backend="torch",
+        mode="mixed",
+        residual=False,
+        epochs=3,
+        metric="mse",
+        n_train=10_000,
+        search_convex_fraction=False,
+    )
+    assert cfg.convex_fraction == 0.5
+    assert "convex_fraction" not in trial.params
+
+
+def test_default_search_convex_fraction_still_searches_mixed() -> None:
+    study = optuna.create_study()
+    trial = study.ask()
+    cfg = suggest_config(
+        trial,
+        dataset="syn",
+        backend="torch",
+        mode="mixed",
+        residual=False,
+        epochs=3,
+        metric="mse",
+        n_train=10_000,
+    )
+    assert 0.0 <= cfg.convex_fraction <= 1.0
+    assert "convex_fraction" in trial.params
+
+
+def test_fixed_convex_fraction_is_noop_for_split() -> None:
+    # split already has fixed convex_fraction; the flag must not change anything.
+    study = optuna.create_study()
+    trial = study.ask()
+    cfg = suggest_config(
+        trial,
+        dataset="syn",
+        backend="torch",
+        mode="split",
+        residual=False,
+        epochs=3,
+        metric="mse",
+        n_train=10_000,
+        search_convex_fraction=False,
+    )
+    assert cfg.convex_fraction == 0.5
+    assert "convex_fraction" not in trial.params
+
+
 def test_roc_auc_primary_also_reports_accuracy() -> None:
     # When roc_auc is the search objective, accuracy must still be reported
     # alongside it (the primary metric switched away from accuracy, but

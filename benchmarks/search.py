@@ -11,7 +11,11 @@ from typing import Any
 
 import typer
 
-from benchmarks._common.search import _ALL_FLAVORS, flavor_name, run_dataset
+from benchmarks._common.search import (
+    _ALL_FLAVORS,
+    _run_flavor_label,
+    run_dataset,
+)
 
 app = typer.Typer(add_completion=False, help="Run the Phase-2a HP-search flavor study.")
 
@@ -91,6 +95,12 @@ def main(
     embed_layers: int = typer.Option(
         1, "--embed-layers", help="Dense layers in the non-monotone embedding"
     ),
+    fix_convex_fraction: bool = typer.Option(
+        False,
+        "--fix-convex-fraction",
+        help="fix convex_fraction at 0.5 for mixed flavors instead of searching it "
+        "(the mixed-fixed flavor)",
+    ),
     out_dir: Path | None = typer.Option(None, "--out-dir"),  # noqa: B008
     storage_dir: Path | None = typer.Option(None, "--storage-dir"),  # noqa: B008
     smoke: bool = typer.Option(False, "--smoke", help="tiny preset for validation"),
@@ -108,7 +118,10 @@ def main(
     cvf: int | None = _SMOKE["cv_folds"] if smoke else cv_folds
     ss: int = _SMOKE["search_seeds"] if smoke else search_seeds
     flavs = _parse_flavors(flavors)
-    flav_names = [flavor_name(m, r, d) for m, r, d in flavs]
+    flav_names = [
+        _run_flavor_label(m, r, d, fixed_convex=fix_convex_fraction)
+        for m, r, d in flavs
+    ]
 
     if dry_run:
         typer.echo(
@@ -133,6 +146,7 @@ def main(
             search_activation=search_activation,
             max_depth=max_depth,
             embed_layers=embed_layers,
+            search_convex_fraction=not fix_convex_fraction,
         )
         typer.echo(f"{dataset}: wrote {len(paths)} result files")
 

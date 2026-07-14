@@ -32,7 +32,14 @@ _FLAVS = [
     "mixed-residual",
     "mixed-deep",
 ]
-_DETAIL_FLAVS = ["split-plain", "mixed-plain", "alternate-plain"]
+_DETAIL_FLAVS = ["split-plain", "mixed-plain", "mixed-fixed-plain", "alternate-plain"]
+# "mixed-fixed-plain" is an opt-in extra flavor (mixed with convex_fraction
+# pinned at 0.5); unlike the other detailed flavors it renders no row at all
+# when absent, rather than a pending "_running_" placeholder (see
+# render_detailed), so older/partial result sets don't sprout a permanent
+# pending row for a flavor that was never run.
+_DETAIL_OPTIONAL_FLAVS = {"mixed-fixed-plain"}
+_DETAIL_LABELS = {"mixed-fixed-plain": "mixed-fix"}
 
 
 def _layers(flavor: str, depth: int) -> int:
@@ -194,6 +201,11 @@ def _detail_cvxf_cell(bp: dict[str, Any]) -> str:
     return f"{cvxf:.2f}" if cvxf is not None else "·"
 
 
+def _detail_flavor_label(fl: str) -> str:
+    """Display name for a detailed-table flavor (bare, no medal/bold)."""
+    return _DETAIL_LABELS.get(fl, fl.removesuffix("-plain"))
+
+
 def _detail_row(
     ds: str,
     label: str,
@@ -203,7 +215,7 @@ def _detail_row(
     is_winner: bool,
 ) -> str:
     """Render one row of the detailed table for a single ``(dataset, flavor)``."""
-    name = fl.removesuffix("-plain")
+    name = _detail_flavor_label(fl)
     if r is None:
         blanks = [""] * 10
         cells = [label, rows_cell, name, "_running_", *blanks, "⏳"]
@@ -251,11 +263,14 @@ def render_detailed(root: Path | None = None) -> str:
     """Return a detailed per-flavor Markdown table (data size, HPs, winner medal).
 
     One row per ``(dataset, flavor)`` for the plain-only flavors ``split``,
-    ``mixed``, ``alternate``. Datasets are ordered by ascending ``n_train``
+    ``mixed``, ``mixed-fixed`` (mixed with ``convex_fraction`` pinned at
+    ``0.5``), ``alternate``. Datasets are ordered by ascending ``n_train``
     (smallest first), falling back to the fixed :data:`_ORDER` for datasets
     with no ``n_train`` recorded. The per-dataset best IQM (direction taken
     from :data:`_DISP`) is marked with a 🥇 and bolded; flavors missing from
-    the result JSONs (partial runs) render as ``_running_`` / ``⏳``.
+    the result JSONs (partial runs) render as ``_running_`` / ``⏳`` — except
+    ``mixed-fixed``, an opt-in extra flavor whose row is omitted entirely
+    when no record exists for it (see :data:`_DETAIL_OPTIONAL_FLAVS`).
 
     :param root: Directory containing per-flavor result JSONs. Defaults to
         ``benchmarks/results/phase2``.
@@ -276,9 +291,12 @@ def render_detailed(root: Path | None = None) -> str:
         winner = _detail_winner(d, ds, lower)
         rows_cell = _detail_rows_cell(d)
         for i, fl in enumerate(_DETAIL_FLAVS):
+            r = d.get(fl)
+            if r is None and fl in _DETAIL_OPTIONAL_FLAVS:
+                continue
             label = f"{ds} ({m} {arrow})" if i == 0 else ""
             rc = rows_cell if i == 0 else ""
-            out.append(_detail_row(ds, label, rc, fl, d.get(fl), fl == winner))
+            out.append(_detail_row(ds, label, rc, fl, r, fl == winner))
     return "\n".join(out)
 
 

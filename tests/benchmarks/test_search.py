@@ -58,6 +58,43 @@ def test_flavor_name() -> None:
     assert flavor_name("mixed", True, deep=True) == "mixed-deep"
 
 
+def test_run_flavor_label_mixed_fixed() -> None:
+    from benchmarks._common.search import _run_flavor_label
+
+    assert (
+        _run_flavor_label("mixed", False, False, fixed_convex=True)
+        == "mixed-fixed-plain"
+    )
+    assert _run_flavor_label("mixed", False, False, fixed_convex=False) == "mixed-plain"
+    assert (
+        _run_flavor_label("mixed", True, False, fixed_convex=True)
+        == "mixed-fixed-residual"
+    )
+    # split/alternate are unaffected by fixed_convex — convex_fraction is
+    # already fixed at 0.5 for them regardless.
+    assert _run_flavor_label("split", False, False, fixed_convex=True) == "split-plain"
+    assert (
+        _run_flavor_label("alternate", False, False, fixed_convex=True)
+        == "alternate-plain"
+    )
+
+
+def test_search_with_fixed_convex_fraction_labels_flavor() -> None:
+    res = search(
+        _bundle(),
+        mode="mixed",
+        residual=False,
+        backend="torch",
+        n_trials=2,
+        seed=0,
+        epochs=1,
+        n_splits=2,
+        search_convex_fraction=False,
+    )
+    assert res.flavor == "mixed-fixed-plain"
+    assert "convex_fraction" not in res.best_params
+
+
 def test_all_flavors_has_six_entries_including_deep() -> None:
     from benchmarks._common.search import _ALL_FLAVORS, flavor_name
 
@@ -247,6 +284,29 @@ def test_run_dataset_persists_n_diverged(tmp_path: Path) -> None:
     assert "n_diverged" in rec
     assert isinstance(rec["n_diverged"], int)
     assert 0 <= rec["n_diverged"] <= rec["n_seeds"]
+
+
+def test_run_dataset_fixed_convex_fraction_writes_mixed_fixed_file(
+    tmp_path: Path,
+) -> None:
+    from benchmarks._common.search import run_dataset
+
+    paths = run_dataset(
+        "synth_additive_clow",
+        backend="torch",
+        flavors=(("mixed", False, False),),
+        n_trials=1,
+        epochs=2,
+        final_seeds=range(2),
+        n_splits=2,
+        search_seeds=1,
+        out_dir=tmp_path,
+        search_convex_fraction=False,
+    )
+    assert (tmp_path / "synth_additive_clow-mixed-fixed-plain.json") in paths
+    rec = json.loads(paths[0].read_text())
+    assert rec["flavor"] == "mixed-fixed-plain"
+    assert "convex_fraction" not in rec["best_params"]
 
 
 def _tiny_reg_bundle() -> DatasetBundle:

@@ -34,6 +34,21 @@ def test_help_lists_flags() -> None:
         assert flag in output
 
 
+def test_help_lists_fix_convex_fraction_flag() -> None:
+    res = runner.invoke(app, ["--help"])
+    assert res.exit_code == 0
+    output = _ANSI.sub("", res.output)
+    assert "--fix-convex-fraction" in output
+
+
+def test_dry_run_with_fix_convex_fraction_labels_mixed_fixed() -> None:
+    res = runner.invoke(
+        app, ["--flavors", "mixed-plain", "--fix-convex-fraction", "--dry-run"]
+    )
+    assert res.exit_code == 0
+    assert "mixed-fixed-plain" in res.output
+
+
 def test_smoke_preset_values() -> None:
     assert _SMOKE["datasets"] == ["auto", "heart"]
     assert _SMOKE["n_trials"] == 5

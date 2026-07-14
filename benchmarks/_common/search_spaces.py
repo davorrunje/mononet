@@ -32,6 +32,7 @@ def suggest_config(
     search_activation: bool = False,
     max_depth: int = 4,
     embed_layers: int = 1,
+    search_convex_fraction: bool = True,
 ) -> BenchmarkConfig:
     """Sample a BenchmarkConfig for one (dataset, flavor) trial.
 
@@ -64,6 +65,11 @@ def suggest_config(
         max_depth]``) used when ``deep`` is `False`.
     :param embed_layers: Number of non-monotone `Dense` layers in
         ``cfg.embed_hidden``, each sized ``width``.
+    :param search_convex_fraction: When ``False`` and ``mode == "mixed"``,
+        fix ``convex_fraction`` at ``0.5`` instead of sampling it (the
+        "mixed-fixed" flavor). Has no effect for ``"split"`` or
+        ``"alternate"``, which already keep it fixed. Defaults to ``True``
+        (current mixed-mode search behaviour).
     :returns: A fully populated `BenchmarkConfig` ready for `run()`.
     """
     width = trial.suggest_categorical("width", [8, 16, 21, 32, 64])
@@ -88,7 +94,9 @@ def suggest_config(
         ),
     )
     convex_fraction = (
-        trial.suggest_float("convex_fraction", 0.0, 1.0) if mode == "mixed" else 0.5
+        trial.suggest_float("convex_fraction", 0.0, 1.0)
+        if mode == "mixed" and search_convex_fraction
+        else 0.5
     )
     alt_init: Literal["composition", "legacy"] | None = (
         "composition" if mode == "alternate" else None

@@ -176,6 +176,52 @@ def test_render_detailed_shows_convex_fraction_for_mixed_only(tmp_path: Path) ->
     assert "·" in alt_line
 
 
+def test_render_detailed_mixed_fixed_flavor_renders_as_mixed_fix(
+    tmp_path: Path,
+) -> None:
+    _write(
+        tmp_path,
+        [
+            _rec("heart", "split-plain", [0.70, 0.71, 0.69], n_train=200),
+            _rec(
+                "heart",
+                "mixed-plain",
+                [0.72, 0.73, 0.71],
+                n_train=200,
+                convex_fraction=0.35,
+            ),
+            _rec(
+                "heart",
+                "mixed-fixed-plain",
+                [0.95, 0.96, 0.94],
+                n_train=200,
+                convex_fraction=0.5,
+            ),
+            _rec("heart", "alternate-plain", [0.68, 0.69, 0.67], n_train=200),
+        ],
+    )
+    out = render_detailed(tmp_path)
+    fixed_line = next(line for line in out.splitlines() if "| mixed-fix " in line)
+    assert "🥇" in fixed_line
+    assert "0.50" in fixed_line
+
+
+def test_render_detailed_mixed_fixed_absent_renders_no_row(tmp_path: Path) -> None:
+    # mixed-fixed-plain is an opt-in extra flavor; when no record exists for it,
+    # render_detailed must NOT synthesize a pending "_running_" row for it (unlike
+    # split/mixed/alternate, which always render even when missing).
+    _write(
+        tmp_path,
+        [
+            _rec("compas", "split-plain", [0.60, 0.61, 0.59], n_train=1000),
+            _rec("compas", "mixed-plain", [0.62, 0.63, 0.61], n_train=1000),
+            _rec("compas", "alternate-plain", [0.64, 0.65, 0.63], n_train=1000),
+        ],
+    )
+    out = render_detailed(tmp_path)
+    assert not any("| mixed-fix" in line for line in out.splitlines())
+
+
 def test_render_detailed_sorts_datasets_by_n_train_ascending(tmp_path: Path) -> None:
     # "auto" is first in the legacy _ORDER but has the larger n_train here;
     # "blog" is last in _ORDER but has the smaller n_train, so it must render
