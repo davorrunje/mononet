@@ -284,3 +284,13 @@ datasets have no free features, so the branch is empty and this is a no-op.)
    `alternate` jumped 0.706→0.730 going 25→50 trials. Reconstructable from the
    committed Optuna storage DBs (all trials stored) with no re-run; extend
    trials per flavor until the best-so-far plateaus.
+6. **Fix `convex_fraction = 0.5` (stop searching it).** `0.5` is the closed-form,
+   self-cancelling init case in `absolute_init_params` (`gain` only, `bias = 0`);
+   any other fraction triggers an 8-iteration `gain`/`bias` fixed-point — extra init
+   complexity for no demonstrated benefit. Searching it also gives `mixed` an extra
+   search dimension `split`/`alternate` lack (per-dimension under-sampling at fixed
+   budget → unfair comparison) and room to meta-overfit. Change `suggest_config` to
+   drop the `convex_fraction` `suggest_float` and always pass `0.5`. Search-space
+   change ⇒ re-run the 5 `mixed` studies (split/alternate unaffected — already 0.5).
+   Supersedes the earlier "discretize to k/width" idea. Timing (fold into this run
+   vs later) pending.
