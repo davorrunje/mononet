@@ -213,6 +213,32 @@ def test_run_dataset_persists_secondary_accuracy_for_classification(
     assert len(sec["values"]) == 3
 
 
+def test_run_dataset_persists_n_diverged(tmp_path: Path) -> None:
+    """run_dataset must record n_diverged alongside n_collapse in the JSON.
+
+    Uses the generator-backed `synth_additive_clow` dataset (no data files
+    needed) end-to-end through search + final_eval + JSON persistence.
+    """
+    from benchmarks._common.search import run_dataset
+
+    paths = run_dataset(
+        "synth_additive_clow",
+        backend="torch",
+        flavors=(("mixed", False, False),),
+        n_trials=1,
+        epochs=2,
+        final_seeds=range(2),
+        n_splits=2,
+        search_seeds=1,
+        out_dir=tmp_path,
+    )
+    rec = json.loads(paths[0].read_text())
+    assert (tmp_path / "synth_additive_clow-mixed-plain.json") in paths
+    assert "n_diverged" in rec
+    assert isinstance(rec["n_diverged"], int)
+    assert 0 <= rec["n_diverged"] <= rec["n_seeds"]
+
+
 def _tiny_reg_bundle() -> DatasetBundle:
     rng = np.random.default_rng(0)
     x = rng.uniform(-1, 1, (80, 3)).astype("float32")

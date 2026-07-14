@@ -441,6 +441,7 @@ def run_dataset(
                 lower_is_better=_lower_is_better(agg.metric),
                 metric=agg.metric,
             ),
+            "n_diverged": sum(1 for r in eval_rows if r.diverged),
             "n_seeds": agg.n_seeds,
         }
         path = out_dir / f"{dataset}-{fname}.json"
