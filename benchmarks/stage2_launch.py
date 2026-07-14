@@ -35,6 +35,7 @@ def _run_dataset(
     device: str,
     out_dir: Path,
     storage_dir: Path | None,
+    extra: list[str],
 ) -> str:
     """Run one dataset's flavor search as a subprocess pinned to ``device``.
 
@@ -49,6 +50,9 @@ def _run_dataset(
         land.
     :param storage_dir: Forwarded as ``--storage-dir`` if given; where the
         resumable Optuna study databases land.
+    :param extra: Additional CLI args forwarded verbatim to the subprocess
+        (e.g. ``--flavors``, ``--search-activation``, ``--max-depth``,
+        ``--embed-layers``).
     :returns: `name`, for the caller to track completion.
     """
     env = {**os.environ, "MONONET_TORCH_DEVICE": device}
@@ -65,6 +69,7 @@ def _run_dataset(
     ]
     if storage_dir is not None:
         cmd += ["--storage-dir", str(storage_dir)]
+    cmd += extra
     subprocess.run(cmd, env=env, check=True)
     return name
 
@@ -75,6 +80,7 @@ def run_parallel(
     devices: list[str],
     out_dir: Path,
     storage_dir: Path | None = None,
+    extra: list[str] | None = None,
 ) -> list[str]:
     """Run the Stage-A search for all `datasets`, one subprocess per dataset.
 
@@ -89,9 +95,13 @@ def run_parallel(
     :param out_dir: Passed through to each subprocess as ``--out-dir``.
     :param storage_dir: Passed through to each subprocess as ``--storage-dir``
         if given.
+    :param extra: Additional CLI args forwarded verbatim to each subprocess
+        (e.g. ``--flavors``, ``--search-activation``, ``--max-depth``,
+        ``--embed-layers``).
     :returns: Dataset names, in completion order.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
+    extra = extra or []
     dev_q: Queue[str] = Queue()
     for d in devices:
         dev_q.put(d)
@@ -101,7 +111,7 @@ def run_parallel(
         t0 = time.monotonic()
         print(f"[start] dataset={name} -> {device}", flush=True)  # noqa: T201
         try:
-            return _run_dataset(name, device, out_dir, storage_dir)
+            return _run_dataset(name, device, out_dir, storage_dir, extra)
         finally:
             dev_q.put(device)
             print(  # noqa: T201
@@ -127,13 +137,44 @@ def main() -> None:
     )
     ap.add_argument("--out-dir", type=Path, default=_DEFAULT_OUT_DIR)
     ap.add_argument("--storage-dir", type=Path, default=None)
+    ap.add_argument(
+        "--flavors", default=None, help="forwarded to benchmarks.search --flavors"
+    )
+    ap.add_argument(
+        "--search-activation",
+        action="store_true",
+        help="forwarded to benchmarks.search --search-activation",
+    )
+    ap.add_argument(
+        "--max-depth",
+        type=int,
+        default=None,
+        help="forwarded to benchmarks.search --max-depth",
+    )
+    ap.add_argument(
+        "--embed-layers",
+        type=int,
+        default=None,
+        help="forwarded to benchmarks.search --embed-layers",
+    )
     args = ap.parse_args()
+
+    extra: list[str] = []
+    if args.flavors is not None:
+        extra += ["--flavors", args.flavors]
+    if args.search_activation:
+        extra += ["--search-activation"]
+    if args.max_depth is not None:
+        extra += ["--max-depth", str(args.max_depth)]
+    if args.embed_layers is not None:
+        extra += ["--embed-layers", str(args.embed_layers)]
 
     run_parallel(
         datasets=tuple(args.datasets.split(",")),
         devices=args.devices.split(","),
         out_dir=args.out_dir,
         storage_dir=args.storage_dir,
+        extra=extra,
     )
 
 

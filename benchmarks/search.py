@@ -51,13 +51,15 @@ def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool, bool], ...]:
     """
     if not spec:
         return _ALL_FLAVORS
-    valid_modes = {"split", "mixed"}
+    valid_modes = {"split", "mixed", "alternate"}
     valid_kinds = {"plain", "residual", "deep"}
     out: list[tuple[str, bool, bool]] = []
     for name in spec.split(","):
         mode, _, kind = name.partition("-")
         if mode not in valid_modes or kind not in valid_kinds:
             raise typer.BadParameter(f"bad flavor: {name}")
+        if mode == "alternate" and kind != "plain":
+            raise typer.BadParameter(f"alternate supports only plain topology: {name}")
         deep = kind == "deep"
         out.append((mode, kind == "residual" or deep, deep))
     return tuple(out)
@@ -77,6 +79,17 @@ def main(
     cv_folds: int | None = typer.Option(None, "--cv-folds"),
     search_seeds: int = typer.Option(
         3, "--search-seeds", help="seeds per fold in the stability-aware search"
+    ),
+    search_activation: bool = typer.Option(
+        False,
+        "--search-activation",
+        help="search activation over relu/elu/softplus/selu",
+    ),
+    max_depth: int = typer.Option(
+        4, "--max-depth", help="upper bound of the shallow depth band"
+    ),
+    embed_layers: int = typer.Option(
+        1, "--embed-layers", help="Dense layers in the non-monotone embedding"
     ),
     out_dir: Path | None = typer.Option(None, "--out-dir"),  # noqa: B008
     storage_dir: Path | None = typer.Option(None, "--storage-dir"),  # noqa: B008
@@ -117,6 +130,9 @@ def main(
             search_seeds=ss,
             out_dir=out_dir,
             storage_dir=storage_dir,
+            search_activation=search_activation,
+            max_depth=max_depth,
+            embed_layers=embed_layers,
         )
         typer.echo(f"{dataset}: wrote {len(paths)} result files")
 

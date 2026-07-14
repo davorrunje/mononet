@@ -116,3 +116,18 @@ def test_dry_run_default_datasets_includes_all_22() -> None:
     ]
     for name in synth:
         assert name in output, f"missing synth dataset: {name}"
+
+
+def test_parse_flavors_accepts_alternate_plain() -> None:
+    from benchmarks.search import _parse_flavors
+
+    assert _parse_flavors("alternate-plain") == (("alternate", False, False),)
+
+
+def test_parse_flavors_rejects_alternate_residual() -> None:
+    import typer
+
+    from benchmarks.search import _parse_flavors
+
+    with pytest.raises(typer.BadParameter):
+        _parse_flavors("alternate-residual")
