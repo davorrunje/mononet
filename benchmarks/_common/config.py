@@ -30,10 +30,17 @@ class EarlyStoppingSpec:
 
     :param monitor: Metric to monitor (e.g., "val_mse").
     :param patience: Number of epochs without improvement before stopping.
+    :param min_delta: Minimum *relative* validation-loss improvement to reset the
+        patience counter — an epoch counts as an improvement only when its loss is
+        below ``best * (1 - min_delta)``. ``0.0`` (the default) means any
+        improvement counts, which on slowly-improving regression losses never
+        triggers early stopping (the loss keeps micro-improving); set a small
+        positive fraction (e.g. ``1e-3``) so training stops once gains stall.
     """
 
     monitor: str
     patience: int
+    min_delta: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)

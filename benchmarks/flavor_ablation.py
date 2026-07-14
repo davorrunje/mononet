@@ -62,17 +62,25 @@ _FOCUSED_DATASETS: tuple[str, ...] = (
     "synth_lattice_cmid",
     "synth_lattice_chigh",
 )
-_LR_GRID: tuple[float, ...] = (1e-4, 3e-4, 1e-3, 3e-3, 1e-2)
+_LR_GRID: tuple[float, ...] = (1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2)
 _LR_SWEEP_DEPTH = 8
 
 # Fixed architecture — held constant across cells so the flavor is the only
 # moving part.
 _WIDTH = 32
-_BASE_LR = 1e-3
+# Base LR re-anchored to 1e-2: the depth-8 LR mini-sweep found every flavor's
+# best at 1e-2 (the old 1e-3 undertrained all of them). The grid extends to
+# 3e-2 so the optimum is bracketed rather than pinned at the edge.
+_BASE_LR = 1e-2
 _EMBED_HIDDEN: tuple[int, ...] = (32,)
 _BATCH = 256
 _EPOCHS = 300
 _PATIENCE = 30
+# Relative early-stop threshold: an epoch improves only if it beats the best by
+# >0.1%. Without this, regression MSE keeps micro-improving and every cell runs
+# the full _EPOCHS (observed on `auto`), which is both slow and makes
+# epochs-to-best degenerate.
+_MIN_DELTA = 1e-3
 _N_SEEDS = 5
 
 
@@ -174,7 +182,7 @@ def _cell_config(
         epochs=2 if smoke else _EPOCHS,
         early_stopping=None
         if smoke
-        else EarlyStoppingSpec(monitor="val", patience=_PATIENCE),
+        else EarlyStoppingSpec(monitor="val", patience=_PATIENCE, min_delta=_MIN_DELTA),
         seeds=(0,) if smoke else tuple(range(_N_SEEDS)),
         metrics=("roc_auc", "accuracy") if binary else ("mse", "rmse"),
         alt_init=cell.alt_init,  # type: ignore[arg-type]
@@ -293,6 +301,35 @@ def run_cell(
     return rec
 
 
+def _rec_key(rec: dict[str, Any]) -> tuple[str, str | None, str, int, float]:
+    """Identity of a cell record for resume/skip-existing.
+
+    :param rec: A cell record (or a dict with the same keys).
+    :returns: ``(mode, alt_init, activation, depth, lr)``.
+    """
+    return (
+        rec["mode"],
+        rec["alt_init"],
+        rec["activation"],
+        rec["depth"],
+        rec["lr"],
+    )
+
+
+def _write_json_atomic(path: Path, recs: list[dict[str, Any]]) -> None:
+    """Atomically write ``recs`` to ``path`` (temp file + os.replace).
+
+    Atomic so a mid-write kill cannot leave a truncated, unparsable JSON that
+    would break the next resume.
+
+    :param path: Destination path.
+    :param recs: Records to serialise.
+    """
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(recs, indent=2) + "\n")
+    tmp.replace(path)
+
+
 def run_dataset_ablation(
     dataset: str,
     backend: str,
@@ -300,14 +337,21 @@ def run_dataset_ablation(
     lr_sweep: bool,
     out_dir: Path | str,
     smoke: bool = False,
+    resume: bool = True,
 ) -> Path:
-    """Run the full focused grid for one dataset and write the records JSON.
+    """Run the focused grid for one dataset, persisting each cell as it completes.
+
+    Resumable: each finished cell is written to ``<dataset>[-lrsweep].json``
+    immediately (atomically), and on a restart any cell already present in that
+    file is skipped — so a killed run loses at most the single in-flight cell.
 
     :param dataset: Dataset key.
     :param backend: Backend name.
     :param lr_sweep: If True, fix depth 8 and sweep the LR grid; else base LR only.
     :param out_dir: Output directory for the ``<dataset>[-lrsweep].json`` file.
     :param smoke: Fast-test mode (subsampled data, 1 seed, 2 epochs).
+    :param resume: If True (default), skip cells already present in the output
+        file; if False, start fresh (overwrite).
     :returns: The path to the written records JSON.
     """
     bundle = _load_bundle(dataset)
@@ -317,16 +361,25 @@ def run_dataset_ablation(
     lrs = _LR_GRID if lr_sweep else (_BASE_LR,)
     if lr_sweep:
         cells = [c for c in cells if c.depth == _LR_SWEEP_DEPTH]
-    recs = [
-        run_cell(dataset, backend, c, lr, bundle, smoke=smoke)
-        for c in cells
-        for lr in lrs
-    ]
+
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     suffix = "-lrsweep" if lr_sweep else ""
     path = out_dir / f"{dataset}{suffix}.json"
-    path.write_text(json.dumps(recs, indent=2) + "\n")
+
+    recs: list[dict[str, Any]] = []
+    done: set[tuple[str, str | None, str, int, float]] = set()
+    if resume and path.exists():
+        recs = json.loads(path.read_text())
+        done = {_rec_key(r) for r in recs}
+
+    _write_json_atomic(path, recs)  # normalise/ensure the file exists
+    for c in cells:
+        for lr in lrs:
+            if (c.mode, c.alt_init, c.activation, c.depth, lr) in done:
+                continue
+            recs.append(run_cell(dataset, backend, c, lr, bundle, smoke=smoke))
+            _write_json_atomic(path, recs)  # persist after every cell
     return path
 
 
@@ -342,6 +395,11 @@ def main() -> None:
         default=Path(__file__).resolve().parent / "results" / "flavor-ablation",
     )
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--fresh",
+        action="store_true",
+        help="ignore any existing output file and re-run every cell",
+    )
     args = ap.parse_args()
     path = run_dataset_ablation(
         args.dataset,
@@ -349,6 +407,7 @@ def main() -> None:
         lr_sweep=args.lr_sweep,
         out_dir=args.out_dir,
         smoke=args.smoke,
+        resume=not args.fresh,
     )
     print(f"wrote {path}")  # noqa: T201
 

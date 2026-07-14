@@ -190,15 +190,30 @@ class _EarlyStop:
     (:func:`is_diverged`), which is the plan's "final loss" definition.
 
     :param patience: Epochs without validation improvement before stopping.
+    :param min_delta: Minimum *relative* improvement to reset patience — an epoch
+        improves only when ``val_loss < best * (1 - min_delta)``. ``0.0`` reduces
+        to "any improvement counts" (which on a slowly-improving regression loss
+        never triggers early stopping).
     """
 
-    def __init__(self, patience: int) -> None:
+    def __init__(self, patience: int, min_delta: float = 0.0) -> None:
         self.patience = patience
+        self.min_delta = min_delta
         self.best_val = math.inf
         self.best_epoch = 0
         self.best_state: dict[str, Any] | None = None
         self.diverged = False
         self.no_improve = 0
+
+    def _improved(self, val_loss: float) -> bool:
+        """Whether ``val_loss`` clears the relative ``min_delta`` threshold.
+
+        :param val_loss: Candidate validation loss.
+        :returns: ``True`` if it is a sufficient improvement over the best so far.
+        """
+        if not math.isfinite(self.best_val):
+            return True  # first finite loss always improves on inf
+        return val_loss < self.best_val * (1.0 - self.min_delta)
 
     def update(self, model: Any, epoch: int, val_loss: float) -> bool:
         """Record ``val_loss`` for ``epoch``; return whether to stop training.
@@ -215,7 +230,7 @@ class _EarlyStop:
         if not math.isfinite(val_loss):
             self.diverged = True
             return True  # no point continuing a blown-up run
-        if val_loss < self.best_val - 1e-9:
+        if self._improved(val_loss):
             self.best_val, self.best_epoch = val_loss, epoch
             self.best_state = copy.deepcopy(model.state_dict())
             self.no_improve = 0
@@ -274,7 +289,7 @@ def _train_torch(
 
     batch_size = min(cfg.batch_size, x_train.shape[0])
     lr = cfg.optimizer.lr
-    stopper = _EarlyStop(es.patience) if es is not None else None
+    stopper = _EarlyStop(es.patience, es.min_delta) if es is not None else None
     epochs_done = 0
 
     model.train()

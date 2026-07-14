@@ -53,10 +53,29 @@ def test_smoke_run_writes_records_with_divergence(tmp_path: Path) -> None:
     assert 0.0 <= r["divergence_rate"] <= 1.0
 
 
+def test_resume_skips_existing_cells(tmp_path: Path) -> None:
+    # first run writes all cells; a second (resume) run must add nothing and
+    # leave no duplicates — proving skip-existing works.
+    out = run_dataset_ablation(
+        "synth_lattice_clow", "torch", lr_sweep=False, out_dir=tmp_path, smoke=True
+    )
+    first = json.loads(out.read_text())
+    keys = {
+        (r["mode"], r["alt_init"], r["activation"], r["depth"], r["lr"]) for r in first
+    }
+    assert len(keys) == len(first), "duplicate cells in first run"
+
+    out2 = run_dataset_ablation(
+        "synth_lattice_clow", "torch", lr_sweep=False, out_dir=tmp_path, smoke=True
+    )
+    second = json.loads(out2.read_text())
+    assert len(second) == len(first), "resume re-ran or duplicated cells"
+
+
 def test_lr_sweep_fixes_depth_eight(tmp_path: Path) -> None:
     out = run_dataset_ablation(
         "synth_lattice_clow", "torch", lr_sweep=True, out_dir=tmp_path, smoke=True
     )
     recs = json.loads(out.read_text())
     assert {r["depth"] for r in recs} == {8}
-    assert {r["lr"] for r in recs} == {1e-4, 3e-4, 1e-3, 3e-3, 1e-2}
+    assert {r["lr"] for r in recs} == {1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2}

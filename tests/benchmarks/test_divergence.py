@@ -85,11 +85,24 @@ def test_normal_run_is_not_diverged() -> None:
 
 
 def test_early_stopping_stops_before_max_epochs() -> None:
-    # trivial linear-monotone target converges fast; with patience it should
-    # stop well before the 300-epoch ceiling.
-    cfg = _cfg(epochs=300, early_stopping=EarlyStoppingSpec(monitor="val", patience=5))
+    # trivial linear-monotone target converges fast; with a relative min_delta
+    # the patience counter fires once gains stall, well before the 300 ceiling.
+    cfg = _cfg(
+        epochs=300,
+        early_stopping=EarlyStoppingSpec(monitor="val", patience=5, min_delta=1e-3),
+    )
     rows = run(cfg, _bundle())
     assert rows[0].epochs_run < 300
+
+
+def test_min_delta_fires_where_zero_delta_would_not() -> None:
+    # a positive relative min_delta must stop no later than a zero one — with a
+    # slowly-improving loss, min_delta=0 can run to the ceiling while min_delta>0
+    # stops once relative gains fall below the threshold.
+    base: dict[str, object] = {"epochs": 300, "seeds": (0,)}
+    lax = _cfg(**base, early_stopping=EarlyStoppingSpec("val", 5, min_delta=0.0))
+    strict = _cfg(**base, early_stopping=EarlyStoppingSpec("val", 5, min_delta=1e-2))
+    assert run(strict, _bundle())[0].epochs_run <= run(lax, _bundle())[0].epochs_run
 
 
 def test_no_early_stopping_runs_full_epochs() -> None:
@@ -101,6 +114,9 @@ def test_no_early_stopping_runs_full_epochs() -> None:
 def test_early_stopping_run_not_falsely_diverged() -> None:
     # regression: a cleanly-converging run with early stopping must NOT be
     # flagged diverged just because early-epoch val loss exceeds the baseline.
-    cfg = _cfg(epochs=200, early_stopping=EarlyStoppingSpec(monitor="val", patience=10))
+    cfg = _cfg(
+        epochs=200,
+        early_stopping=EarlyStoppingSpec(monitor="val", patience=10, min_delta=1e-3),
+    )
     rows = run(cfg, _bundle())
     assert rows[0].diverged is False
