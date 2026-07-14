@@ -19,7 +19,7 @@ Stage 1 establishes the capability; Stage 2 measures whether it pays off.
 
 ## Flavors and effective depth
 
-Six flavors per dataset: `{switch, absolute} × {plain, residual, deep}`. `deep`
+Six flavors per dataset: `{split, mixed} × {plain, residual, deep}`. `deep`
 is just the residual construction searched at a larger depth band, so we report
 it **collapsed into `residual`**: the collapsed `residual` cell is whichever of
 `{residual, deep}` the stability-aware CV score preferred.
@@ -50,26 +50,26 @@ dataset by IQM (ties broken by fewest collapses).
 
 | dataset | mode | variant | layers | IQM | mean ± std | ⚠ |
 |---|---|---|--:|--:|--:|:-:|
-| auto (MSE ↓) | switch | plain | 2 | **9.78** | 9.76 ± 0.18 | · |
-|  | switch | residual | 4 | 9.89 | 10.11 ± 0.62 | 2/20 |
-|  | absolute | plain | 2 | 10.91 | 10.90 ± 0.21 | · |
-|  | absolute | residual | 4 | 9.92 | 9.94 ± 0.33 | · |
-| heart (acc ↑) | switch | plain | 4 | 0.836 | 0.711 ± 0.249 | 4/20 |
-|  | switch | residual | 14 | 0.831 | 0.829 ± 0.012 | 2/20 |
-|  | absolute | plain | 3 | **0.836** | 0.839 ± 0.012 | · |
-|  | absolute | residual | 4 | 0.821 | 0.825 ± 0.008 | · |
-| compas (acc ↑) | switch | plain | 2 | 0.679 | 0.679 ± 0.002 | · |
-|  | switch | residual | 14 | 0.641 | 0.632 ± 0.033 | 4/20 |
-|  | absolute | plain | 4 | 0.683 | 0.683 ± 0.002 | · |
-|  | absolute | residual | 10 | **0.684** | 0.684 ± 0.002 | · |
-| loan (acc ↑) | switch | plain | 3 | 0.647 | 0.647 ± 0.001 | · |
-|  | switch | residual | 6 | 0.647 | 0.646 ± 0.001 | · |
-|  | absolute | plain | 3 | 0.648 | 0.648 ± 0.000 | · |
-|  | absolute | residual | 14 | **0.649** | 0.650 ± 0.001 | · |
-| blog (RMSE ↓) | switch | plain | 2 | 0.185 | 0.185 ± 0.002 | · |
-|  | switch | residual | 4 | 0.182 | 0.182 ± 0.000 | 1/10 |
-|  | absolute | plain | 2 | 0.189 | 0.189 ± 0.000 | · |
-|  | absolute | residual | 4 | **0.173** | 0.173 ± 0.001 | · |
+| auto (MSE ↓) | split | plain | 2 | **9.78** | 9.76 ± 0.18 | · |
+|  | split | residual | 4 | 9.89 | 10.11 ± 0.62 | 2/20 |
+|  | mixed | plain | 2 | 10.91 | 10.90 ± 0.21 | · |
+|  | mixed | residual | 4 | 9.92 | 9.94 ± 0.33 | · |
+| heart (acc ↑) | split | plain | 4 | 0.836 | 0.711 ± 0.249 | 4/20 |
+|  | split | residual | 14 | 0.831 | 0.829 ± 0.012 | 2/20 |
+|  | mixed | plain | 3 | **0.836** | 0.839 ± 0.012 | · |
+|  | mixed | residual | 4 | 0.821 | 0.825 ± 0.008 | · |
+| compas (acc ↑) | split | plain | 2 | 0.679 | 0.679 ± 0.002 | · |
+|  | split | residual | 14 | 0.641 | 0.632 ± 0.033 | 4/20 |
+|  | mixed | plain | 4 | 0.683 | 0.683 ± 0.002 | · |
+|  | mixed | residual | 10 | **0.684** | 0.684 ± 0.002 | · |
+| loan (acc ↑) | split | plain | 3 | 0.647 | 0.647 ± 0.001 | · |
+|  | split | residual | 6 | 0.647 | 0.646 ± 0.001 | · |
+|  | mixed | plain | 3 | 0.648 | 0.648 ± 0.000 | · |
+|  | mixed | residual | 14 | **0.649** | 0.650 ± 0.001 | · |
+| blog (RMSE ↓) | split | plain | 2 | 0.185 | 0.185 ± 0.002 | · |
+|  | split | residual | 4 | 0.182 | 0.182 ± 0.000 | 1/10 |
+|  | mixed | plain | 2 | 0.189 | 0.189 ± 0.000 | · |
+|  | mixed | residual | 4 | **0.173** | 0.173 ± 0.001 | · |
 
 ### Robustness — all six flavors
 
@@ -78,36 +78,36 @@ the **median** and the raw `depth` HP. `d` = the tuned `depth` (residual blocks)
 
 | dataset | flavor | layers (blocks) | mean ± std | median | IQM | ⚠ |
 |---|---|--:|--:|--:|--:|:-:|
-| auto | switch-plain | 2 (d1) | 9.76 ± 0.18 | 9.77 | 9.78 | · |
-| auto | switch-residual | 4 (d1) | 10.11 ± 0.62 | 9.87 | 9.89 | 2/20 |
-| auto | switch-deep | 22 (d10) | 10.02 ± 0.33 | 9.98 | 9.98 | · |
-| auto | absolute-plain | 2 (d1) | 10.90 ± 0.21 | 10.91 | 10.91 | · |
-| auto | absolute-residual | 4 (d1) | 9.94 ± 0.33 | 9.88 | 9.92 | · |
-| auto | absolute-deep | 14 (d6) | 10.54 ± 1.10 | 10.06 | 10.21 | · |
-| heart | switch-plain | 4 (d3) | 0.711 ± 0.249 | 0.836 | 0.836 | 4/20 |
-| heart | switch-residual | 8 (d3) | 0.832 ± 0.017 | 0.836 | 0.833 | 3/20 |
-| heart | switch-deep | 14 (d6) | 0.829 ± 0.012 | 0.836 | 0.831 | 2/20 |
-| heart | absolute-plain | 3 (d2) | 0.839 ± 0.012 | 0.836 | 0.836 | · |
-| heart | absolute-residual | 4 (d1) | 0.825 ± 0.008 | 0.820 | 0.821 | · |
-| heart | absolute-deep | 34 (d16) | 0.820 ± 0.000 | 0.820 | 0.820 | · |
-| compas | switch-plain | 2 (d1) | 0.679 ± 0.002 | 0.679 | 0.679 | · |
-| compas | switch-residual | 6 (d2) | 0.679 ± 0.004 | 0.679 | 0.679 | · |
-| compas | switch-deep | 14 (d6) | 0.632 ± 0.033 | 0.640 | 0.641 | 4/20 |
-| compas | absolute-plain | 4 (d3) | 0.683 ± 0.002 | 0.683 | 0.683 | · |
-| compas | absolute-residual | 10 (d4) | 0.684 ± 0.002 | 0.684 | 0.684 | · |
-| compas | absolute-deep | 34 (d16) | 0.666 ± 0.009 | 0.668 | 0.669 | · |
-| loan | switch-plain | 3 (d2) | 0.647 ± 0.001 | 0.647 | 0.647 | · |
-| loan | switch-residual | 6 (d2) | 0.646 ± 0.001 | 0.647 | 0.647 | · |
-| loan | switch-deep | 22 (d10) | 0.646 ± 0.000 | 0.646 | 0.646 | · |
-| loan | absolute-plain | 3 (d2) | 0.648 ± 0.000 | 0.648 | 0.648 | · |
-| loan | absolute-residual | 4 (d1) | 0.648 ± 0.000 | 0.648 | 0.648 | · |
-| loan | absolute-deep | 14 (d6) | 0.650 ± 0.001 | 0.649 | 0.649 | · |
-| blog | switch-plain | 2 (d1) | 0.185 ± 0.002 | 0.185 | 0.185 | · |
-| blog | switch-residual | 4 (d1) | 0.182 ± 0.000 | 0.182 | 0.182 | 1/10 |
-| blog | switch-deep | 34 (d16) | 0.191 ± 0.002 | 0.191 | 0.191 | · |
-| blog | absolute-plain | 2 (d1) | 0.189 ± 0.000 | 0.189 | 0.189 | · |
-| blog | absolute-residual | 4 (d1) | 0.173 ± 0.001 | 0.173 | 0.173 | · |
-| blog | absolute-deep | 22 (d10) | 0.175 ± 0.001 | 0.175 | 0.175 | · |
+| auto | split-plain | 2 (d1) | 9.76 ± 0.18 | 9.77 | 9.78 | · |
+| auto | split-residual | 4 (d1) | 10.11 ± 0.62 | 9.87 | 9.89 | 2/20 |
+| auto | split-deep | 22 (d10) | 10.02 ± 0.33 | 9.98 | 9.98 | · |
+| auto | mixed-plain | 2 (d1) | 10.90 ± 0.21 | 10.91 | 10.91 | · |
+| auto | mixed-residual | 4 (d1) | 9.94 ± 0.33 | 9.88 | 9.92 | · |
+| auto | mixed-deep | 14 (d6) | 10.54 ± 1.10 | 10.06 | 10.21 | · |
+| heart | split-plain | 4 (d3) | 0.711 ± 0.249 | 0.836 | 0.836 | 4/20 |
+| heart | split-residual | 8 (d3) | 0.832 ± 0.017 | 0.836 | 0.833 | 3/20 |
+| heart | split-deep | 14 (d6) | 0.829 ± 0.012 | 0.836 | 0.831 | 2/20 |
+| heart | mixed-plain | 3 (d2) | 0.839 ± 0.012 | 0.836 | 0.836 | · |
+| heart | mixed-residual | 4 (d1) | 0.825 ± 0.008 | 0.820 | 0.821 | · |
+| heart | mixed-deep | 34 (d16) | 0.820 ± 0.000 | 0.820 | 0.820 | · |
+| compas | split-plain | 2 (d1) | 0.679 ± 0.002 | 0.679 | 0.679 | · |
+| compas | split-residual | 6 (d2) | 0.679 ± 0.004 | 0.679 | 0.679 | · |
+| compas | split-deep | 14 (d6) | 0.632 ± 0.033 | 0.640 | 0.641 | 4/20 |
+| compas | mixed-plain | 4 (d3) | 0.683 ± 0.002 | 0.683 | 0.683 | · |
+| compas | mixed-residual | 10 (d4) | 0.684 ± 0.002 | 0.684 | 0.684 | · |
+| compas | mixed-deep | 34 (d16) | 0.666 ± 0.009 | 0.668 | 0.669 | · |
+| loan | split-plain | 3 (d2) | 0.647 ± 0.001 | 0.647 | 0.647 | · |
+| loan | split-residual | 6 (d2) | 0.646 ± 0.001 | 0.647 | 0.647 | · |
+| loan | split-deep | 22 (d10) | 0.646 ± 0.000 | 0.646 | 0.646 | · |
+| loan | mixed-plain | 3 (d2) | 0.648 ± 0.000 | 0.648 | 0.648 | · |
+| loan | mixed-residual | 4 (d1) | 0.648 ± 0.000 | 0.648 | 0.648 | · |
+| loan | mixed-deep | 14 (d6) | 0.650 ± 0.001 | 0.649 | 0.649 | · |
+| blog | split-plain | 2 (d1) | 0.185 ± 0.002 | 0.185 | 0.185 | · |
+| blog | split-residual | 4 (d1) | 0.182 ± 0.000 | 0.182 | 0.182 | 1/10 |
+| blog | split-deep | 34 (d16) | 0.191 ± 0.002 | 0.191 | 0.191 | · |
+| blog | mixed-plain | 2 (d1) | 0.189 ± 0.000 | 0.189 | 0.189 | · |
+| blog | mixed-residual | 4 (d1) | 0.173 ± 0.001 | 0.173 | 0.173 | · |
+| blog | mixed-deep | 22 (d10) | 0.175 ± 0.001 | 0.175 | 0.175 | · |
 
 > **`compas-deep` budget note.** The two `compas-deep` studies were tuned with
 > `search_seeds=1` (vs. 3 elsewhere): a 34-layer stack × 5-fold CV × 3 seeds ×
@@ -119,20 +119,20 @@ the **median** and the raw `depth` HP. `d` = the tuned `depth` (residual blocks)
 ## What the numbers say
 
 - **Depth helps only on `loan`** — the largest dataset (419k rows), where the
-  best model is a 14-layer absolute residual stack (IQM 0.649/0.650, `deep` band
+  best model is a 14-layer mixed residual stack (IQM 0.649/0.650, `deep` band
   `d6`). On every other dataset the best model is **≤ 4 effective layers**, and
-  the deep band (14–34 layers) is neutral-to-worse (e.g. `compas` absolute-deep
-  0.666 vs residual 0.684; `auto` switch-deep 9.98 vs plain 9.78). This is the
+  the deep band (14–34 layers) is neutral-to-worse (e.g. `compas` mixed-deep
+  0.666 vs residual 0.684; `auto` split-deep 9.98 vs plain 9.78). This is the
   pre-registered null-ish result: extra monotone depth does not pay off on
   small/medium tabular data.
-- **Absolute mode is the strongest construction** once the read-out head is
+- **Mixed mode is the strongest construction** once the read-out head is
   linear (see [protocol](protocol.md) — the ReLU-head fix): it wins on `heart`,
-  `compas`, `loan`, and `blog`; `switch` wins only on `auto`.
-- **Instability clusters on plain/shallow `switch`**, never on `absolute`: the
-  `⚠` collapses are all `switch` (`heart` plain 4/20, `compas`-deep 4/20, `auto`
+  `compas`, `loan`, and `blog`; `split` wins only on `auto`.
+- **Instability clusters on plain/shallow `split`**, never on `mixed`: the
+  `⚠` collapses are all `split` (`heart` plain 4/20, `compas`-deep 4/20, `auto`
   residual 2/20, `blog` residual 1/10). The median/IQM are unaffected — this is
   why we report robustly and surface the collapse count rather than hiding it in
-  a mean (compare `heart switch-plain`: mean 0.711 vs IQM 0.836).
+  a mean (compare `heart split-plain`: mean 0.711 vs IQM 0.836).
 
 ## Future work
 

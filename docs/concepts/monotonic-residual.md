@@ -3,7 +3,7 @@
 ## Motivation
 
 Deep *plain* monotone stacks fail to train: `|W|`'s all-positive weights make layer outputs
-strongly correlated, so variance compounds with depth (both `absolute` and `switch` diverge by
+strongly correlated, so variance compounds with depth (both `mixed` and `split` diverge by
 depth ≥ 8). Static initialization cannot fix this — a corrected per-layer init (`absolute_init`)
 fixes moderate-depth trainability (depth 2–4) but cannot stabilize a genuinely deep plain stack,
 because the architectural coupling remains. Residual skips address the architectural root cause.
@@ -19,13 +19,13 @@ import torch.nn as nn
 
 W = 32
 net = nn.Sequential(
-    MonoLinear(n_in, W, mode="absolute", activation="elu"),
-    *[MonoResidual(W, W, sub_depth=2, mode="absolute", activation="elu") for _ in range(15)],
-    MonoLinear(W, 1, mode="absolute", activation="elu"),
+    MonoLinear(n_in, W, mode="mixed", activation="elu"),
+    *[MonoResidual(W, W, sub_depth=2, mode="mixed", activation="elu") for _ in range(15)],
+    MonoLinear(W, 1, mode="mixed", activation="elu"),
 )  # ~depth 32; uniform width => identity skips
 ```
 
-`sub_depth=2` is the default, so `MonoResidual(W, W, mode="absolute", activation="elu")`
+`sub_depth=2` is the default, so `MonoResidual(W, W, mode="mixed", activation="elu")`
 is equivalent. Uniform width means every block has `in == out` and uses pure identity skips
 (the strongest warm start). Total depth ≈ `2 + n_blocks * sub_depth`.
 
@@ -39,7 +39,7 @@ monotonicity or trainability.
   non-decreasing map, so it is monotonicity-preserving — unlike LayerNorm/BatchNorm, which are
   **not** safe here (a data-dependent mean subtraction and possibly-negative rescale are not
   guaranteed non-decreasing). The identity skip propagates input magnitude straight through to
-  every block, and both the near-identity warm start below and the `absolute`-mode static init
+  every block, and both the near-identity warm start below and the `mixed`-mode static init
   are derived assuming `x ~ O(1)`. The shipped construction is measurably sensitive to this:
   train MSE degrades from ≈`0.06` at unit scale to ≈`3.1` at `x ~ O(10)` and breaks outright
   (≈`2300`) at `x ~ O(100)` — see [Input-scale sensitivity](#input-scale-sensitivity) below for
@@ -50,7 +50,7 @@ monotonicity or trainability.
   ResNet-style forward-stable warm start regardless of depth.
 - **The residual path `F` must be monotone, contribute ≈ 0 at init, and — the subtle
   requirement — its weights must stay trainable at init.** Monotonicity holds by the
-  `|W|`/`switch` construction for *any* weight values, so it is free. "≈ 0 at init" and "trainable
+  `|W|`/`split` construction for *any* weight values, so it is free. "≈ 0 at init" and "trainable
   at init" are in tension under `|W|` (see [Design choices](#design-choices-two-traps-two-fixes)
   below): meeting the first the naive way (exact-zero init) silently breaks the second. Its gate
   `g_β` must be strictly positive (monotonicity forbids a signed/ReZero-style gate) and must be
@@ -100,7 +100,7 @@ the gate's init *value* no longer matters for identity-at-init.
 ### Trap 2 — the `|W|` frozen-weight fixed point
 
 Suppose Trap 1 is sidestepped the naive (Fixup) way: zero-initialize `F`'s last layer directly.
-Under `absolute` mode, `F` computes with `|W|`, and `d|W|/dW` at `W = 0` is `sign(0) = 0` — an
+Under `mixed` mode, `F` computes with `|W|`, and `d|W|/dW` at `W = 0` is `sign(0) = 0` — an
 exact **gradient fixed point**. The zeroed weights never move: `F` degenerates to a per-block
 learned *constant* (only its bias moves), not an `x`-dependent function. Confirmed in the
 [A-vs-B ablation](#a-vs-b-ablation) below: exact-zero init moves `0/16` blocks' last-layer
@@ -135,9 +135,9 @@ inputs via a positive per-feature affine ahead of the network, never LayerNorm/B
 **Theorem.** For any parameter values, `∂yⱼ/∂xᵢ ≥ 0` for all i, j (the block is non-decreasing
 in every input).
 
-**`F` is non-decreasing** (any weights): for `absolute` mode, `h = x @ |W| + b` with
+**`F` is non-decreasing** (any weights): for `mixed` mode, `h = x @ |W| + b` with
 `|W| ≥ 0`, and both the convex units `act(h)` (`act' ≥ 0`) and concave units `−act(−h)`
-(derivative `act'(−h)·|W| ≥ 0`) are non-decreasing in x; for `switch` mode,
+(derivative `act'(−h)·|W| ≥ 0`) are non-decreasing in x; for `split` mode,
 `act(x @ W⁺ + b) − act(x @ W⁻ + b)` with `W⁺ = max(W,0) ≥ 0` (non-decreasing) and
 `W⁻ = min(W,0) ≤ 0` (so `−act(x @ W⁻)` is non-decreasing). A `sub_depth`-deep stack of
 non-decreasing maps is non-decreasing by composition.
@@ -185,7 +185,7 @@ applied here to the monotone setting. This is what avoids the plain-stack blow-u
 depth ≥ 8 untrainable. It is a claim about **forward stability**: it says nothing about whether
 `F` ends up doing anything useful once training starts (see Experiments below).
 
-`F` itself is a **K-deep plain sub-stack** (`sub_depth = K`), which — from the `absolute`-init
+`F` itself is a **K-deep plain sub-stack** (`sub_depth = K`), which — from the `mixed`-init
 analysis — blows up its own internal variance by depth ≈ 4–8, same as any plain monotone stack.
 The skip re-centers only every `K` layers, so once `F` actually engages, **K must stay ≤ the
 plain-blowup depth**: `K ≤ 4` keeps each `F` well-conditioned; `K = 8` lets `F` explode internally
@@ -209,21 +209,21 @@ learns) and init input-gradient norm (conditioning). Reproduce:
 uv run --extra torch --group bench python -m benchmarks.deep_residual_run
 ```
 
-The sweep covers `mode ∈ {absolute, switch}` × `depth ∈ {4, 8, 16, 32}` × `K ∈ {plain, 1, 2, 4, 8}`
+The sweep covers `mode ∈ {mixed, split}` × `depth ∈ {4, 8, 16, 32}` × `K ∈ {plain, 1, 2, 4, 8}`
 (`K > depth` is skipped, shown `—`). Final train MSE (lower is better; `1e6` = diverged / capped):
 
 | mode | depth | plain | K=1 | K=2 | K=4 | K=8 |
 |---|---|---|---|---|---|---|
-| absolute | 4 | 1.75 | 0.093 | **0.090** | 0.090 | — |
-| absolute | 8 | 2.00 | 0.104 | **0.101** | 0.104 | 0.172 |
-| absolute | 16 | 1e6 | 0.104 | **0.103** | 0.108 | 0.721 |
-| absolute | 32 | 1e6 | 0.112 | **0.111** | 0.115 | 1.108 |
-| switch | 4 | 416 | 0.071 | **0.068** | 0.068 | — |
-| switch | 8 | 1e6 | 0.070 | **0.070** | 0.070 | 5.455 |
-| switch | 16 | 1e6 | 0.076 | **0.074** | 0.075 | 30.50 |
-| switch | 32 | 1e6 | 0.089 | **0.084** | 0.087 | 26.43 |
+| mixed | 4 | 1.75 | 0.093 | **0.090** | 0.090 | — |
+| mixed | 8 | 2.00 | 0.104 | **0.101** | 0.104 | 0.172 |
+| mixed | 16 | 1e6 | 0.104 | **0.103** | 0.108 | 0.721 |
+| mixed | 32 | 1e6 | 0.112 | **0.111** | 0.115 | 1.108 |
+| split | 4 | 416 | 0.071 | **0.068** | 0.068 | — |
+| split | 8 | 1e6 | 0.070 | **0.070** | 0.070 | 5.455 |
+| split | 16 | 1e6 | 0.076 | **0.074** | 0.075 | 30.50 |
+| split | 32 | 1e6 | 0.089 | **0.084** | 0.087 | 26.43 |
 
-**Reframed.** Plain stacks diverge from depth 8 (`switch`) or 16 (`absolute`); K ∈ {1, 2, 4} keep
+**Reframed.** Plain stacks diverge from depth 8 (`split`) or 16 (`mixed`); K ∈ {1, 2, 4} keep
 every depth **forward-stable** (init input-gradient norm stays O(1–10), vs 1e3–1e6 for plain and
 K = 8) and non-divergent, while K = 8 degrades with depth and fails outright by depth 16. This
 sweep predates the two-traps fix — it was generated under the original `scaled_elu` gate with a
@@ -238,7 +238,7 @@ fix, to see whether an engaged `F` changes these numbers, is part of the Stage-2
 ### Trap instrumentation
 
 Per-step instrumentation of the pre-fix default (`a_mode="off"` — random `F`, no near-zero init —
-gate `scaled_elu`), a depth-16 `absolute` stack on a synthetic monotone teacher target. Reproduce:
+gate `scaled_elu`), a depth-16 `mixed` stack on a synthetic monotone teacher target. Reproduce:
 
 ```
 uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_trap
@@ -262,7 +262,7 @@ benchmarks probe the same trap.
 
 ### A-vs-B ablation
 
-Depth-16 `absolute` stack, same synthetic monotone teacher, deterministic seed. `A` = `F`'s
+Depth-16 `mixed` stack, same synthetic monotone teacher, deterministic seed. `A` = `F`'s
 last-layer init (`off` = normal/random; `exactzero`; `nearzero` ×`1e-3`); `B` = residual gate
 (`scaled_elu` vs `softplus`). `F-moved` = number of the 16 blocks whose `F` last-layer weights
 left their init after training. Reproduce:
@@ -298,7 +298,7 @@ anything useful, only that the gate wasn't a perfect `0`. The informative contra
 
 ### Input-scale sensitivity
 
-The shipped A+B construction (depth-16, `absolute`, `nearzero`+`softplus`), with input scale
+The shipped A+B construction (depth-16, `mixed`, `nearzero`+`softplus`), with input scale
 `x ~ U(0, s)` swept and the synthetic teacher target standardized as usual. Reproduce:
 
 ```
@@ -314,7 +314,7 @@ uv run --extra torch --group bench python -m benchmarks.monoresidual_gate_scale
 
 The near-zero-F fix keeps each block near-identity *at init* regardless of `s` — init F-RMS
 tracks `s` but stays a small fraction of the block-output RMS at every scale. But the
-`absolute`-mode first layer and the near-open `softplus` gate (`g_β(0) ≈ 0.69`, not `0`) both
+`mixed`-mode first layer and the near-open `softplus` gate (`g_β(0) ≈ 0.69`, not `0`) both
 scale with the raw input magnitude, so the block-output RMS grows linearly with `s` and training
 starts further and further from the (always unit-scale) target. Train MSE is small at `s ≤ 1`,
 degrades sharply by `s = 10`, and is essentially broken by `s = 100` — the fix is necessary but
