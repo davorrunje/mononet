@@ -16,14 +16,14 @@ def load_config(
     path: Path | str,
     *,
     backend: Literal["torch", "jax", "keras"],
-    mode: Literal["split", "mixed"],
+    mode: Literal["split", "mixed", "alternate"],
     residual: bool,
 ) -> BenchmarkConfig:
     """Load benchmark configuration from a TOML file.
 
     :param path: Path to the TOML config file.
     :param backend: Target backend ("torch", "jax", or "keras").
-    :param mode: Monotonicity mode ("split" or "mixed").
+    :param mode: Monotonicity mode ("split", "mixed", or "alternate").
     :param residual: Whether to use residual connections.
     :returns: Loaded BenchmarkConfig with backend/mode/residual set from arguments.
     """
@@ -42,6 +42,7 @@ def load_config(
     activation: str = model_section.get("activation", "elu")
     convex_fraction: float = model_section.get("convex_fraction", 0.5)
     embed_hidden_list: list[int] = model_section.get("embed_hidden", [])
+    alt_init: str | None = model_section.get("alt_init", None)
 
     optimizer_name: str = train_section.get("optimizer", "adam")
     lr: float = train_section.get("lr", 0.001)
@@ -77,4 +78,5 @@ def load_config(
         early_stopping=None,
         seeds=tuple(seeds_list),
         metrics=tuple(metrics_list),  # type: ignore
+        alt_init=cast("Literal['composition', 'legacy'] | None", alt_init),
     )
