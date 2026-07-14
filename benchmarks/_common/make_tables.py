@@ -147,14 +147,23 @@ def _detail_winner(d: dict[str, dict[str, Any]], ds: str, lower: bool) -> str | 
     return (min if lower else max)(scored, key=lambda t: t[1])[0]
 
 
-def _detail_rows_cell(d: dict[str, dict[str, Any]]) -> str:
-    """``n_train`` (with thousands separator) from the first record that has it."""
+def _dataset_n_train(d: dict[str, dict[str, Any]]) -> int | None:
+    """``n_train`` from the first :data:`_DETAIL_FLAVS` record that has it.
+
+    Checks all three detailed flavors (not just the first present one), since
+    older result JSONs may carry ``n_train`` on some flavors but not others.
+    """
     for fl in _DETAIL_FLAVS:
         r = d.get(fl)
-        if r is not None:
-            n_train = r.get("n_train")
-            return f"{n_train:,}" if n_train is not None else "—"
-    return "—"
+        if r is not None and r.get("n_train") is not None:
+            return int(r["n_train"])
+    return None
+
+
+def _detail_rows_cell(d: dict[str, dict[str, Any]]) -> str:
+    """``n_train`` (with thousands separator), or ``—`` if none of the records have it."""
+    n_train = _dataset_n_train(d)
+    return f"{n_train:,}" if n_train is not None else "—"
 
 
 def _detail_hp_cells(bp: dict[str, Any], fl: str) -> list[str]:
@@ -175,6 +184,16 @@ def _detail_hp_cells(bp: dict[str, Any], fl: str) -> list[str]:
     ]
 
 
+def _detail_cvxf_cell(bp: dict[str, Any]) -> str:
+    """``convex_fraction`` from ``best_params``, formatted ``.2f`` or ``·`` if absent.
+
+    Only the ``mixed`` flavor searches ``convex_fraction``; ``split`` and
+    ``alternate`` do not, so they render the ``·`` placeholder.
+    """
+    cvxf = bp.get("convex_fraction")
+    return f"{cvxf:.2f}" if cvxf is not None else "·"
+
+
 def _detail_row(
     ds: str,
     label: str,
@@ -186,7 +205,7 @@ def _detail_row(
     """Render one row of the detailed table for a single ``(dataset, flavor)``."""
     name = fl.removesuffix("-plain")
     if r is None:
-        blanks = [""] * 9
+        blanks = [""] * 10
         cells = [label, rows_cell, name, "_running_", *blanks, "⏳"]
         return "| " + " | ".join(cells) + " |"
     me, sd, _, iqm = _stats(r, ds)
@@ -201,18 +220,42 @@ def _detail_row(
         iqmc,
         f"{_num(me, ds)} ± {_num(sd, ds)}",
         *_detail_hp_cells(r["best_params"], fl),
+        _detail_cvxf_cell(r["best_params"]),
         "✅",
     ]
     return "| " + " | ".join(cells) + " |"
+
+
+def _dataset_order(rows: dict[str, dict[str, dict[str, Any]]]) -> list[str]:
+    """Datasets ordered by ascending ``n_train``, falling back to :data:`_ORDER`.
+
+    Datasets with a known ``n_train`` sort first (smallest first); datasets
+    with no ``n_train`` in any record (older result JSONs) keep their
+    original :data:`_ORDER` position, so legacy data still renders in the
+    same order it always has.
+
+    :param rows: Dataset -> flavor -> record map, as returned by :func:`_load`.
+    :returns: Dataset names in render order.
+    """
+
+    def _key(ds: str) -> tuple[int, int]:
+        n_train = _dataset_n_train(rows[ds])
+        if n_train is not None:
+            return (0, n_train)
+        return (1, _ORDER.index(ds) if ds in _ORDER else len(_ORDER))
+
+    return sorted(rows, key=_key)
 
 
 def render_detailed(root: Path | None = None) -> str:
     """Return a detailed per-flavor Markdown table (data size, HPs, winner medal).
 
     One row per ``(dataset, flavor)`` for the plain-only flavors ``split``,
-    ``mixed``, ``alternate``. The per-dataset best IQM (direction taken from
-    :data:`_DISP`) is marked with a 🥇 and bolded; flavors missing from the
-    result JSONs (partial runs) render as ``_running_`` / ``⏳``.
+    ``mixed``, ``alternate``. Datasets are ordered by ascending ``n_train``
+    (smallest first), falling back to the fixed :data:`_ORDER` for datasets
+    with no ``n_train`` recorded. The per-dataset best IQM (direction taken
+    from :data:`_DISP`) is marked with a 🥇 and bolded; flavors missing from
+    the result JSONs (partial runs) render as ``_running_`` / ``⏳``.
 
     :param root: Directory containing per-flavor result JSONs. Defaults to
         ``benchmarks/results/phase2``.
@@ -221,10 +264,10 @@ def render_detailed(root: Path | None = None) -> str:
     rows = _load(root)
     out = [
         "| dataset | rows | flavor | IQM | mean ± std | act | layers | width "
-        "| lr | wdec | drop | lrdec | batch | done |",
-        "|---|--:|---|--:|--:|---|--:|--:|--:|--:|--:|--:|--:|:-:|",
+        "| lr | wdec | drop | lrdec | batch | cvxf | done |",
+        "|---|--:|---|--:|--:|---|--:|--:|--:|--:|--:|--:|--:|--:|:-:|",
     ]
-    for ds in _ORDER:
+    for ds in _dataset_order(rows):
         d = rows.get(ds, {})
         if not d:
             continue

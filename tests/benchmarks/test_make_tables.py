@@ -23,6 +23,7 @@ def _rec(
     dropout: float = 0.1,
     lr_decay: float = 0.9,
     batch_size: int = 64,
+    convex_fraction: float | None = None,
 ) -> dict[str, Any]:
     rec: dict[str, Any] = {
         "dataset": dataset,
@@ -45,6 +46,8 @@ def _rec(
     }
     if n_train is not None:
         rec["n_train"] = n_train
+    if convex_fraction is not None:
+        rec["best_params"]["convex_fraction"] = convex_fraction
     return rec
 
 
@@ -89,7 +92,9 @@ def test_render_detailed_marks_winner_and_bolds_iqm(tmp_path: Path) -> None:
     out = render_detailed(tmp_path)
 
     # mixed-plain wins on auto (lower-is-better).
-    mixed_line = next(line for line in out.splitlines() if "| mixed " in line)
+    mixed_line = next(
+        line for line in out.splitlines() if "| mixed " in line and "5.00" in line
+    )
     assert "🥇" in mixed_line
     assert "**" in mixed_line
     split_auto_line = next(
@@ -145,3 +150,62 @@ def test_render_detailed_includes_rows_and_hyperparameters(tmp_path: Path) -> No
     assert "64" in split_line
     assert "128" in split_line
     assert "0.0050" in split_line
+
+
+def test_render_detailed_shows_convex_fraction_for_mixed_only(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        [
+            _rec("heart", "split-plain", [0.70, 0.71, 0.69], n_train=200),
+            _rec(
+                "heart",
+                "mixed-plain",
+                [0.72, 0.73, 0.71],
+                n_train=200,
+                convex_fraction=0.35,
+            ),
+            _rec("heart", "alternate-plain", [0.68, 0.69, 0.67], n_train=200),
+        ],
+    )
+    out = render_detailed(tmp_path)
+    mixed_line = next(line for line in out.splitlines() if "| mixed " in line)
+    split_line = next(line for line in out.splitlines() if "| split " in line)
+    alt_line = next(line for line in out.splitlines() if "| alternate " in line)
+    assert "0.35" in mixed_line
+    assert "·" in split_line
+    assert "·" in alt_line
+
+
+def test_render_detailed_sorts_datasets_by_n_train_ascending(tmp_path: Path) -> None:
+    # "auto" is first in the legacy _ORDER but has the larger n_train here;
+    # "blog" is last in _ORDER but has the smaller n_train, so it must render
+    # first now that rows are sorted by size.
+    _write(
+        tmp_path,
+        [
+            _rec("auto", "split-plain", [10.0, 11.0, 9.0], n_train=50000),
+            _rec("blog", "split-plain", [1.0, 1.1, 0.9], n_train=100),
+        ],
+    )
+    out = render_detailed(tmp_path)
+    lines = out.splitlines()
+    blog_idx = next(i for i, line in enumerate(lines) if line.startswith("| blog ("))
+    auto_idx = next(i for i, line in enumerate(lines) if line.startswith("| auto ("))
+    assert blog_idx < auto_idx
+
+
+def test_render_detailed_falls_back_to_order_without_n_train(tmp_path: Path) -> None:
+    # Legacy records (no n_train anywhere) must preserve the fixed _ORDER:
+    # "auto" before "blog".
+    _write(
+        tmp_path,
+        [
+            _rec("blog", "split-plain", [1.0, 1.1, 0.9]),
+            _rec("auto", "split-plain", [10.0, 11.0, 9.0]),
+        ],
+    )
+    out = render_detailed(tmp_path)
+    lines = out.splitlines()
+    auto_idx = next(i for i, line in enumerate(lines) if line.startswith("| auto ("))
+    blog_idx = next(i for i, line in enumerate(lines) if line.startswith("| blog ("))
+    assert auto_idx < blog_idx
