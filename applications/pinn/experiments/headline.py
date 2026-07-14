@@ -57,7 +57,7 @@ def bootstrap_band(
     return float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))
 
 
-_KEYS = ("l1", "l2", "admissibility_violation", "overshoot")
+_KEYS = ("l1", "l2", "admissibility_violation", "overshoot", "held_out_rmse")
 
 
 def run_panel(
@@ -71,6 +71,9 @@ def run_panel(
     grad_clip: float = 1.0,
     n_boot: int = 2000,
     residual: bool = True,
+    observations: str = "scatter",
+    n_detectors: int = 8,
+    n_holdout_detectors: int = 4,
 ) -> dict[str, object]:
     """Tune + multi-seed IQM for all four methods on one ``(problem, tier)``.
 
@@ -82,6 +85,10 @@ def run_panel(
     :param steps: Optimisation steps per run.
     :param grad_clip: Global-norm gradient clip (stabilises the constrained field).
     :param n_boot: Bootstrap resamples for the band.
+    :param residual: Whether to use residual blocks in the model.
+    :param observations: Observation mode ("scatter" or "detectors").
+    :param n_detectors: Number of detectors for detector mode.
+    :param n_holdout_detectors: Number of held-out detectors for validation.
     :returns: A JSON-serialisable results dict.
     """
     rng = np.random.default_rng(0)
@@ -92,6 +99,9 @@ def run_panel(
         tier=tier,
         steps=steps,
         grad_clip=grad_clip,
+        observations=observations,
+        n_detectors=n_detectors,
+        n_holdout_detectors=n_holdout_detectors,
         model=ModelConfig(residual=residual),
     )
     out: dict[str, object] = {
@@ -137,7 +147,7 @@ def run_panel(
             f"{method:14} L1={a['l1']['iqm']:.3f} "
             f"[{a['l1']['lo']:.3f},{a['l1']['hi']:.3f}] "
             f"L2={a['l2']['iqm']:.3f} viol={a['admissibility_violation']['iqm']:.3f} "
-            f"over={a['overshoot']['iqm']:.3f}",
+            f"over={a['overshoot']['iqm']:.3f} hrmse={a['held_out_rmse']['iqm']:.3f}",
             flush=True,
         )
     out["methods"] = methods_out
@@ -158,6 +168,11 @@ def main() -> None:
         action="store_true",
         help="Use a plain MonoLinear field instead of MonoResidual blocks.",
     )
+    p.add_argument(
+        "--observations", choices=["scatter", "detectors"], default="scatter"
+    )
+    p.add_argument("--n-detectors", type=int, default=8)
+    p.add_argument("--n-holdout-detectors", type=int, default=4)
     p.add_argument("--out", required=True)
     args = p.parse_args()
     result = run_panel(
@@ -168,6 +183,9 @@ def main() -> None:
         seeds=args.seeds,
         steps=args.steps,
         residual=not args.no_residual,
+        observations=args.observations,
+        n_detectors=args.n_detectors,
+        n_holdout_detectors=args.n_holdout_detectors,
     )
     with Path(args.out).open("w") as f:
         json.dump(result, f, indent=2)
