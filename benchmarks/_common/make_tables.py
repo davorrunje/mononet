@@ -56,9 +56,9 @@ def _num(x: float, ds: str) -> str:
     return f"{x:.2f}" if ds == "auto" else f"{x:.3f}"
 
 
-def _load() -> dict[str, dict[str, dict[str, Any]]]:
+def _load(root: Path | None = None) -> dict[str, dict[str, dict[str, Any]]]:
     out: dict[str, dict[str, dict[str, Any]]] = {}
-    root = Path(__file__).resolve().parents[1] / "results" / "phase2"
+    root = root or (Path(__file__).resolve().parents[1] / "results" / "phase2")
     for f in sorted(root.glob("*.json")):
         r = json.loads(f.read_text())
         out.setdefault(r["dataset"], {})[r["flavor"]] = r
@@ -76,9 +76,77 @@ def _pick_residual(
     return best
 
 
-def render() -> str:
-    """Return the main + robustness Markdown tables as one string."""
-    rows = _load()
+def render_verdict(ds: str, d: dict[str, dict[str, Any]], lower: bool) -> str:
+    """One-line bootstrap verdict: alternate vs best-of-{split,mixed} plain.
+
+    :param ds: Dataset name.
+    :param d: Flavor -> record map for this dataset.
+    :param lower: Whether lower metric is better.
+    :returns: A Markdown table row ``| ds | Δ | 95% CI | verdict |``.
+    """
+    import numpy as np
+
+    from benchmarks._common.results import bootstrap_delta
+
+    alt = d.get("alternate-plain")
+    raw_others = [d.get("split-plain"), d.get("mixed-plain")]
+    others: list[dict[str, Any]] = [o for o in raw_others if o]
+    if alt is None or not others:
+        return f"| {ds} | — | — | *pending* |"
+    best_other = (min if lower else max)(others, key=lambda o: _stats(o, ds)[3])
+    av = np.asarray(alt["test_values"], np.float64)
+    bv = np.asarray(best_other["test_values"], np.float64)
+    if ds == "blog":  # values stored as MSE; table reports RMSE
+        av, bv = np.sqrt(av), np.sqrt(bv)
+    point, lo, hi = bootstrap_delta(av, bv, lower_is_better=lower)
+    if lo > 0:
+        verdict = "alternate **beats** best-of-others"
+    elif hi < 0:
+        verdict = "alternate loses"
+    else:
+        verdict = "matches (CI straddles 0)"
+    return (
+        f"| {ds} | {point:+.3f} | [{lo:+.3f}, {hi:+.3f}] | {verdict} "
+        f"(vs {best_other['flavor']}) |"
+    )
+
+
+def _render_verdict_section(
+    rows: dict[str, dict[str, dict[str, Any]]],
+) -> list[str]:
+    """Build the Markdown "Verdict" section: alternate vs best-of-others.
+
+    :param rows: Dataset -> flavor -> record map, as returned by :func:`_load`.
+    :returns: Lines to append to the rendered tables.
+    """
+    out = ["", "### Verdict — alternate vs best-of-others", ""]
+    out.append("| dataset | Δ (alt vs best-other) | 95% CI | verdict |")
+    out.append("|---|--:|:--|:--|")
+    wins = 0
+    for ds in _ORDER:
+        d = rows.get(ds, {})
+        if not d:
+            continue
+        lower = _DISP[ds][0] in ("MSE", "RMSE")
+        line = render_verdict(ds, d, lower)
+        out.append(line)
+        if "beats" in line:
+            wins += 1
+    out.append("")
+    out.append(
+        f"**alternate beats best-of-others on {wins} of {len(_ORDER)} datasets.**"
+    )
+    return out
+
+
+def render(root: Path | None = None) -> str:
+    """Return the main + robustness Markdown tables as one string.
+
+    :param root: Directory containing per-flavor result JSONs. Defaults to
+        ``benchmarks/results/phase2``.
+    :returns: The rendered Markdown tables.
+    """
+    rows = _load(root)
     out: list[str] = ["### Main results (collapsed plain/residual)", ""]
     out.append("| dataset | mode | variant | layers | IQM | mean ± std | ⚠ |")
     out.append("|---|---|---|--:|--:|--:|:-:|")
@@ -93,6 +161,7 @@ def render() -> str:
             ("split", "residual", _pick_residual(d, "split", lower)),
             ("mixed", "plain", d.get("mixed-plain")),
             ("mixed", "residual", _pick_residual(d, "mixed", lower)),
+            ("alternate", "plain", d.get("alternate-plain")),
         ]
         scored = [(e, _stats(e[2], ds)[3], e[2]["n_collapse"]) for e in entries if e[2]]
         best = (
@@ -115,6 +184,8 @@ def render() -> str:
                 f"| {label} | {mode} | {var} | {_layers(r['flavor'], dep)} | "
                 f"{iqmc} | {_num(me, ds)} ± {_num(sd, ds)} | {warn} |"
             )
+
+    out += _render_verdict_section(rows)
 
     out += ["", "### Robustness — all six flavors", ""]
     out.append("| dataset | flavor | layers (blocks) | mean ± std | median | IQM | ⚠ |")
