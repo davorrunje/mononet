@@ -66,6 +66,11 @@ def test_convex_fraction_rejected_for_alternate() -> None:
         MonoLinear(4, 8, mode="alternate", activation="relu", convex_fraction=0.3)
 
 
+def test_init_rejected_for_alternate() -> None:
+    with pytest.raises(ValueError, match="init"):
+        MonoLinear(4, 8, mode="alternate", activation="relu", init="he_normal")
+
+
 def test_prev_rejected_for_non_alternate() -> None:
     entry = MonoLinear(4, 8, mode="alternate", activation="relu")
     with pytest.raises(ValueError, match="prev"):

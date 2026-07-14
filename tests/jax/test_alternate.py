@@ -98,6 +98,18 @@ def test_convex_fraction_rejected_for_alternate() -> None:
         )
 
 
+def test_init_rejected_for_alternate() -> None:
+    with pytest.raises(ValueError, match="init"):
+        MonoLinear(
+            4,
+            8,
+            mode="alternate",
+            activation="relu",
+            init="he_normal",
+            rngs=nnx.Rngs(0),
+        )
+
+
 def test_prev_rejected_for_non_alternate() -> None:
     rngs = nnx.Rngs(0)
     entry = MonoLinear(4, 8, mode="alternate", activation="relu", rngs=rngs)

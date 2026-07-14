@@ -229,8 +229,8 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
                 "units": self.units,
                 "mode": self.mode,
                 "activation": self.activation_name,
-                "convex_fraction": self.convex_fraction,
-                "init": self.init_name,
+                "convex_fraction": 0.5 if self._is_alternate else self.convex_fraction,
+                "init": None if self._is_alternate else self.init_name,
                 "bias": self.use_bias,
             }
         )

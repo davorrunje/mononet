@@ -77,6 +77,18 @@ def test_convex_fraction_rejected_for_alternate() -> None:
         MonoDense(8, mode="alternate", activation="relu", convex_fraction=0.3)
 
 
+def test_init_rejected_for_alternate() -> None:
+    with pytest.raises(ValueError, match="init"):
+        MonoDense(8, mode="alternate", activation="relu", init="he_normal")
+
+
+def test_alternate_monodense_config_roundtrip() -> None:
+    layer = MonoDense(8, mode="alternate", activation="relu")
+    clone = MonoDense.from_config(layer.get_config())
+    assert clone.mode == "alternate"
+    assert clone.convex_fraction == 1.0  # entry-phase rebuild (prev=None ⇒ convex)
+
+
 def test_prev_rejected_for_non_alternate() -> None:
     entry = MonoDense(8, mode="alternate", activation="relu")
     with pytest.raises(ValueError, match="prev"):
