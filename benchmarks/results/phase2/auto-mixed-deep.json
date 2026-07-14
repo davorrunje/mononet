@@ -1,6 +1,6 @@
 {
   "dataset": "auto",
-  "flavor": "absolute-deep",
+  "flavor": "mixed-deep",
   "best_params": {
     "width": 21,
     "depth": 6,

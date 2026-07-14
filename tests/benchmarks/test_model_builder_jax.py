@@ -34,7 +34,7 @@ def _bundle(n: int = 64, d: int = 7) -> DatasetBundle:
     )
 
 
-def _cfg(mode: Literal["switch", "absolute"], residual: bool) -> BenchmarkConfig:
+def _cfg(mode: Literal["split", "mixed"], residual: bool) -> BenchmarkConfig:
     return BenchmarkConfig(
         dataset="syn",
         backend="jax",
@@ -56,10 +56,10 @@ def _cfg(mode: Literal["switch", "absolute"], residual: bool) -> BenchmarkConfig
     )
 
 
-@pytest.mark.parametrize("mode", ["switch", "absolute"])
+@pytest.mark.parametrize("mode", ["split", "mixed"])
 @pytest.mark.parametrize("residual", [False, True])
 def test_builds_and_output_shape(
-    mode: Literal["switch", "absolute"], residual: bool
+    mode: Literal["split", "mixed"], residual: bool
 ) -> None:
     b = _bundle()
     model = build_model(_cfg(mode, residual), b)
@@ -68,8 +68,8 @@ def test_builds_and_output_shape(
     assert out.shape == (b.X_train.shape[0], 1)
 
 
-@pytest.mark.parametrize("mode", ["switch", "absolute"])
-def test_monotone_in_decreasing_feature(mode: Literal["switch", "absolute"]) -> None:
+@pytest.mark.parametrize("mode", ["split", "mixed"])
+def test_monotone_in_decreasing_feature(mode: Literal["split", "mixed"]) -> None:
     # Output must be non-increasing in column 4 (declared decreasing).
     b = _bundle()
     model = build_model(_cfg(mode, residual=False), b)

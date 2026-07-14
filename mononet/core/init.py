@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Static, data-free initialization derivation for the ``absolute`` construction.
+"""Static, data-free initialization derivation for the ``mixed`` construction.
 
 Pure NumPy (no backend import). Derives, from an activation's moments under a
 standard normal pre-activation, a variance-preserving weight ``gain`` and a
-layer-mean-centering ``bias`` for ``mode="absolute"``.
+layer-mean-centering ``bias`` for ``mode="mixed"``.
 """
 
 from __future__ import annotations
@@ -109,7 +109,7 @@ def _solve_bias(name: str, gain: float, f: float) -> float:
 def absolute_init_params(
     activation: ActivationSpec | str, convex_fraction: float
 ) -> tuple[float, float]:
-    """Derive ``(gain, bias)`` for the ``absolute`` construction.
+    """Derive ``(gain, bias)`` for the ``mixed`` construction.
 
     The weight init std is ``gain / sqrt(fan_in)`` (variance-preserving through the
     ``|W|`` + convex/concave-activation map), and the whole bias vector is

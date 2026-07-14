@@ -15,7 +15,7 @@ non-increasing) via `MonoInput`, and unconstrained in 2 non-monotone features,
 which are embedded through a plain MLP before being concatenated with the
 monotone path. The embedding absorbs the non-monotonicity, so the composite
 `RiskNet` is monotone in `x_mono` and free in `x_free`. The dense layer and
-`MonoResidual` default to `mode="absolute"`. Pick your backend:
+`MonoResidual` default to `mode="mixed"`. Pick your backend:
 
 ::::{tab-set}
 :::{tab-item} PyTorch

@@ -1,8 +1,8 @@
 """Deep-init trainability sweep (torch).
 
-Trains plain `absolute`/`switch` `MonoLinear` stacks across depth on the synthetic
+Trains plain `mixed`/`split` `MonoLinear` stacks across depth on the synthetic
 monotone target and records the final train MSE per (depth, method). Compares the new
-default `absolute` init against the old `he_normal` default and `switch`. Writes
+default `mixed` init against the old `he_normal` default and `split`. Writes
 ``benchmarks/results/deep-init/trainability.json`` (committed; read by
 ``docs/benchmarks/deep-init.ipynb``). Repo-only; never shipped in the wheel.
 
@@ -28,9 +28,9 @@ if TYPE_CHECKING:
 _DEPTHS: tuple[int, ...] = (2, 4, 8, 16)
 # (label, mode, init)
 _METHODS: tuple[tuple[str, Mode, str | None], ...] = (
-    ("absolute (new init)", "absolute", None),
-    ("absolute (he_normal)", "absolute", "he_normal"),
-    ("switch", "switch", None),
+    ("mixed (new init)", "mixed", None),
+    ("mixed (he_normal)", "mixed", "he_normal"),
+    ("split", "split", None),
 )
 _CAP = 1.0e6  # cap diverged losses so the committed JSON stays standard (no inf)
 

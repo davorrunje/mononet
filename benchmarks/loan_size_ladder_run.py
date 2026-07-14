@@ -1,7 +1,7 @@
 """Size-ladder: whether deep monotone residual wins with scale (Stage B).
 
 For each train size N and each arm (shallow D in [1,4] vs deep D in {6,10,16},
-both absolute residual), tune HPs on an N-subsample, then refit + multi-seed
+both mixed residual), tune HPs on an N-subsample, then refit + multi-seed
 test on the full held-out test set (a fresh N-subsample per seed) and record the
 IQM. Applies to any large dataset (`n_train >= 20_000`, see `_require_large`);
 `--dataset` defaults to `loan` for back-compat. See
@@ -89,7 +89,7 @@ def _ladder_eval(
         agg, seed_rows = final_eval(
             b_s,
             best_params,
-            mode="absolute",
+            mode="mixed",
             residual=True,
             backend=backend,
             seeds=[s],
@@ -147,7 +147,7 @@ def run_ladder(
             b_search = subsample_train(bundle, n, seed=0)
             study = search(
                 b_search,
-                mode="absolute",
+                mode="mixed",
                 residual=True,
                 deep=deep,
                 backend=backend,

@@ -9,7 +9,7 @@ CONFIGS = Path("benchmarks/configs")
 
 def test_auto_config_values() -> None:
     cfg = load_config(
-        CONFIGS / "auto.toml", backend="torch", mode="switch", residual=False
+        CONFIGS / "auto.toml", backend="torch", mode="split", residual=False
     )
     assert cfg.dataset == "auto"
     assert cfg.depth == 2
@@ -19,5 +19,5 @@ def test_auto_config_values() -> None:
     assert cfg.epochs == 50
     assert abs(cfg.optimizer.lr - 0.073407) < 1e-9
     assert cfg.backend == "torch"
-    assert cfg.mode == "switch"
+    assert cfg.mode == "split"
     assert cfg.residual is False

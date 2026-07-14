@@ -18,7 +18,7 @@ def test_exports() -> None:
 def test_mono_linear_is_module_and_runs() -> None:
     import mononet.torch as t
 
-    layer = t.MonoLinear(3, 5, mode="switch")
+    layer = t.MonoLinear(3, 5, mode="split")
     assert isinstance(layer, torch.nn.Module)
     y = layer(torch.zeros(2, 3))
     assert y.shape == (2, 5)
@@ -30,7 +30,7 @@ def test_mono_residual_warm_start_near_identity() -> None:
     torch.manual_seed(0)  # deterministic init + input (jax/keras tests already seed)
     # near-identity holds with the true default (softplus beta_gate, near-zero
     # last-layer init of the default F): g_beta(0)*F(x) stays inside atol.
-    block = t.MonoResidual(4, 4, mode="switch", activation="relu")
+    block = t.MonoResidual(4, 4, mode="split", activation="relu")
     x = torch.randn(3, 4)
     y = block(x)
     assert torch.allclose(y, x, atol=5e-3)

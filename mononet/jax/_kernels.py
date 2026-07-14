@@ -71,26 +71,26 @@ def monotonic_dense(
     :param x: Input tensor of shape ``(batch, in_features)``.
     :param weights: Weight matrix of shape ``(in_features, units)``.
     :param bias: Bias vector of shape ``(units,)``.
-    :param mode: ``switch`` or ``absolute``.
+    :param mode: ``split`` or ``mixed``.
     :param activation_name: Base activation name.
     :param convex_fraction: Fraction of output units that are convex
-        (used only when ``mode="absolute"``).
+        (used only when ``mode="mixed"``).
     :returns: Output tensor of shape ``(batch, units)``.
-    :raises ValueError: If ``mode`` is not ``switch`` or ``absolute``.
+    :raises ValueError: If ``mode`` is not ``split`` or ``mixed``.
     """
-    if mode == "switch":
+    if mode == "split":
         w_pos = jnp.maximum(weights, 0.0)
         w_neg = jnp.minimum(weights, 0.0)
         return activation(activation_name, x @ w_pos + bias) - activation(
             activation_name, x @ w_neg + bias
         )
-    if mode == "absolute":
+    if mode == "mixed":
         h = x @ jnp.abs(weights) + bias
         c = math.ceil(convex_fraction * weights.shape[1])
         left = activation(activation_name, h[:, :c])
         right = concave_reflection(activation_name, h[:, c:])
         return jnp.concatenate([left, right], axis=1)
-    raise ValueError(f"mode must be 'switch' or 'absolute'; got {mode!r}")
+    raise ValueError(f"mode must be 'mixed' or 'split'; got {mode!r}")
 
 
 def monotonic_residual(
@@ -114,9 +114,9 @@ def monotonic_residual(
     :param bias: Bias vector for the dense sublayer.
     :param alpha: Raw skip-path gate parameter.
     :param beta: Raw dense-path gate parameter.
-    :param mode: ``switch`` or ``absolute`` passed to :func:`monotonic_dense`.
+    :param mode: ``split`` or ``mixed`` passed to :func:`monotonic_dense`.
     :param activation_name: Base activation name.
-    :param convex_fraction: Convex fraction for ``absolute`` mode.
+    :param convex_fraction: Convex fraction for ``mixed`` mode.
     :param alpha_gate: Gate token for the skip path.
     :param beta_gate: Gate token for the dense path.
     :param skip_weight: Optional log-scale projection matrix; when ``None``

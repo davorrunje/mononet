@@ -77,7 +77,7 @@
     ]
   },
   "params": {
-    "mode": "absolute",
+    "mode": "mixed",
     "activation": "identity",
     "convex_fraction": 0.5,
     "dtype": "float64"

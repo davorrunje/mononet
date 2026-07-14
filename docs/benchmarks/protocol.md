@@ -82,18 +82,18 @@ above. They are recorded here because they matter for the paper's methodology.
 
 **1. The read-out head must be linear (`identity`), not a nonlinear activation.**
 Every monotone layer applies an activation; if the final 1-unit read-out also
-does, an `absolute`-mode head becomes `relu(|W|·h + b) ≥ 0`, forcing the
+does, a `mixed`-mode head becomes `relu(|W|·h + b) ≥ 0`, forcing the
 pre-sigmoid non-negative → the model predicts the positive class for every row →
 binary classification **collapses to the base rate** (and ReLU's dead zone locks
-it there). `switch` is spared (its head is a *difference* of activations) and
+it there). `split` is spared (its head is a *difference* of activations) and
 regression is spared (positive targets), which masks the issue. The fix is a
 **linear monotone read-out** — `|W|·h + b` via a first-class `identity` activation
 — which is the correct output-layer form and preserves monotonicity. A regression
-test asserts the head is linear and that absolute-mode classification clears the
+test asserts the head is linear and that mixed-mode classification clears the
 base rate.
 
 **2. Plain monotone stacks explode with depth; use residual for depth.** A plain
-`|W|`/switch stack is variance-amplifying: on standard-normal input the
+`|W|`/split stack is variance-amplifying: on standard-normal input the
 activation std grows ~4–5× per layer (≈10¹² over 20 layers), because `|W|` is a
 non-negative matrix whose Perron growth compounds the convex/concave mean
 structure. **No scalar init fixes it** (shrinking the init only lowers the growth
@@ -105,7 +105,7 @@ paper's original networks avoided the problem by staying shallow (2 layers).
 **3. Aggressive HP regions collapse on some seeds — hence stability-aware
 selection + robust reporting.** With a single-seed CV, the search can select a
 fragile configuration (e.g. high learning rate × high weight decay on a plain
-switch stack) that trains well on the CV seed but drives the weights to a dead
+split stack) that trains well on the CV seed but drives the weights to a dead
 attractor (`σ(W⁺x+b) − σ(W⁻x+b) → 0`, constant 0.5, loss `ln 2`) on a fraction of
 final-eval seeds. This is not fixable by a single knob — the collapse is
 non-monotone in weight decay (both high and zero WD collapse; gradient clipping

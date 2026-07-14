@@ -1,6 +1,6 @@
 {
   "dataset": "loan",
-  "flavor": "switch-deep",
+  "flavor": "split-deep",
   "best_params": {
     "width": 21,
     "depth": 10,

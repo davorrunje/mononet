@@ -20,7 +20,7 @@ def test_exports() -> None:
 def test_mono_linear_runs() -> None:
     import mononet.jax as j
 
-    layer = j.MonoLinear(3, 5, mode="switch", rngs=nnx.Rngs(0))
+    layer = j.MonoLinear(3, 5, mode="split", rngs=nnx.Rngs(0))
     y = layer(jnp.zeros((2, 3)))
     assert y.shape == (2, 5)
 
@@ -30,7 +30,7 @@ def test_mono_residual_warm_start_near_identity() -> None:
 
     # near-identity holds with the true default (softplus beta_gate, near-zero
     # last-layer init of the default F): g_beta(0)*F(x) stays inside atol.
-    block = j.MonoResidual(4, 4, mode="switch", activation="relu", rngs=nnx.Rngs(0))
+    block = j.MonoResidual(4, 4, mode="split", activation="relu", rngs=nnx.Rngs(0))
     x = jax.random.normal(jax.random.key(1), (3, 4))
     assert jnp.allclose(block(x), x, atol=5e-3)
 

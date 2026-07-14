@@ -75,7 +75,7 @@
     "beta": 0.5
   },
   "params": {
-    "mode": "absolute",
+    "mode": "mixed",
     "activation": "elu",
     "convex_fraction": 0.5,
     "alpha_gate": "shifted_elu",

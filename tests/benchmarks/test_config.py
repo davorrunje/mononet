@@ -5,7 +5,7 @@ def _cfg() -> BenchmarkConfig:
     return BenchmarkConfig(
         dataset="auto",
         backend="torch",
-        mode="switch",
+        mode="split",
         residual=False,
         depth=2,
         width=21,
@@ -25,9 +25,9 @@ def _cfg() -> BenchmarkConfig:
 
 def test_replace_returns_modified_copy() -> None:
     c = _cfg()
-    d = c.replace(mode="absolute", residual=True)
-    assert c.mode == "switch"
+    d = c.replace(mode="mixed", residual=True)
+    assert c.mode == "split"
     assert c.residual is False
-    assert d.mode == "absolute"
+    assert d.mode == "mixed"
     assert d.residual is True
     assert d.dataset == "auto"

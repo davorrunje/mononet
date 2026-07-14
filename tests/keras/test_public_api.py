@@ -22,12 +22,12 @@ def test_exports() -> None:
 def test_mono_dense_runs_and_serializes() -> None:
     import mononet.keras as kmod
 
-    layer = kmod.MonoDense(5, mode="absolute", convex_fraction=0.25)
+    layer = kmod.MonoDense(5, mode="mixed", convex_fraction=0.25)
     y = layer(ops.zeros((2, 3)))
     assert tuple(y.shape) == (2, 5)
     cfg = layer.get_config()
     clone = kmod.MonoDense.from_config(cfg)
-    assert clone.mode == "absolute"
+    assert clone.mode == "mixed"
     assert clone.convex_fraction == 0.25
 
 
@@ -38,7 +38,7 @@ def test_mono_residual_warm_start_near_identity() -> None:
     keras.utils.set_random_seed(0)
     # near-identity holds with the true default (softplus beta_gate, near-zero
     # last-layer init of the default F): g_beta(0)*F(x) stays inside atol.
-    block = kmod.MonoResidual(4, mode="switch", activation="relu")
+    block = kmod.MonoResidual(4, mode="split", activation="relu")
     x = ops.convert_to_tensor(np.random.default_rng(0).normal(size=(3, 4)))
     assert bool(ops.all(ops.abs(block(x) - x) < 5e-3))
 

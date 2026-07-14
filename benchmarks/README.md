@@ -116,7 +116,7 @@ wait
 
 ## Deep-network init
 
-`mode="absolute"` uses a derived static init (`mononet.core.init.absolute_init_params`, the
+`mode="mixed"` uses a derived static init (`mononet.core.init.absolute_init_params`, the
 default) that fixes moderate-depth trainability. To reproduce the depth sweep + rendered
 figure:
 

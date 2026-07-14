@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 @settings(deadline=None, max_examples=30)
-@given(mode=st.sampled_from(["switch", "absolute"]), seed=st.integers(0, 10_000))
+@given(mode=st.sampled_from(["split", "mixed"]), seed=st.integers(0, 10_000))
 def test_mono_dense_nondecreasing(mode: Mode, seed: int) -> None:
     rng = np.random.default_rng(seed)
     layer = MonoDense(4, mode=mode)

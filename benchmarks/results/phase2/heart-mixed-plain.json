@@ -1,6 +1,6 @@
 {
   "dataset": "heart",
-  "flavor": "absolute-plain",
+  "flavor": "mixed-plain",
   "best_params": {
     "width": 21,
     "depth": 2,

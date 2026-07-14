@@ -44,7 +44,7 @@ class BenchmarkConfig:
 
     :param dataset: Dataset name.
     :param backend: Target backend ("torch", "jax", or "keras").
-    :param mode: Monotonicity mode ("switch" or "absolute").
+    :param mode: Monotonicity mode ("split" or "mixed").
     :param residual: Whether to use residual connections.
     :param depth: Network depth (number of layers).
     :param width: Network width (hidden units per layer).
@@ -63,7 +63,7 @@ class BenchmarkConfig:
 
     dataset: str
     backend: Literal["torch", "jax", "keras"]
-    mode: Literal["switch", "absolute"]
+    mode: Literal["split", "mixed"]
     residual: bool
     depth: int
     width: int

@@ -12,7 +12,7 @@ from mononet.core.types import ActivationSpec, InitSpec
 def test_mono_config_roundtrip() -> None:
     cfg = MonoConfig(
         units=8,
-        mode="absolute",
+        mode="mixed",
         activation=ActivationSpec("elu"),
         convex_fraction=0.25,
         init=InitSpec(scheme="he_normal", seed=3),
@@ -23,7 +23,7 @@ def test_mono_config_roundtrip() -> None:
 
 def test_mono_config_defaults() -> None:
     cfg = MonoConfig(units=4)
-    assert cfg.mode == "absolute"
+    assert cfg.mode == "mixed"
     assert cfg.activation.name == "identity"
     assert cfg.convex_fraction == 0.5
     assert cfg.bias is True
@@ -37,7 +37,7 @@ def test_mono_config_rejects_bad_units_and_fraction() -> None:
 
 
 def test_mono_residual_config_roundtrip() -> None:
-    cfg = MonoResidualConfig(units=16, mode="switch", activation=ActivationSpec("relu"))
+    cfg = MonoResidualConfig(units=16, mode="split", activation=ActivationSpec("relu"))
     assert MonoResidualConfig.from_json(cfg.to_json()) == cfg
     assert cfg.alpha_gate == "shifted_elu"
     assert cfg.beta_gate == "softplus"
@@ -45,7 +45,7 @@ def test_mono_residual_config_roundtrip() -> None:
     assert MonoResidualConfig.from_json(
         MonoResidualConfig(
             units=16,
-            mode="switch",
+            mode="split",
             activation=ActivationSpec("relu"),
             near_zero_scale=5e-3,
         ).to_json()
@@ -77,3 +77,29 @@ def test_mono_residual_config_rejects_bad_units_and_mode() -> None:
         MonoResidualConfig(units=0, activation=ActivationSpec("relu"))
     with pytest.raises(ValueError, match="mode must be"):
         MonoResidualConfig(units=4, mode="bogus", activation=ActivationSpec("relu"))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(("old", "new"), [("absolute", "mixed"), ("switch", "split")])
+def test_old_mode_names_rejected_with_hint(old: str, new: str) -> None:
+    with pytest.raises(ValueError, match=new):
+        MonoConfig(units=4, mode=old)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match=new):
+        MonoResidualConfig(
+            units=4,
+            mode=old,  # type: ignore[arg-type]
+            activation=ActivationSpec("relu"),
+        )
+
+
+def test_from_dict_rejects_old_mode() -> None:
+    with pytest.raises(ValueError, match="mixed"):
+        MonoConfig.from_dict(
+            {
+                "units": 4,
+                "mode": "absolute",
+                "activation": {"name": "relu"},
+                "convex_fraction": 0.5,
+                "init": {"scheme": "he_normal", "seed": None},
+                "bias": True,
+            }
+        )

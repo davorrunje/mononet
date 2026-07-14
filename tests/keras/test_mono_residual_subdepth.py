@@ -15,36 +15,36 @@ from mononet.keras import MonoDense, MonoResidual
 
 
 def test_default_builds_two_monodense() -> None:
-    layer = MonoResidual(8, mode="absolute", activation="elu")  # default sub_depth -> 2
+    layer = MonoResidual(8, mode="mixed", activation="elu")  # default sub_depth -> 2
     assert isinstance(layer.F, keras.Sequential)
     assert sum(isinstance(m, MonoDense) for m in layer.F.layers) == 2
 
 
 def test_subdepth_builds_k_monodense() -> None:
-    layer = MonoResidual(8, mode="absolute", activation="elu", sub_depth=3)
+    layer = MonoResidual(8, mode="mixed", activation="elu", sub_depth=3)
     assert isinstance(layer.F, keras.Sequential)
     assert sum(isinstance(m, MonoDense) for m in layer.F.layers) == 3
 
 
 def test_subdepth1_is_single_monodense() -> None:
-    layer = MonoResidual(8, mode="absolute", activation="elu", sub_depth=1)
+    layer = MonoResidual(8, mode="mixed", activation="elu", sub_depth=1)
     assert isinstance(layer.F, MonoDense)
 
 
 def test_f_alone_is_used() -> None:
-    f = MonoDense(8, mode="absolute")
+    f = MonoDense(8, mode="mixed")
     layer = MonoResidual(8, F=f)
     assert layer.F is f
 
 
 def test_f_and_explicit_subdepth_raises() -> None:
     with pytest.raises(ValueError, match="sub_depth"):
-        MonoResidual(8, F=MonoDense(8, mode="absolute"), sub_depth=2)
+        MonoResidual(8, F=MonoDense(8, mode="mixed"), sub_depth=2)
 
 
 def test_subdepth_below_one_raises() -> None:
     with pytest.raises(ValueError, match="sub_depth"):
-        MonoResidual(8, mode="absolute", sub_depth=0)
+        MonoResidual(8, mode="mixed", sub_depth=0)
 
 
 def _nondecreasing(units: int, in_f: int, mode: Mode) -> None:
@@ -64,19 +64,19 @@ def _nondecreasing(units: int, in_f: int, mode: Mode) -> None:
 
 
 def test_monotone_identity_skip() -> None:
-    _nondecreasing(6, 6, "absolute")
+    _nondecreasing(6, 6, "mixed")
 
 
 def test_monotone_projection_skip() -> None:
-    _nondecreasing(4, 6, "switch")
+    _nondecreasing(4, 6, "split")
 
 
 def test_default_F_without_activation_raises() -> None:  # noqa: N802
     with pytest.raises(ValueError, match="activation is required"):
-        MonoResidual(8, mode="absolute")
+        MonoResidual(8, mode="mixed")
 
 
 def test_F_and_activation_together_raises() -> None:  # noqa: N802
-    f = MonoDense(8, mode="absolute")
+    f = MonoDense(8, mode="mixed")
     with pytest.raises(ValueError, match="either F or activation"):
         MonoResidual(8, F=f, activation="elu")

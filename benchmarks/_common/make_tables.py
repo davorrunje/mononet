@@ -25,12 +25,12 @@ _DISP = {
 }
 _ORDER = ["auto", "heart", "compas", "loan", "blog"]
 _FLAVS = [
-    "switch-plain",
-    "switch-residual",
-    "switch-deep",
-    "absolute-plain",
-    "absolute-residual",
-    "absolute-deep",
+    "split-plain",
+    "split-residual",
+    "split-deep",
+    "mixed-plain",
+    "mixed-residual",
+    "mixed-deep",
 ]
 
 
@@ -89,10 +89,10 @@ def render() -> str:
         m, arrow = _DISP[ds]
         lower = m in ("MSE", "RMSE")
         entries = [
-            ("switch", "plain", d.get("switch-plain")),
-            ("switch", "residual", _pick_residual(d, "switch", lower)),
-            ("absolute", "plain", d.get("absolute-plain")),
-            ("absolute", "residual", _pick_residual(d, "absolute", lower)),
+            ("split", "plain", d.get("split-plain")),
+            ("split", "residual", _pick_residual(d, "split", lower)),
+            ("mixed", "plain", d.get("mixed-plain")),
+            ("mixed", "residual", _pick_residual(d, "mixed", lower)),
         ]
         scored = [(e, _stats(e[2], ds)[3], e[2]["n_collapse"]) for e in entries if e[2]]
         best = (

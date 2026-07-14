@@ -1,6 +1,6 @@
 {
   "dataset": "loan",
-  "flavor": "switch-plain",
+  "flavor": "split-plain",
   "best_params": {
     "width": 8,
     "depth": 2,

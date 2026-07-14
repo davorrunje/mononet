@@ -58,10 +58,10 @@ def test_invalid_flavors_exits_nonzero() -> None:
 def test_parse_flavors_accepts_deep() -> None:
     from benchmarks.search import _parse_flavors
 
-    assert _parse_flavors("absolute-deep") == (("absolute", True, True),)
-    assert _parse_flavors("switch-plain,switch-residual") == (
-        ("switch", False, False),
-        ("switch", True, False),
+    assert _parse_flavors("mixed-deep") == (("mixed", True, True),)
+    assert _parse_flavors("split-plain,split-residual") == (
+        ("split", False, False),
+        ("split", True, False),
     )
 
 
@@ -72,9 +72,9 @@ def test_parse_flavors_default_is_all_six() -> None:
 
 
 def test_dry_run_lists_deep_flavor() -> None:
-    res = runner.invoke(app, ["--flavors", "absolute-deep", "--dry-run"])
+    res = runner.invoke(app, ["--flavors", "mixed-deep", "--dry-run"])
     assert res.exit_code == 0
-    assert "absolute-deep" in res.output
+    assert "mixed-deep" in res.output
 
 
 def test_dry_run_default_datasets_includes_all_22() -> None:

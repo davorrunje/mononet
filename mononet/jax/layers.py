@@ -67,12 +67,12 @@ class MonoLinear(nnx.Module):
 
     :param in_features: Number of input features.
     :param units: Number of output units.
-    :param mode: ``absolute`` (default) or ``switch``.
+    :param mode: ``mixed`` (default) or ``split``.
     :param activation: Base activation, one of ``"relu"``, ``"elu"``,
         ``"selu"``, ``"softplus"``, ``"identity"``, or an
         :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
         means ``"identity"`` — a linear monotone map, matching ``nnx.Linear``.
-    :param convex_fraction: Fraction of convex units (``absolute`` mode only).
+    :param convex_fraction: Fraction of convex units (``mixed`` mode only).
     :param init: Weight initializer; defaults to ``he_normal``.
     :param bias: Whether to include a bias vector.
     :param near_zero_scale: Private. When not ``None``, the weight is scaled
@@ -87,7 +87,7 @@ class MonoLinear(nnx.Module):
         in_features: int,
         units: int,
         *,
-        mode: Mode = "absolute",
+        mode: Mode = "mixed",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -102,7 +102,7 @@ class MonoLinear(nnx.Module):
         )
         self.convex_fraction = convex_fraction
         bias_fill = 0.0
-        if mode == "absolute" and init is None:
+        if mode == "mixed" and init is None:
             gain, bias_fill = absolute_init_params(
                 self.activation_name, convex_fraction
             )
@@ -151,7 +151,7 @@ class MonoResidual(nnx.Module):
         A custom ``F`` is not near-zero-initialised; for deep stacks initialise
         its last layer near zero (or pass ``beta_gate="scaled_elu"``) to avoid
         divergence at init.
-    :param mode: ``absolute`` (default) or ``switch``.
+    :param mode: ``mixed`` (default) or ``split``.
     :param activation: Base activation name or spec for the default ``F``
         (default ``None``). Required when ``F`` is not provided; mutually
         exclusive with an explicit ``F``.
@@ -165,7 +165,7 @@ class MonoResidual(nnx.Module):
         weight (bias zeroed) so the block starts near-identity — the deep
         default stack (``softplus`` ``beta_gate``) would otherwise diverge
         through a randomly-initialized residual branch. ``0.0`` reproduces
-        exact-zero, which is not recommended: under ``absolute`` mode ``F``
+        exact-zero, which is not recommended: under ``mixed`` mode ``F``
         uses ``|W|``, whose gradient at ``W=0`` is ``sign(0)=0``, a fixed
         point that freezes the weights. A custom ``F`` is untouched.
     :param rngs: Flax NNX RNG container.
@@ -179,7 +179,7 @@ class MonoResidual(nnx.Module):
         units: int,
         *,
         F: nnx.Module | Callable[[int], nnx.Module] | None = None,  # noqa: N803
-        mode: Mode = "absolute",
+        mode: Mode = "mixed",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "softplus",

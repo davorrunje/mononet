@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 def _cfg(
-    mode: Literal["switch", "absolute"],
+    mode: Literal["split", "mixed"],
     residual: bool,
     metric: Literal["accuracy", "rmse", "mse", "roc_auc"] = "mse",
     deep: bool = False,
@@ -34,9 +34,9 @@ def _cfg(
     )
 
 
-def test_absolute_searches_convex_fraction_within_unit_interval() -> None:
-    cfg = _cfg("absolute", False, metric="mse")
-    assert cfg.mode == "absolute"
+def test_mixed_searches_convex_fraction_within_unit_interval() -> None:
+    cfg = _cfg("mixed", False, metric="mse")
+    assert cfg.mode == "mixed"
     assert cfg.residual is False
     assert 0.0 <= cfg.convex_fraction <= 1.0
     assert cfg.activation == "elu"
@@ -45,8 +45,8 @@ def test_absolute_searches_convex_fraction_within_unit_interval() -> None:
     assert cfg.metrics == ("mse",)
 
 
-def test_switch_uses_fixed_convex_fraction() -> None:
-    # switch mode ignores convex_fraction; the sampler must NOT add it as a
+def test_split_uses_fixed_convex_fraction() -> None:
+    # split mode ignores convex_fraction; the sampler must NOT add it as a
     # search dimension (kept at the 0.5 default so studies don't carry a dead param).
     study = optuna.create_study()
     trial = study.ask()
@@ -54,13 +54,13 @@ def test_switch_uses_fixed_convex_fraction() -> None:
         trial,
         dataset="syn",
         backend="torch",
-        mode="switch",
+        mode="split",
         residual=True,
         epochs=2,
         metric="accuracy",
         n_train=10_000,
     )
-    assert cfg.mode == "switch"
+    assert cfg.mode == "split"
     assert cfg.residual is True
     assert cfg.convex_fraction == 0.5
     assert "convex_fraction" not in trial.params
@@ -71,14 +71,14 @@ def test_roc_auc_primary_also_reports_accuracy() -> None:
     # When roc_auc is the search objective, accuracy must still be reported
     # alongside it (the primary metric switched away from accuracy, but
     # accuracy is not dropped from the results).
-    cfg = _cfg("switch", residual=True, metric="roc_auc")
+    cfg = _cfg("split", residual=True, metric="roc_auc")
     assert cfg.metrics == ("roc_auc", "accuracy")
 
 
 def test_deep_samples_depth_from_high_band() -> None:
     # Deep flavor draws depth from the categorical high band, never the 1..4 range.
     for _ in range(25):
-        cfg = _cfg("absolute", residual=True, deep=True)
+        cfg = _cfg("mixed", residual=True, deep=True)
         assert cfg.depth in (6, 10, 16)
         assert cfg.residual is True
         assert 0.0 <= cfg.convex_fraction <= 1.0  # other fields still sampled
@@ -86,7 +86,7 @@ def test_deep_samples_depth_from_high_band() -> None:
 
 def test_non_deep_keeps_shallow_depth_band() -> None:
     for _ in range(25):
-        cfg = _cfg("switch", residual=True, deep=False)
+        cfg = _cfg("split", residual=True, deep=False)
         assert 1 <= cfg.depth <= 4
 
 
@@ -101,7 +101,7 @@ def _cfg_for_dataset(dataset: str, n_train: int | None = None) -> BenchmarkConfi
         trial,
         dataset=dataset,
         backend="torch",
-        mode="switch",
+        mode="split",
         residual=False,
         epochs=3,
         metric="mse",
@@ -140,7 +140,7 @@ def test_batch_band_is_size_driven() -> None:
                 t,
                 dataset="x",
                 backend="torch",
-                mode="absolute",
+                mode="mixed",
                 residual=True,
                 epochs=1,
                 metric="mse",

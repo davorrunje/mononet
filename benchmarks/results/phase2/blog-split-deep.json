@@ -1,6 +1,6 @@
 {
   "dataset": "blog",
-  "flavor": "switch-deep",
+  "flavor": "split-deep",
   "best_params": {
     "width": 8,
     "depth": 16,

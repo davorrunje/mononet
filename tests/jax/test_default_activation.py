@@ -11,7 +11,7 @@ from mononet.jax import MonoLinear
 
 
 def test_default_activation_is_affine() -> None:
-    layer = MonoLinear(4, 8, mode="switch", rngs=nnx.Rngs(0))
+    layer = MonoLinear(4, 8, mode="split", rngs=nnx.Rngs(0))
     rng = np.random.default_rng(0)
     x1 = jnp.asarray(rng.standard_normal((5, 4)), dtype=jnp.float32)
     x2 = jnp.asarray(rng.standard_normal((5, 4)), dtype=jnp.float32)
