@@ -269,3 +269,18 @@ datasets have no free features, so the branch is empty and this is a no-op.)
    was paused, as a separate "does depth help" follow-up.
 3. Reconcile the two ablation entry points (fixed-grid vs Optuna) once both
    questions are answered, to retire duplicate launcher/report code.
+4. **Dropout in the monotone stack (paper fidelity).** The benchmark builder
+   applies dropout only in the non-monotone `Dense` embedding branch; the
+   paper's own code (`mononet/legacy/mono_dense_layer.py:395-396`,
+   `create_type_1`) applies dropout *between the monotone hidden layers*. Add
+   dropout between `MonoLinear` stack layers in `_build_torch_stack` + the
+   jax/keras stack loops to match the paper. Safe for monotonicity (test-time
+   off; train-time sub-networks stay `≥0`-weighted), but handle the interaction
+   with `alternate`'s composition-aware init (dropout's `×1/(1-p)` rescaling
+   perturbs the per-layer variance the init sets).
+5. **HP-search sensitivity curves (best-so-far vs trial count).** Per-flavor
+   optimization-history curves to check each flavor's search converged (fair
+   comparison) and detect under-search — especially relevant since `compas`
+   `alternate` jumped 0.706→0.730 going 25→50 trials. Reconstructable from the
+   committed Optuna storage DBs (all trials stored) with no re-run; extend
+   trials per flavor until the best-so-far plateaus.
