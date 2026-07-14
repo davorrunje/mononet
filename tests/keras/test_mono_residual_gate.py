@@ -25,7 +25,7 @@ def _last_dense(block: MonoResidual) -> MonoDense:
 
 def test_default_F_last_layer_is_near_zero_but_nonzero() -> None:  # noqa: N802
     keras.utils.set_random_seed(0)
-    block = MonoResidual(32, mode="absolute", activation="elu")
+    block = MonoResidual(32, mode="mixed", activation="elu")
     block(np.zeros((1, 32), dtype="float32"))  # build
     last = _last_dense(block)
     wnorm = float(ops.convert_to_numpy(ops.sum(ops.abs(last.w))))
@@ -39,7 +39,7 @@ def test_default_F_last_layer_is_near_zero_but_nonzero() -> None:  # noqa: N802
 
 def test_default_block_is_near_identity_at_init() -> None:
     keras.utils.set_random_seed(0)
-    block = MonoResidual(32, mode="absolute", activation="elu")
+    block = MonoResidual(32, mode="mixed", activation="elu")
     x = ops.convert_to_tensor(
         np.random.default_rng(0).standard_normal((8, 32)).astype("float32")
     )
@@ -50,7 +50,7 @@ def test_default_block_is_near_identity_at_init() -> None:
 
 def test_custom_F_is_not_near_zeroed() -> None:  # noqa: N802
     keras.utils.set_random_seed(0)
-    custom = MonoDense(32, mode="absolute", activation="elu")
+    custom = MonoDense(32, mode="mixed", activation="elu")
     custom(np.zeros((1, 32), dtype="float32"))  # build
     before = float(ops.convert_to_numpy(ops.sum(ops.abs(custom.w))))
     block = MonoResidual(32, F=custom)
@@ -61,13 +61,13 @@ def test_custom_F_is_not_near_zeroed() -> None:  # noqa: N802
 
 def test_near_zero_scale_is_user_tunable() -> None:
     keras.utils.set_random_seed(0)
-    small_block = MonoResidual(32, mode="absolute", activation="elu")
+    small_block = MonoResidual(32, mode="mixed", activation="elu")
     small_block(np.zeros((1, 32), dtype="float32"))
     small = _last_dense(small_block)
 
     keras.utils.set_random_seed(0)
     big_block = MonoResidual(
-        32, mode="absolute", activation="elu", near_zero_scale=2e-3
+        32, mode="mixed", activation="elu", near_zero_scale=2e-3
     )
     big_block(np.zeros((1, 32), dtype="float32"))
     big = _last_dense(big_block)
@@ -81,7 +81,7 @@ def test_near_zero_scale_is_user_tunable() -> None:
     # 0.0 reproduces exact-zero
     keras.utils.set_random_seed(0)
     zero_block = MonoResidual(
-        32, mode="absolute", activation="elu", near_zero_scale=0.0
+        32, mode="mixed", activation="elu", near_zero_scale=0.0
     )
     zero_block(np.zeros((1, 32), dtype="float32"))
     zero = _last_dense(zero_block)
@@ -91,7 +91,7 @@ def test_near_zero_scale_is_user_tunable() -> None:
 def test_near_zero_scale_with_bias_false() -> None:
     # covers the no-bias branch of near-zero init: weight scaled, no bias to zero
     layer = MonoDense(
-        4, mode="absolute", activation="elu", bias=False, near_zero_scale=1e-3
+        4, mode="mixed", activation="elu", bias=False, near_zero_scale=1e-3
     )
     layer(np.zeros((2, 4), dtype="float32"))  # triggers build with no bias
     assert layer.b is None

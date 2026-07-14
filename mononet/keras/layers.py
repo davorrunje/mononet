@@ -50,17 +50,17 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
     """Monotonic analogue of ``keras.layers.Dense`` (non-decreasing in all inputs).
 
     The weight matrix is constrained at call-time (not at parameter-update time)
-    by the ``switch`` or ``absolute`` mode, as described in the paper.
+    by the ``split`` or ``mixed`` mode, as described in the paper.
 
     :param units: Output dimensionality.
-    :param mode: One of ``absolute`` (default) or ``switch``.
+    :param mode: One of ``mixed`` (default) or ``split``.
     :param activation: Base activation, one of ``"relu"``, ``"elu"``,
         ``"selu"``, ``"softplus"``, ``"identity"``, or an
         :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
         means ``"identity"`` — a linear monotone map, matching
         ``keras.layers.Dense``.
     :param convex_fraction: Fraction of output units using the convex branch
-        (only used in ``absolute`` mode).
+        (only used in ``mixed`` mode).
     :param init: Initializer name or :class:`~mononet.core.types.InitSpec`.
     :param bias: Whether to include a bias term (default ``True``).
     :param near_zero_scale: Private. When not ``None``, the weight is scaled
@@ -73,7 +73,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         self,
         units: int,
         *,
-        mode: Mode = "absolute",
+        mode: Mode = "mixed",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -90,7 +90,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         )
         self.convex_fraction = convex_fraction
         self.init_name = _init_name(init)
-        self._absolute_default = mode == "absolute" and init is None
+        self._absolute_default = mode == "mixed" and init is None
         self.use_bias = bias
         self.near_zero_scale = near_zero_scale
 
@@ -175,8 +175,8 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         A custom ``F`` is not near-zero-initialised; for deep stacks initialise
         its last layer near zero (or pass ``beta_gate="scaled_elu"``) to avoid
         divergence at init.
-    :param mode: Forwarded to the default ``F``. ``absolute`` (default) or
-        ``switch``.
+    :param mode: Forwarded to the default ``F``. ``mixed`` (default) or
+        ``split``.
     :param activation: Forwarded to the default ``F`` (default ``None``).
         Required when ``F`` is not provided; mutually exclusive with an
         explicit ``F``. A custom ``F`` is not serializable, so
@@ -190,7 +190,7 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         weight (bias zeroed) so the block starts near-identity — the deep
         default stack (``softplus`` ``beta_gate``) would otherwise diverge
         through a randomly-initialized residual branch. ``0.0`` reproduces
-        exact-zero, which is not recommended: under ``absolute`` mode ``F``
+        exact-zero, which is not recommended: under ``mixed`` mode ``F``
         uses ``|W|``, whose gradient at ``W=0`` is ``sign(0)=0``, a fixed
         point that freezes the weights. A custom ``F`` is untouched.
     :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
@@ -202,7 +202,7 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         units: int,
         *,
         F: keras.layers.Layer | None = None,  # noqa: N803
-        mode: Mode = "absolute",
+        mode: Mode = "mixed",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "softplus",
