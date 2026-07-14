@@ -206,6 +206,49 @@ def test_render_detailed_mixed_fixed_flavor_renders_as_mixed_fix(
     assert "0.50" in fixed_line
 
 
+def test_render_detailed_mixed_fixed_cvxf_defaults_to_050_when_unsearched(
+    tmp_path: Path,
+) -> None:
+    # mixed-fixed-plain pins convex_fraction=0.5 by construction and does not
+    # search it, so best_params has no "convex_fraction" key. The cvxf cell
+    # must still read 0.50 (not "·"), so it's visibly distinct from
+    # split/alternate (which genuinely have no convex_fraction) and contrasts
+    # with searched mixed's own value.
+    _write(
+        tmp_path,
+        [
+            _rec("heart", "split-plain", [0.70, 0.71, 0.69], n_train=200),
+            _rec(
+                "heart",
+                "mixed-plain",
+                [0.72, 0.73, 0.71],
+                n_train=200,
+                convex_fraction=0.35,
+            ),
+            _rec(
+                "heart",
+                "mixed-fixed-plain",
+                [0.95, 0.96, 0.94],
+                n_train=200,
+            ),
+            _rec("heart", "alternate-plain", [0.68, 0.69, 0.67], n_train=200),
+        ],
+    )
+    out = render_detailed(tmp_path)
+    fixed_line = next(line for line in out.splitlines() if "| mixed-fix " in line)
+    mixed_line = next(
+        line
+        for line in out.splitlines()
+        if "| mixed " in line and "mixed-fix" not in line
+    )
+    split_line = next(line for line in out.splitlines() if "| split " in line)
+    alt_line = next(line for line in out.splitlines() if "| alternate " in line)
+    assert "0.50" in fixed_line
+    assert "0.35" in mixed_line
+    assert "·" in split_line
+    assert "·" in alt_line
+
+
 def test_render_detailed_mixed_fixed_absent_renders_no_row(tmp_path: Path) -> None:
     # mixed-fixed-plain is an opt-in extra flavor; when no record exists for it,
     # render_detailed must NOT synthesize a pending "_running_" row for it (unlike

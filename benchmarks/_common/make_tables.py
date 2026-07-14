@@ -191,12 +191,17 @@ def _detail_hp_cells(bp: dict[str, Any], fl: str) -> list[str]:
     ]
 
 
-def _detail_cvxf_cell(bp: dict[str, Any]) -> str:
+def _detail_cvxf_cell(bp: dict[str, Any], fl: str) -> str:
     """``convex_fraction`` from ``best_params``, formatted ``.2f`` or ``·`` if absent.
 
     Only the ``mixed`` flavor searches ``convex_fraction``; ``split`` and
-    ``alternate`` do not, so they render the ``·`` placeholder.
+    ``alternate`` do not, so they render the ``·`` placeholder. ``mixed-fixed``
+    pins ``convex_fraction=0.5`` by construction and never searches it (so it
+    is absent from ``best_params``), but the cell still renders ``0.50`` to
+    make that pinning visible and distinguish it from ``split``/``alternate``.
     """
+    if fl == "mixed-fixed-plain":
+        return "0.50"
     cvxf = bp.get("convex_fraction")
     return f"{cvxf:.2f}" if cvxf is not None else "·"
 
@@ -232,7 +237,7 @@ def _detail_row(
         iqmc,
         f"{_num(me, ds)} ± {_num(sd, ds)}",
         *_detail_hp_cells(r["best_params"], fl),
-        _detail_cvxf_cell(r["best_params"]),
+        _detail_cvxf_cell(r["best_params"], fl),
         "✅",
     ]
     return "| " + " | ".join(cells) + " |"
