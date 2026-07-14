@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `mononet.legacy` — a deprecated, backend-agnostic (Keras 3) drop-in port of
+  the original `airtai/monotonic-nn` `MonoDense` layer, its
+  `create_type_1`/`create_type_2` builders, and helper functions. Emits a
+  `DeprecationWarning` on use; keeps the original `{-1, 0, 1}` monotonicity
+  indicator. Serves as a migration bridge for existing
+  `airtai/monotonic-nn` users. Numeric equivalence to the original is pinned by
+  committed goldens.
 - Public package skeleton with `mononet.core`, `mononet.torch`,
   `mononet.jax`, `mononet.keras` layers implementing the constrained
   monotonic construction.
