@@ -17,7 +17,7 @@ def test_build_command_shape() -> None:
     assert cmd[:3] == [sys.executable, "-m", "benchmarks.flavor_ablation"]
     assert cmd[cmd.index("--dataset") + 1] == "heart"
     assert cmd[cmd.index("--backend") + 1] == "torch"
-    assert cmd[cmd.index("--out-dir") + 1] == "/out"
+    assert cmd[cmd.index("--out-dir") + 1] == str(Path("/out"))
     assert "--lr-sweep" not in cmd
 
 

@@ -5,6 +5,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+pytest.importorskip("torch")
+
 from benchmarks._common.bundle import DatasetBundle
 from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
 

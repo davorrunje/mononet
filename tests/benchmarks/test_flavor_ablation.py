@@ -5,6 +5,10 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+import pytest
+
+pytest.importorskip("torch")
+
 from benchmarks.flavor_ablation import ablation_cells, run_dataset_ablation
 
 if TYPE_CHECKING:
