@@ -66,6 +66,16 @@ def test_all_flavors_has_six_entries_including_deep() -> None:
     assert {"split-deep", "mixed-deep"} <= names
 
 
+def test_budget_for_matches_paper_trial_counts() -> None:
+    from benchmarks._common.search import _budget_for
+
+    assert _budget_for("auto") == (200, range(20), 5)
+    assert _budget_for("heart") == (200, range(20), 5)
+    assert _budget_for("compas") == (50, range(10), 1)
+    assert _budget_for("blog") == (50, range(10), 1)
+    assert _budget_for("loan") == (50, range(10), 1)
+
+
 def test_search_deep_flavor_names_study_and_uses_high_depth() -> None:
     res = search(
         _bundle(),

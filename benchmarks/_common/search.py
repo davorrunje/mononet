@@ -270,17 +270,21 @@ _ALL_FLAVORS: tuple[tuple[str, bool, bool], ...] = (
 )
 # (n_trials, final_seeds, n_splits) per dataset.
 # n_splits: 5-fold CV for small/medium datasets; 1 (single holdout) for the large
-# ones (loan/blog), where a single split is already low-variance and 5x cheaper.
-# final_seeds bumped to 20 for the small/medium datasets so the robust
-# estimators (median, IQM) and the collapse count are stable; loan/blog keep a
-# smaller count (their single-holdout final_eval is already near-deterministic,
-# std ~1e-4).
+# ones (compas/loan/blog), where a single split is already low-variance and 5x
+# cheaper. final_seeds bumped to 20 for the small/medium datasets so the robust
+# estimators (median, IQM) and the collapse count are stable; compas/loan/blog
+# keep a smaller count (their single-holdout final_eval is already
+# near-deterministic, std ~1e-4).
+# n_trials for auto/heart/compas/blog/loan match the paper's (airtai/
+# monotonic-nn) per-dataset Optuna trial counts: AutoMPG/heart=200;
+# compas/blog/loan=50. compas also switches to a single holdout split (1),
+# like the other larger datasets.
 _BUDGET: dict[str, tuple[int, range, int]] = {
-    "auto": (50, range(20), 5),
-    "heart": (50, range(20), 5),
-    "compas": (50, range(20), 5),
-    "loan": (25, range(10), 1),
-    "blog": (25, range(10), 1),
+    "auto": (200, range(20), 5),
+    "heart": (200, range(20), 5),
+    "compas": (50, range(10), 1),
+    "loan": (50, range(10), 1),
+    "blog": (50, range(10), 1),
     "adult": (25, range(10), 5),
     "taiwan": (25, range(10), 5),
     "polish": (25, range(10), 5),
