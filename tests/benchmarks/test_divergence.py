@@ -96,3 +96,11 @@ def test_no_early_stopping_runs_full_epochs() -> None:
     cfg = _cfg(epochs=8, early_stopping=None)
     rows = run(cfg, _bundle())
     assert rows[0].epochs_run == 8
+
+
+def test_early_stopping_run_not_falsely_diverged() -> None:
+    # regression: a cleanly-converging run with early stopping must NOT be
+    # flagged diverged just because early-epoch val loss exceeds the baseline.
+    cfg = _cfg(epochs=200, early_stopping=EarlyStoppingSpec(monitor="val", patience=10))
+    rows = run(cfg, _bundle())
+    assert rows[0].diverged is False

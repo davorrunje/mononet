@@ -136,15 +136,12 @@ def run(cfg: BenchmarkConfig, bundle: DatasetBundle) -> list[ResultRow]:
 # ---------------------------------------------------------------------------
 
 
-def _carve_val_split(
-    x_all: Any, y_all: Any, *, binary: bool
-) -> tuple[Any, Any, Any, Any, float]:
-    """Carve a 20% validation split and its predict-the-mean baseline loss.
+def _carve_val_split(x_all: Any, y_all: Any) -> tuple[Any, Any, Any, Any]:
+    """Carve a 20% validation split for early stopping.
 
     :param x_all: All training inputs.
     :param y_all: All training targets, shape ``(N, 1)``.
-    :param binary: Whether the task is binary classification.
-    :returns: ``(x_train, y_train, x_val, y_val, baseline)``.
+    :returns: ``(x_train, y_train, x_val, y_val)``.
     """
     import torch
 
@@ -152,13 +149,7 @@ def _carve_val_split(
     n_val = max(1, int(0.2 * n_all))
     split = torch.randperm(n_all, device=x_all.device)
     val_idx, tr_idx = split[:n_val], split[n_val:]
-    x_val, y_val = x_all[val_idx], y_all[val_idx]
-    if binary:
-        p = float(y_val.mean().clamp(1e-8, 1 - 1e-8))
-        baseline = -(p * math.log(p) + (1 - p) * math.log(1 - p))
-    else:
-        baseline = float(y_val.var(unbiased=False))
-    return x_all[tr_idx], y_all[tr_idx], x_val, y_val, baseline
+    return x_all[tr_idx], y_all[tr_idx], x_all[val_idx], y_all[val_idx]
 
 
 def _torch_epoch(
@@ -190,14 +181,19 @@ def _torch_epoch(
 class _EarlyStop:
     """Best-epoch tracker + divergence detector for the torch training loop.
 
+    ``diverged`` fires only on a **non-finite** validation loss (a genuine
+    blow-up). It deliberately does *not* fire on a merely-large finite loss: an
+    untrained model early in training is normally well above the predict-the-mean
+    baseline, so a magnitude test here would false-positive on every run that
+    later converges. Whether the *final* model is worse than ``10x`` the baseline
+    is decided by the caller from the restored-best model's eval
+    (:func:`is_diverged`), which is the plan's "final loss" definition.
+
     :param patience: Epochs without validation improvement before stopping.
-    :param baseline: Predict-the-mean validation-loss baseline; a validation
-        loss above ``10x`` this (or non-finite) marks the run diverged.
     """
 
-    def __init__(self, patience: int, baseline: float) -> None:
+    def __init__(self, patience: int) -> None:
         self.patience = patience
-        self.baseline = baseline
         self.best_val = math.inf
         self.best_epoch = 0
         self.best_state: dict[str, Any] | None = None
@@ -216,9 +212,8 @@ class _EarlyStop:
         """
         import copy
 
-        if (not math.isfinite(val_loss)) or (val_loss > 10.0 * self.baseline):
-            self.diverged = True
         if not math.isfinite(val_loss):
+            self.diverged = True
             return True  # no point continuing a blown-up run
         if val_loss < self.best_val - 1e-9:
             self.best_val, self.best_epoch = val_loss, epoch
@@ -243,8 +238,9 @@ def _train_torch(
     is carved from ``X_train``: each epoch's validation loss is monitored, the
     best-epoch weights are restored at the end, ``epochs_run`` is the
     epochs-to-best, and ``diverged`` is ``True`` if any epoch's validation loss
-    was non-finite or exceeded ``10x`` the predict-the-mean baseline (a
-    trajectory signal that best-weight restore cannot mask).
+    was non-finite (a genuine blow-up, which best-weight restore cannot mask).
+    Whether the final model is merely worse than the baseline is decided by the
+    caller from the eval (see :func:`is_diverged`).
 
     :param model: ``nn.Module`` returned by :func:`build_model`.
     :param cfg: Benchmark configuration.
@@ -272,15 +268,13 @@ def _train_torch(
 
     es = cfg.early_stopping
     if es is not None:
-        x_train, y_train, x_val, y_val, baseline = _carve_val_split(
-            x_all, y_all, binary=binary
-        )
+        x_train, y_train, x_val, y_val = _carve_val_split(x_all, y_all)
     else:
-        x_train, y_train, x_val, y_val, baseline = x_all, y_all, None, None, 0.0
+        x_train, y_train, x_val, y_val = x_all, y_all, None, None
 
     batch_size = min(cfg.batch_size, x_train.shape[0])
     lr = cfg.optimizer.lr
-    stopper = _EarlyStop(es.patience, baseline) if es is not None else None
+    stopper = _EarlyStop(es.patience) if es is not None else None
     epochs_done = 0
 
     model.train()
