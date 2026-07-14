@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from mononet.core.types import ActivationSpec, InitSpec
 
-Mode = Literal["split", "mixed"]
+Mode = Literal["mixed", "alternate", "split"]
 
 _RENAMED_MODES = {"absolute": "mixed", "switch": "split"}
 
@@ -24,7 +24,8 @@ class MonoConfig:
 
     :param units: Number of output units; must be positive.
     :param mode: Construction mode — `"mixed"` (the paper's `|W|`
-        construction, default) or `"split"` (the activation-switch variant).
+        construction, default), `"alternate"` (composition-aware alternating
+        convex/concave layers), or `"split"` (the activation-switch variant).
     :param activation: Base activation applied by the layer (default
         `identity`).
     :param convex_fraction: Fraction of output units with a convex activation
@@ -53,8 +54,10 @@ class MonoConfig:
                 f"mode {self.mode!r} was renamed; use "
                 f"{_RENAMED_MODES[self.mode]!r} instead"
             )
-        if self.mode not in ("mixed", "split"):
-            raise ValueError(f"mode must be 'mixed' or 'split'; got {self.mode!r}")
+        if self.mode not in ("mixed", "alternate", "split"):
+            raise ValueError(
+                f"mode must be 'mixed', 'alternate', or 'split'; got {self.mode!r}"
+            )
         if not 0.0 <= self.convex_fraction <= 1.0:
             raise ValueError(
                 f"convex_fraction must be in [0, 1]; got {self.convex_fraction}"
@@ -102,7 +105,7 @@ class MonoResidualConfig:
 
     :param units: Number of output units; must be positive.
     :param mode: Construction mode for the default `F` — `"mixed"`
-        (default) or `"split"`.
+        (default), `"alternate"`, or `"split"`.
     :param activation: Base activation for the default `F`. Required
         (keyword-only, no default) since a custom `F` is not representable
         here.
@@ -132,8 +135,10 @@ class MonoResidualConfig:
                 f"mode {self.mode!r} was renamed; use "
                 f"{_RENAMED_MODES[self.mode]!r} instead"
             )
-        if self.mode not in ("mixed", "split"):
-            raise ValueError(f"mode must be 'mixed' or 'split'; got {self.mode!r}")
+        if self.mode not in ("mixed", "alternate", "split"):
+            raise ValueError(
+                f"mode must be 'mixed', 'alternate', or 'split'; got {self.mode!r}"
+            )
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain-Python dict suitable for JSON encoding."""
