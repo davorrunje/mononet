@@ -22,7 +22,11 @@ class ResultRow:
     :param residual: Whether residual connections were used.
     :param seed: Random seed for this run.
     :param scores: Dict mapping metric names to scalar values.
-    :param epochs_run: Number of training epochs completed.
+    :param epochs_run: Number of training epochs completed (epochs-to-best when
+        early stopping is active, otherwise the full ``cfg.epochs``).
+    :param diverged: Whether the run diverged — its final loss was non-finite or
+        exceeded 10x the predict-the-mean baseline (see
+        :func:`benchmarks._common.runner.is_diverged`).
     """
 
     dataset: str
@@ -32,6 +36,7 @@ class ResultRow:
     seed: int
     scores: dict[str, float]
     epochs_run: int
+    diverged: bool = False
 
 
 @dataclass(frozen=True, slots=True)
