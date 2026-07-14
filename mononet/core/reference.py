@@ -2,8 +2,8 @@
 """NumPy reference implementations of the monotonic primitives.
 
 Arithmetic ground truth for the cross-backend equivalence harness. Papers:
-https://arxiv.org/abs/2205.11775 (absolute mode) and
-https://arxiv.org/abs/2505.02537 (switch mode).
+https://arxiv.org/abs/2205.11775 (mixed mode) and
+https://arxiv.org/abs/2505.02537 (split mode).
 """
 
 from __future__ import annotations
@@ -88,28 +88,28 @@ def monotonic_dense(
 ) -> npt.NDArray[np.floating]:
     """Single monotonic dense transformation (NumPy reference).
 
-    Non-decreasing in every input. `switch` uses the post-activation switch
-    `rho(W_pos @ x + b) - rho(W_neg @ x + b)`; `absolute` uses `|W| @ x + b`
+    Non-decreasing in every input. `split` uses the post-activation switch
+    `rho(W_pos @ x + b) - rho(W_neg @ x + b)`; `mixed` uses `|W| @ x + b`
     with the first `ceil(convex_fraction * m)` neurons convex and the rest
     concave.
 
     :param x: Input array of shape `(batch, in_features)`.
     :param weights: Weights of shape `(in_features, out_features)`.
     :param bias: Bias of shape `(out_features,)`.
-    :param mode: `"switch"` or `"absolute"`.
+    :param mode: `"split"` or `"mixed"`.
     :param activation: Base activation rho_breve.
-    :param convex_fraction: Convex-neuron fraction (absolute mode only).
+    :param convex_fraction: Convex-neuron fraction (mixed mode only).
     :returns: Output array of shape `(batch, out_features)`.
     :raises ValueError: If `mode` is not recognised.
     """
     name = activation.name
-    if mode == "switch":
+    if mode == "split":
         w_pos = np.maximum(weights, 0.0)
         w_neg = np.minimum(weights, 0.0)
         return base_activation(name, x @ w_pos + bias) - base_activation(
             name, x @ w_neg + bias
         )
-    if mode == "absolute":
+    if mode == "mixed":
         h = x @ np.abs(weights) + bias
         m = weights.shape[1]
         c = int(np.ceil(convex_fraction * m))
@@ -117,7 +117,7 @@ def monotonic_dense(
         out[:, :c] = base_activation(name, h[:, :c])
         out[:, c:] = concave_reflection(name, h[:, c:])
         return out
-    raise ValueError(f"mode must be 'switch' or 'absolute'; got {mode!r}")
+    raise ValueError(f"mode must be 'mixed' or 'split'; got {mode!r}")
 
 
 def monotonic_residual(
@@ -127,7 +127,7 @@ def monotonic_residual(
     alpha: npt.NDArray[np.floating],
     beta: npt.NDArray[np.floating],
     *,
-    mode: str = "absolute",
+    mode: str = "mixed",
     activation: ActivationSpec,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
@@ -145,9 +145,9 @@ def monotonic_residual(
     :param bias: `F` bias `(units,)`.
     :param alpha: Scalar raw skip-gate parameter.
     :param beta: Scalar raw residual-gate parameter.
-    :param mode: `F` mode. `"absolute"` (default) or `"switch"`.
+    :param mode: `F` mode. `"mixed"` (default) or `"split"`.
     :param activation: `F` base activation.
-    :param convex_fraction: `F` convex fraction (absolute mode).
+    :param convex_fraction: `F` convex fraction (mixed mode).
     :param alpha_gate: Skip-gate token.
     :param beta_gate: Residual-gate token.
     :param skip_weight: Projection weights `(in_features, units)`, or `None`
