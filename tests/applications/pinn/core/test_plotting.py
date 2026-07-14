@@ -46,3 +46,15 @@ def test_metric_vs_noise() -> None:
     )
     assert isinstance(fig, Figure)
     assert len(fig.axes[0].get_lines()) == 2
+
+
+def test_metric_bars() -> None:
+    """Grouped bar helper returns a Figure with one bar group per metric."""
+    fig = plotting.metric_bars(
+        ["hard", "vanilla", "asm"],
+        {"L1": [1.0, 2.0, 1.5], "held-out RMSE": [0.1, 0.3, 0.2]},
+        ylabel="error",
+        title="ngsim",
+    )
+    assert isinstance(fig, Figure)
+    assert len(fig.axes[0].containers) == 2  # two metric groups

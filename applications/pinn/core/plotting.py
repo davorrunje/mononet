@@ -136,6 +136,37 @@ def metric_vs_noise(
     return fig
 
 
+def metric_bars(
+    labels: list[str],
+    groups: Mapping[str, list[float]],
+    *,
+    ylabel: str,
+    title: str = "",
+) -> Figure:
+    """Plot a grouped bar chart: one group of bars per metric, one bar per method.
+
+    :param labels: Method names (x categories).
+    :param groups: Mapping of metric name to per-method values (len == len(labels)).
+    :param ylabel: Y-axis label.
+    :param title: Optional title.
+    :returns: The figure.
+    """
+    fig = Figure(figsize=(6.0, 4.0))
+    ax = fig.subplots()
+    n = len(labels)
+    width = 0.8 / max(len(groups), 1)
+    base = np.arange(n)
+    for i, (name, vals) in enumerate(groups.items()):
+        ax.bar(base + i * width, vals, width, label=name)
+    ax.set_xticks(base + width * (len(groups) - 1) / 2)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title)
+    ax.legend(fontsize=8)
+    return fig
+
+
 def field_heatmap(
     field: Array,
     x_values: Array,
