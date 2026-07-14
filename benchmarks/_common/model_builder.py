@@ -53,6 +53,35 @@ def _build_torch_stack(
 
     mono_layers: list[nn.Module] = []
     prev = stack_in
+    if cfg.mode == "alternate":
+        if cfg.residual:
+            raise NotImplementedError(
+                "residual + alternate not supported (plain topology only)"
+            )
+        prev_layer = None
+        for i in range(cfg.depth):
+            if cfg.alt_init == "legacy":
+                # collapse baseline: pure convex/concave mixed layers, no prev=
+                cf = 1.0 if i % 2 == 0 else 0.0
+                lay: nn.Module = MonoLinear(
+                    prev,
+                    cfg.width,
+                    mode="mixed",
+                    activation=cfg.activation,
+                    convex_fraction=cf,
+                )
+            else:  # "composition" (real construction)
+                lay = MonoLinear(
+                    prev,
+                    cfg.width,
+                    mode="alternate",
+                    activation=cfg.activation,
+                    prev=prev_layer,
+                )
+                prev_layer = lay
+            mono_layers.append(lay)
+            prev = cfg.width
+        return nn.Sequential(*mono_layers), prev
     if cfg.residual:
         mono_layers.append(
             MonoLinear(
@@ -134,7 +163,10 @@ def _build_torch(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
             # monotone affine map (|W|h + b). Any nonlinear activation here
             # (the layer default is ReLU) would force the pre-sigmoid >= 0 in
             # mixed mode -> constant positive prediction -> base-rate collapse.
-            self.head = MonoLinear(stack_out, 1, mode=cfg.mode, activation="identity")
+            # The read-out head is parity-neutral: an `alternate` stack takes a
+            # plain `mixed` head (no `prev=`), so its output parity is not forced.
+            head_mode = "mixed" if cfg.mode == "alternate" else cfg.mode
+            self.head = MonoLinear(stack_out, 1, mode=head_mode, activation="identity")
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
             """Apply embedding-composition forward pass.
@@ -204,6 +236,36 @@ def _build_jax_stack(
 
     raw_mono: list[Any] = []
     prev = stack_in
+    if cfg.mode == "alternate":
+        if cfg.residual:
+            raise NotImplementedError(
+                "residual + alternate not supported (plain topology only)"
+            )
+        prev_layer = None
+        for i in range(cfg.depth):
+            if cfg.alt_init == "legacy":
+                cf = 1.0 if i % 2 == 0 else 0.0
+                lay = MonoLinear(
+                    prev,
+                    cfg.width,
+                    mode="mixed",
+                    activation=cfg.activation,
+                    convex_fraction=cf,
+                    rngs=rngs,
+                )
+            else:  # "composition"
+                lay = MonoLinear(
+                    prev,
+                    cfg.width,
+                    mode="alternate",
+                    activation=cfg.activation,
+                    prev=prev_layer,
+                    rngs=rngs,
+                )
+                prev_layer = lay
+            raw_mono.append(lay)
+            prev = cfg.width
+        return raw_mono, prev
     if cfg.residual:
         raw_mono.append(
             MonoLinear(
@@ -273,8 +335,10 @@ def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle, *, seed: int = 0) ->
     raw_mono, prev = _build_jax_stack(cfg, stack_in, rngs)
 
     # Linear monotone read-out (see torch builder): `identity` avoids the
-    # ReLU-head base-rate collapse in mixed mode.
-    head = MonoLinear(prev, 1, mode=cfg.mode, activation="identity", rngs=rngs)
+    # ReLU-head base-rate collapse in mixed mode. Parity-neutral `mixed` head
+    # for an `alternate` stack (no `prev=`).
+    head_mode = "mixed" if cfg.mode == "alternate" else cfg.mode
+    head = MonoLinear(prev, 1, mode=head_mode, activation="identity", rngs=rngs)
     mono_input_layer = MonoInput(MonotonicityMask(signs)) if mono_cols else None
 
     # Capture in locals for closure (not stored on module to avoid pytree issues)
@@ -315,6 +379,70 @@ def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle, *, seed: int = 0) ->
             return jax.nn.sigmoid(y) if _binary else y
 
     return JaxModel()
+
+
+def _build_keras_stack(
+    cfg: BenchmarkConfig,
+    z: Any,
+    mono_dense: Any,
+    mono_residual: Any,
+) -> Any:
+    """Apply the monotone layer stack over the functional-API tensor ``z``.
+
+    :param cfg: Benchmark configuration.
+    :param z: Input Keras tensor to the monotone stack.
+    :param mono_dense: The ``MonoDense`` layer class.
+    :param mono_residual: The ``MonoResidual`` layer class.
+    :returns: The Keras tensor after the monotone stack.
+    :raises NotImplementedError: If ``cfg.mode == "alternate"`` with residual.
+    """
+    if cfg.mode == "alternate":
+        if cfg.residual:
+            raise NotImplementedError(
+                "residual + alternate not supported (plain topology only)"
+            )
+        prev_layer = None
+        for i in range(cfg.depth):
+            if cfg.alt_init == "legacy":
+                cf = 1.0 if i % 2 == 0 else 0.0
+                layer = mono_dense(
+                    cfg.width,
+                    mode="mixed",
+                    activation=cfg.activation,
+                    convex_fraction=cf,
+                )
+            else:  # "composition"
+                layer = mono_dense(
+                    cfg.width,
+                    mode="alternate",
+                    activation=cfg.activation,
+                    prev=prev_layer,
+                )
+                prev_layer = layer
+            z = layer(z)
+        return z
+    if cfg.residual:
+        z = mono_dense(
+            cfg.width,
+            mode=cfg.mode,
+            activation=cfg.activation,
+            convex_fraction=cfg.convex_fraction,
+        )(z)
+        for _ in range(cfg.depth):
+            z = mono_residual(
+                cfg.width,
+                mode=cfg.mode,
+                activation=cfg.activation,
+            )(z)
+        return z
+    for _ in range(cfg.depth):
+        z = mono_dense(
+            cfg.width,
+            mode=cfg.mode,
+            activation=cfg.activation,
+            convex_fraction=cfg.convex_fraction,
+        )(z)
+    return z
 
 
 def _build_keras(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
@@ -362,32 +490,13 @@ def _build_keras(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
 
     z = keras.layers.Concatenate()(parts) if len(parts) > 1 else parts[0]
 
-    # monotone stack
-    if cfg.residual:
-        z = MonoDense(
-            cfg.width,
-            mode=cfg.mode,
-            activation=cfg.activation,
-            convex_fraction=cfg.convex_fraction,
-        )(z)
-        for _ in range(cfg.depth):
-            z = MonoResidual(
-                cfg.width,
-                mode=cfg.mode,
-                activation=cfg.activation,
-            )(z)
-    else:
-        for _ in range(cfg.depth):
-            z = MonoDense(
-                cfg.width,
-                mode=cfg.mode,
-                activation=cfg.activation,
-                convex_fraction=cfg.convex_fraction,
-            )(z)
+    z = _build_keras_stack(cfg, z, MonoDense, MonoResidual)
 
     # Linear monotone read-out (see torch builder): `identity` avoids the
-    # ReLU-head base-rate collapse in mixed mode.
-    y = MonoDense(1, mode=cfg.mode, activation="identity")(z)
+    # ReLU-head base-rate collapse in mixed mode. Parity-neutral `mixed` head
+    # for an `alternate` stack (no `prev=`).
+    head_mode = "mixed" if cfg.mode == "alternate" else cfg.mode
+    y = MonoDense(1, mode=head_mode, activation="identity")(z)
     if binary:
         y = keras.layers.Activation("sigmoid")(y)
 

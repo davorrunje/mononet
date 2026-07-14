@@ -44,7 +44,7 @@ class BenchmarkConfig:
 
     :param dataset: Dataset name.
     :param backend: Target backend ("torch", "jax", or "keras").
-    :param mode: Monotonicity mode ("split" or "mixed").
+    :param mode: Monotonicity mode ("split", "mixed", or "alternate").
     :param residual: Whether to use residual connections.
     :param depth: Network depth (number of layers).
     :param width: Network width (hidden units per layer).
@@ -59,11 +59,16 @@ class BenchmarkConfig:
     :param early_stopping: Optional EarlyStoppingSpec instance.
     :param seeds: Tuple of random seeds to use.
     :param metrics: Tuple of metric names to track.
+    :param alt_init: Initialisation arm for ``mode="alternate"`` — ``"composition"``
+        (the real construction: per-layer convex/concave activation alternation with
+        composition-aware ``prev=`` chaining) or ``"legacy"`` (the collapse baseline:
+        pure convex/concave ``mode="mixed"`` layers with ``convex_fraction`` alternating
+        1/0). ``None`` for the non-alternate modes.
     """
 
     dataset: str
     backend: Literal["torch", "jax", "keras"]
-    mode: Literal["split", "mixed"]
+    mode: Literal["split", "mixed", "alternate"]
     residual: bool
     depth: int
     width: int
@@ -78,6 +83,7 @@ class BenchmarkConfig:
     early_stopping: EarlyStoppingSpec | None
     seeds: tuple[int, ...]
     metrics: tuple[Literal["accuracy", "rmse", "mse", "roc_auc"], ...]
+    alt_init: Literal["composition", "legacy"] | None = None
 
     def replace(self, **changes: Any) -> BenchmarkConfig:
         """Return a copy with the given fields overridden.
