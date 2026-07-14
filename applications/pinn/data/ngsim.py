@@ -157,17 +157,45 @@ def window_scan(
     return best
 
 
-def _load_raw(raw_csv: Path, lane: int) -> tuple[Array, Array, Array]:
-    """Load (vehicle_id, t seconds, x metres) for one lane from an NGSIM CSV."""
+_FEET_TO_M = 0.3048
+
+
+def _load_raw(
+    raw_csv: Path, lane: int, *, units: str = "feet"
+) -> tuple[Array, Array, Array]:
+    """Load ``(vehicle_id, t seconds, x metres)`` for one lane from an NGSIM CSV.
+
+    Column names are matched **case-insensitively**, so both the zip-attachment
+    export (``Vehicle_ID``, ``Local_Y``, ...) and the Socrata API/CSV export
+    (``vehicle_id``, ``local_y``, ...) work unchanged. ``Local_Y`` is converted to
+    metres when ``units == "feet"`` (NGSIM ships in feet).
+
+    :param raw_csv: Path to the raw NGSIM trajectory CSV.
+    :param lane: Lane id to select.
+    :param units: ``"feet"`` (convert ``Local_Y`` x 0.3048) or ``"metres"``.
+    :returns: ``(vehicle_id, t, x)`` arrays.
+    :raises KeyError: If a required column is absent (case-insensitively).
+    """
+    scale = _FEET_TO_M if units == "feet" else 1.0
     vids, ts, xs = [], [], []
     with Path(raw_csv).open(newline="") as f:
         reader = csv.DictReader(f)
+        header = {name.lower(): name for name in (reader.fieldnames or [])}
+
+        def _col(key: str) -> str:
+            actual = header.get(key.lower())
+            if actual is None:
+                raise KeyError(f"column {key!r} not found in {list(header.values())}")
+            return actual
+
+        c_vid, c_t = _col("Vehicle_ID"), _col("Global_Time")
+        c_y, c_lane = _col("Local_Y"), _col("Lane_ID")
         for row in reader:
-            if int(float(row["Lane_ID"])) != lane:
+            if int(float(row[c_lane])) != lane:
                 continue
-            vids.append(float(row["Vehicle_ID"]))
-            ts.append(float(row["Global_Time"]) / 1000.0)  # ms -> s
-            xs.append(float(row["Local_Y"]))  # already metres in re-metricated NGSIM
+            vids.append(float(row[c_vid]))
+            ts.append(float(row[c_t]) / 1000.0)  # ms -> s
+            xs.append(float(row[c_y]) * scale)
     return (
         np.asarray(vids, dtype=np.float64),
         np.asarray(ts, dtype=np.float64),
@@ -183,6 +211,7 @@ def build_dataset(
     dx: float = 20.0,
     dt: float = 5.0,
     tau: float = 0.05,
+    units: str = "feet",
 ) -> dict[str, object]:
     """Build the derived ``.npz`` from a raw NGSIM CSV.
 
@@ -195,9 +224,11 @@ def build_dataset(
     :param dx: Spatial cell size (metres).
     :param dt: Temporal cell size (seconds).
     :param tau: Monotonicity-defect threshold for the window scan.
+    :param units: Raw ``Local_Y`` units -- ``"feet"`` (NGSIM default, converted to
+        metres) or ``"metres"`` (already SI).
     :returns: A summary dict (window, defect, FD params, grid shape).
     """
-    vid, t, x = _load_raw(Path(raw_csv), lane)
+    vid, t, x = _load_raw(Path(raw_csv), lane, units=units)
     x_edges = np.arange(x.min(), x.max() + dx, dx)
     t_edges = np.arange(t.min(), t.max() + dt, dt)
     rho, q = edie_fields(vid, t, x, x_edges=x_edges, t_edges=t_edges)
@@ -214,7 +245,7 @@ def build_dataset(
     t_w = t_c[t_lo:t_hi] - t_c[t_lo]
     fd = calibrate_greenshields(rho_w, q_w)
     provenance = (
-        f"NGSIM I-80, lane={lane}, dx={dx}m, dt={dt}s, "
+        f"NGSIM I-80, lane={lane}, dx={dx}m, dt={dt}s, units={units}, "
         f"window x[{x_lo}:{x_hi}] t[{t_lo}:{t_hi}], tau={tau}"
     )
     np.savez(
@@ -247,9 +278,16 @@ def main() -> None:
     p.add_argument("--dx", type=float, default=20.0)
     p.add_argument("--dt", type=float, default=5.0)
     p.add_argument("--tau", type=float, default=0.05)
+    p.add_argument("--units", choices=["feet", "metres"], default="feet")
     args = p.parse_args()
     summary = build_dataset(
-        args.raw, args.out, lane=args.lane, dx=args.dx, dt=args.dt, tau=args.tau
+        args.raw,
+        args.out,
+        lane=args.lane,
+        dx=args.dx,
+        dt=args.dt,
+        tau=args.tau,
+        units=args.units,
     )
     print(f"== wrote {args.out}: {summary} ==", flush=True)  # noqa: T201
 

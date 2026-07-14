@@ -11,10 +11,25 @@ Source: **Next Generation Simulation (NGSIM) Vehicle Trajectories and Supporting
 Data** — U.S. DOT, public domain. Vehicle trajectories on I-80 (Emeryville, CA),
 sampled at 10 Hz.
 
-### Where to get it
+### Automated download (recommended)
 
-Download on a networked machine (the dev container cannot reach the canonical
-hosts), then copy the file into the container workspace.
+A helper fetches the I-80 zip, extracts the chosen period's trajectory **CSV**
+(the header-less space-delimited `.txt` sibling is skipped), and stages it:
+
+```bash
+uv run python -m applications.pinn.data.download_ngsim   # -> raw/i80.csv (0500-0515)
+```
+
+Stdlib-only; downloads to `raw/.ngsim-cache/` (zip reused on re-run). Needs
+internet on the host running it. The download URL is deterministic (dataset
+`8ect-6jqj`, I-80 asset `ea269540-b86c-4b2d-a9c2-c8f4c0a3d0a0`); override with
+`--url` if the Socrata blobstore path changes, or `--period {0400-0415,0500-0515,
+0515-0530}`.
+
+### Manual download
+
+Download on a networked machine (the dev container's egress may be firewalled),
+then copy the file into the container workspace.
 
 1. **Official — ITS DataHub (`data.transportation.gov`).**
    - Web UI: open the *"Next Generation Simulation (NGSIM) Vehicle Trajectories

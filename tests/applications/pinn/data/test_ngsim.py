@@ -95,7 +95,10 @@ def test_build_dataset_writes_npz(tmp_path: Path) -> None:
     with raw.open("w", newline="") as f:
         csv.writer(f).writerows(rows)
     out = tmp_path / "wave.npz"
-    summary = ngsim.build_dataset(raw, out, lane=1, dx=5.0, dt=1.0, tau=0.9)
+    # synthetic positions are already in metres -> disable feet conversion
+    summary = ngsim.build_dataset(
+        raw, out, lane=1, dx=5.0, dt=1.0, tau=0.9, units="metres"
+    )
     assert out.exists()
     d = np.load(out, allow_pickle=True)
     for key in (
@@ -111,3 +114,24 @@ def test_build_dataset_writes_npz(tmp_path: Path) -> None:
         assert key in d
     assert d["rho"].ndim == 2
     assert summary["nx"] == d["rho"].shape[1]
+
+
+def test_load_raw_case_insensitive_headers_and_units(tmp_path: Path) -> None:
+    """_load_raw matches columns case-insensitively and converts feet -> metres."""
+    import csv
+
+    raw = tmp_path / "lower.csv"
+    with raw.open("w", newline="") as f:
+        w = csv.writer(f)
+        # lowercase Socrata-style headers, extra columns interleaved
+        w.writerow(["vehicle_id", "frame_id", "global_time", "local_y", "lane_id"])
+        w.writerow([1, 0, 1000.0, 100.0, 2])  # lane 2 (skipped)
+        w.writerow([2, 0, 2000.0, 10.0, 1])  # lane 1
+        w.writerow([2, 1, 2100.0, 20.0, 1])  # lane 1
+    vid, t, x = ngsim._load_raw(raw, lane=1, units="feet")
+    assert list(vid) == [2.0, 2.0]  # only lane-1 rows, columns resolved lowercase
+    assert np.allclose(t, [2.0, 2.1])  # ms -> s
+    assert np.allclose(x, [10.0 * 0.3048, 20.0 * 0.3048])  # feet -> metres
+    # metres mode leaves positions unscaled
+    _, _, x_m = ngsim._load_raw(raw, lane=1, units="metres")
+    assert np.allclose(x_m, [10.0, 20.0])
