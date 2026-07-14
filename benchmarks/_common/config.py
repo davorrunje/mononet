@@ -30,10 +30,17 @@ class EarlyStoppingSpec:
 
     :param monitor: Metric to monitor (e.g., "val_mse").
     :param patience: Number of epochs without improvement before stopping.
+    :param min_delta: Minimum *relative* validation-loss improvement to reset the
+        patience counter — an epoch counts as an improvement only when its loss is
+        below ``best * (1 - min_delta)``. ``0.0`` (the default) means any
+        improvement counts, which on slowly-improving regression losses never
+        triggers early stopping (the loss keeps micro-improving); set a small
+        positive fraction (e.g. ``1e-3``) so training stops once gains stall.
     """
 
     monitor: str
     patience: int
+    min_delta: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +51,7 @@ class BenchmarkConfig:
 
     :param dataset: Dataset name.
     :param backend: Target backend ("torch", "jax", or "keras").
-    :param mode: Monotonicity mode ("split" or "mixed").
+    :param mode: Monotonicity mode ("split", "mixed", or "alternate").
     :param residual: Whether to use residual connections.
     :param depth: Network depth (number of layers).
     :param width: Network width (hidden units per layer).
@@ -59,11 +66,16 @@ class BenchmarkConfig:
     :param early_stopping: Optional EarlyStoppingSpec instance.
     :param seeds: Tuple of random seeds to use.
     :param metrics: Tuple of metric names to track.
+    :param alt_init: Initialisation arm for ``mode="alternate"`` — ``"composition"``
+        (the real construction: per-layer convex/concave activation alternation with
+        composition-aware ``prev=`` chaining) or ``"legacy"`` (the collapse baseline:
+        pure convex/concave ``mode="mixed"`` layers with ``convex_fraction`` alternating
+        1/0). ``None`` for the non-alternate modes.
     """
 
     dataset: str
     backend: Literal["torch", "jax", "keras"]
-    mode: Literal["split", "mixed"]
+    mode: Literal["split", "mixed", "alternate"]
     residual: bool
     depth: int
     width: int
@@ -78,6 +90,7 @@ class BenchmarkConfig:
     early_stopping: EarlyStoppingSpec | None
     seeds: tuple[int, ...]
     metrics: tuple[Literal["accuracy", "rmse", "mse", "roc_auc"], ...]
+    alt_init: Literal["composition", "legacy"] | None = None
 
     def replace(self, **changes: Any) -> BenchmarkConfig:
         """Return a copy with the given fields overridden.
