@@ -59,15 +59,15 @@ def _write(kind: str, name: str, payload: dict[str, Any]) -> None:
 
 def _dense_cases() -> None:
     grid = [
-        ("1x1x1", 1, 1, 1, "switch", "relu", 0.5),
-        ("4x2x3-switch-relu", 4, 2, 3, "switch", "relu", 0.5),
-        ("8x7x12-switch-elu", 8, 7, 12, "switch", "elu", 0.5),
-        ("4x2x3-abs-relu-c1", 4, 2, 3, "absolute", "relu", 1.0),
-        ("4x2x3-abs-relu-c0", 4, 2, 3, "absolute", "relu", 0.0),
-        ("3x5x11-abs-selu", 3, 5, 11, "absolute", "selu", 0.5),
-        ("2x16x1-switch-softplus", 2, 16, 1, "switch", "softplus", 0.5),
-        ("5x4x6-abs-identity", 5, 4, 6, "absolute", "identity", 0.5),
-        ("5x4x6-switch-identity", 5, 4, 6, "switch", "identity", 0.5),
+        ("1x1x1", 1, 1, 1, "split", "relu", 0.5),
+        ("4x2x3-switch-relu", 4, 2, 3, "split", "relu", 0.5),
+        ("8x7x12-switch-elu", 8, 7, 12, "split", "elu", 0.5),
+        ("4x2x3-abs-relu-c1", 4, 2, 3, "mixed", "relu", 1.0),
+        ("4x2x3-abs-relu-c0", 4, 2, 3, "mixed", "relu", 0.0),
+        ("3x5x11-abs-selu", 3, 5, 11, "mixed", "selu", 0.5),
+        ("2x16x1-switch-softplus", 2, 16, 1, "split", "softplus", 0.5),
+        ("5x4x6-abs-identity", 5, 4, 6, "mixed", "identity", 0.5),
+        ("5x4x6-switch-identity", 5, 4, 6, "split", "identity", 0.5),
     ]
     for name, b, n, m, mode, act, cf in grid:
         rng = np.random.default_rng(_seed(name))
@@ -112,9 +112,9 @@ def _dense_cases() -> None:
         )
 
     f32_variants = [
-        ("2x16x1-switch-softplus", 2, 16, 1, "switch", "softplus", 0.5),
-        ("8x7x12-switch-elu", 8, 7, 12, "switch", "elu", 0.5),
-        ("3x5x11-abs-selu", 3, 5, 11, "absolute", "selu", 0.5),
+        ("2x16x1-switch-softplus", 2, 16, 1, "split", "softplus", 0.5),
+        ("8x7x12-switch-elu", 8, 7, 12, "split", "elu", 0.5),
+        ("3x5x11-abs-selu", 3, 5, 11, "mixed", "selu", 0.5),
     ]
     for orig_name, b, n, m, mode, act, cf in f32_variants:
         f32_name = f"{orig_name}-f32"
@@ -150,12 +150,12 @@ def _dense_cases() -> None:
 
 def _residual_cases() -> None:
     grid = [
-        ("4x3x3-identity-switch", 4, 3, 3, None, "switch", "relu", "scaled_elu"),
-        ("4x2x5-proj-switch", 4, 2, 5, (2, 5), "switch", "relu", "scaled_elu"),
-        ("6x4x4-identity-abs", 6, 4, 4, None, "absolute", "elu", "scaled_elu"),
-        ("5x3x3-identity-abs-id", 5, 3, 3, None, "absolute", "identity", "scaled_elu"),
-        ("6x4x4-identity-abs-softplus", 6, 4, 4, None, "absolute", "elu", "softplus"),
-        ("4x2x5-proj-switch-softplus", 4, 2, 5, (2, 5), "switch", "relu", "softplus"),
+        ("4x3x3-identity-switch", 4, 3, 3, None, "split", "relu", "scaled_elu"),
+        ("4x2x5-proj-switch", 4, 2, 5, (2, 5), "split", "relu", "scaled_elu"),
+        ("6x4x4-identity-abs", 6, 4, 4, None, "mixed", "elu", "scaled_elu"),
+        ("5x3x3-identity-abs-id", 5, 3, 3, None, "mixed", "identity", "scaled_elu"),
+        ("6x4x4-identity-abs-softplus", 6, 4, 4, None, "mixed", "elu", "softplus"),
+        ("4x2x5-proj-switch-softplus", 4, 2, 5, (2, 5), "split", "relu", "softplus"),
     ]
     for name, b, n, m, proj, mode, act, beta_gate in grid:
         rng = np.random.default_rng(_seed(name))

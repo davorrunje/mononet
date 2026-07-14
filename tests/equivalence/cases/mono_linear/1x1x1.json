@@ -16,7 +16,7 @@
     ]
   },
   "params": {
-    "mode": "switch",
+    "mode": "split",
     "activation": "relu",
     "convex_fraction": 0.5,
     "dtype": "float64"

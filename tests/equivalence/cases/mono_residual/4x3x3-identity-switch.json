@@ -49,7 +49,7 @@
     "beta": 0.5
   },
   "params": {
-    "mode": "switch",
+    "mode": "split",
     "activation": "relu",
     "convex_fraction": 0.5,
     "alpha_gate": "shifted_elu",

@@ -38,7 +38,7 @@
     ]
   },
   "params": {
-    "mode": "absolute",
+    "mode": "mixed",
     "activation": "relu",
     "convex_fraction": 1.0,
     "dtype": "float64"
