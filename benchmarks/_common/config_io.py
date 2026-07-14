@@ -16,14 +16,14 @@ def load_config(
     path: Path | str,
     *,
     backend: Literal["torch", "jax", "keras"],
-    mode: Literal["switch", "absolute"],
+    mode: Literal["split", "mixed"],
     residual: bool,
 ) -> BenchmarkConfig:
     """Load benchmark configuration from a TOML file.
 
     :param path: Path to the TOML config file.
     :param backend: Target backend ("torch", "jax", or "keras").
-    :param mode: Monotonicity mode ("switch" or "absolute").
+    :param mode: Monotonicity mode ("split" or "mixed").
     :param residual: Whether to use residual connections.
     :returns: Loaded BenchmarkConfig with backend/mode/residual set from arguments.
     """

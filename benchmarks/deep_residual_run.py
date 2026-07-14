@@ -21,7 +21,7 @@ from benchmarks._common.init_diagnostics import build_residual_stack, synthetic_
 if TYPE_CHECKING:
     from mononet.core.config import Mode
 
-_MODES: tuple[Mode, ...] = ("absolute", "switch")
+_MODES: tuple[Mode, ...] = ("mixed", "split")
 _DEPTHS = (4, 8, 16, 32)
 _KS: tuple[int | None, ...] = (None, 1, 2, 4, 8)
 _CAP = 1.0e6

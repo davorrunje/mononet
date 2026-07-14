@@ -23,7 +23,7 @@ def suggest_config(
     *,
     dataset: str,
     backend: Literal["torch", "jax", "keras"],
-    mode: Literal["switch", "absolute"],
+    mode: Literal["split", "mixed"],
     residual: bool,
     epochs: int,
     metric: Literal["accuracy", "rmse", "mse", "roc_auc"],
@@ -32,13 +32,13 @@ def suggest_config(
 ) -> BenchmarkConfig:
     """Sample a BenchmarkConfig for one (dataset, flavor) trial.
 
-    `convex_fraction` is searched only for absolute mode; switch keeps 0.5.
+    `convex_fraction` is searched only for mixed mode; split keeps 0.5.
     `activation` is fixed to "elu" in Phase 2a.
 
     :param trial: Optuna trial used to suggest hyperparameter values.
     :param dataset: Dataset name (labels the config).
     :param backend: ML backend to target.
-    :param mode: Monotonicity mode (`"absolute"` or `"switch"`).
+    :param mode: Monotonicity mode (`"mixed"` or `"split"`).
     :param residual: Whether to use residual connections.
     :param epochs: Number of training epochs per trial.
     :param metric: Primary metric; propagated into `cfg.metrics` so the
@@ -67,7 +67,7 @@ def suggest_config(
     )
     batch_size = trial.suggest_categorical("batch_size", batch_choices)
     convex_fraction = (
-        trial.suggest_float("convex_fraction", 0.0, 1.0) if mode == "absolute" else 0.5
+        trial.suggest_float("convex_fraction", 0.0, 1.0) if mode == "mixed" else 0.5
     )
     metrics: tuple[Literal["accuracy", "rmse", "mse", "roc_auc"], ...] = (
         ("roc_auc", "accuracy") if metric == "roc_auc" else (metric,)

@@ -15,7 +15,7 @@ def test_run_dataset_writes_one_json_per_flavor(tmp_path: Path) -> None:
     paths = run_dataset(
         "auto",
         backend="torch",
-        flavors=(("switch", False, False), ("absolute", False, False)),
+        flavors=(("split", False, False), ("mixed", False, False)),
         n_trials=2,
         epochs=1,
         final_seeds=range(2),
@@ -25,8 +25,8 @@ def test_run_dataset_writes_one_json_per_flavor(tmp_path: Path) -> None:
     )
     assert len(paths) == 2
     assert {p.name for p in paths} == {
-        "auto-switch-plain.json",
-        "auto-absolute-plain.json",
+        "auto-split-plain.json",
+        "auto-mixed-plain.json",
     }
     rec = json.loads(paths[0].read_text())
     assert rec["dataset"] == "auto"
@@ -50,7 +50,7 @@ def test_run_dataset_deep_flavor_writes_deep_json(tmp_path: Path) -> None:
     paths = run_dataset(
         "auto",
         backend="torch",
-        flavors=(("absolute", True, True),),
+        flavors=(("mixed", True, True),),
         n_trials=2,
         epochs=1,
         final_seeds=range(2),
@@ -58,9 +58,9 @@ def test_run_dataset_deep_flavor_writes_deep_json(tmp_path: Path) -> None:
         data_dir=FIXTURES,
         out_dir=tmp_path,
     )
-    assert [p.name for p in paths] == ["auto-absolute-deep.json"]
+    assert [p.name for p in paths] == ["auto-mixed-deep.json"]
     rec = _json.loads(paths[0].read_text())
-    assert rec["flavor"] == "absolute-deep"
+    assert rec["flavor"] == "mixed-deep"
     assert rec["best_params"]["depth"] in (6, 10, 16)
     assert math.isfinite(rec["test_mean"])
 
@@ -86,7 +86,7 @@ def test_storage_uses_deterministic_study_name_so_it_resumes(tmp_path: Path) -> 
     storage = f"sqlite:///{tmp_path}/auto.db"
     search(
         bundle,
-        mode="switch",
+        mode="split",
         residual=False,
         backend="torch",
         n_trials=2,
@@ -96,7 +96,7 @@ def test_storage_uses_deterministic_study_name_so_it_resumes(tmp_path: Path) -> 
     )
     search(
         bundle,
-        mode="switch",
+        mode="split",
         residual=False,
         backend="torch",
         n_trials=2,
@@ -105,6 +105,6 @@ def test_storage_uses_deterministic_study_name_so_it_resumes(tmp_path: Path) -> 
         storage=storage,
     )
     study = optuna.load_study(
-        study_name=f"auto-{flavor_name('switch', False)}", storage=storage
+        study_name=f"auto-{flavor_name('split', False)}", storage=storage
     )
     assert len(study.trials) == 4  # resumed, not restarted

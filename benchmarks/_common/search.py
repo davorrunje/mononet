@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 def flavor_name(mode: str, residual: bool, deep: bool = False) -> str:
     """Canonical flavor label for result files and Optuna study names.
 
-    :param mode: Monotonicity mode (``"switch"`` or ``"absolute"``).
+    :param mode: Monotonicity mode (``"split"`` or ``"mixed"``).
     :param residual: Whether the stack uses residual blocks.
     :param deep: Whether this is the deep-depth-band flavor. When ``True`` the
         label is ``"{mode}-deep"`` regardless of ``residual`` (deep implies
@@ -244,12 +244,12 @@ def _secondary_metrics(
 # (mode, residual, deep) triples. Deep implies residual=True with a larger
 # depth search band (see suggest_config); it is a separate Optuna study.
 _ALL_FLAVORS: tuple[tuple[str, bool, bool], ...] = (
-    ("switch", False, False),
-    ("switch", True, False),
-    ("absolute", False, False),
-    ("absolute", True, False),
-    ("switch", True, True),
-    ("absolute", True, True),
+    ("split", False, False),
+    ("split", True, False),
+    ("mixed", False, False),
+    ("mixed", True, False),
+    ("split", True, True),
+    ("mixed", True, True),
 )
 # (n_trials, final_seeds, n_splits) per dataset.
 # n_splits: 5-fold CV for small/medium datasets; 1 (single holdout) for the large

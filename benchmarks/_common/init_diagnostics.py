@@ -1,4 +1,4 @@
-"""Diagnostics for absolute-vs-switch init conditioning across depth (torch)."""
+"""Diagnostics for mixed-vs-split init conditioning across depth (torch)."""
 
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ def grad_flow(
 ) -> dict[str, float | list[float]]:
     """Init-time gradient flow through an untrained plain stack.
 
-    :param mode: ``switch`` or ``absolute``.
+    :param mode: ``split`` or ``mixed``.
     :param depth: Number of hidden ``MonoLinear`` layers.
     :param activation: Base activation.
     :param width: Hidden width.
@@ -91,7 +91,7 @@ def trainability(
 ) -> dict[str, float]:
     """Fixed-budget train loss of a plain stack on the synthetic target.
 
-    :param mode: ``switch`` or ``absolute``.
+    :param mode: ``split`` or ``mixed``.
     :param depth: Number of hidden ``MonoLinear`` layers.
     :param activation: Base activation.
     :param epochs: Full-batch training epochs.
@@ -123,7 +123,7 @@ def build_residual_stack(
 ) -> nn.Module:
     """Uniform-width monotone stack; residual (skip every ``sub_depth``) or plain.
 
-    :param mode: ``switch`` or ``absolute``.
+    :param mode: ``split`` or ``mixed``.
     :param depth: Number of hidden ``W->W`` monotone layers.
     :param sub_depth: Layers per residual block; ``None`` builds a plain (no-skip) stack.
     :param width: Uniform hidden width ``W``.

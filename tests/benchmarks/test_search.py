@@ -52,10 +52,10 @@ def test_primary_metric_is_mse_for_regression() -> None:
 
 
 def test_flavor_name() -> None:
-    assert flavor_name("switch", False) == "switch-plain"
-    assert flavor_name("absolute", True) == "absolute-residual"
-    assert flavor_name("switch", True, deep=True) == "switch-deep"
-    assert flavor_name("absolute", True, deep=True) == "absolute-deep"
+    assert flavor_name("split", False) == "split-plain"
+    assert flavor_name("mixed", True) == "mixed-residual"
+    assert flavor_name("split", True, deep=True) == "split-deep"
+    assert flavor_name("mixed", True, deep=True) == "mixed-deep"
 
 
 def test_all_flavors_has_six_entries_including_deep() -> None:
@@ -63,13 +63,13 @@ def test_all_flavors_has_six_entries_including_deep() -> None:
 
     assert len(_ALL_FLAVORS) == 6
     names = {flavor_name(m, r, d) for m, r, d in _ALL_FLAVORS}
-    assert {"switch-deep", "absolute-deep"} <= names
+    assert {"split-deep", "mixed-deep"} <= names
 
 
 def test_search_deep_flavor_names_study_and_uses_high_depth() -> None:
     res = search(
         _bundle(),
-        mode="absolute",
+        mode="mixed",
         residual=True,
         deep=True,
         backend="torch",
@@ -78,14 +78,14 @@ def test_search_deep_flavor_names_study_and_uses_high_depth() -> None:
         epochs=1,
         n_splits=2,
     )
-    assert res.flavor == "absolute-deep"
+    assert res.flavor == "mixed-deep"
     assert res.best_params["depth"] in (6, 10, 16)
 
 
 def test_search_two_trials_two_folds_returns_finite_best() -> None:
     res = search(
         _bundle(),
-        mode="switch",
+        mode="split",
         residual=False,
         backend="torch",
         n_trials=2,
@@ -95,7 +95,7 @@ def test_search_two_trials_two_folds_returns_finite_best() -> None:
     )
     assert isinstance(res, StudyResult)
     assert res.n_trials == 2
-    assert res.flavor == "switch-plain"
+    assert res.flavor == "split-plain"
     assert np.isfinite(res.best_value)
     assert "lr" in res.best_params
     assert "width" in res.best_params
@@ -107,7 +107,7 @@ def test_search_objective_is_fold_mean() -> None:
     for n_splits in (1, 3):
         res = search(
             _bundle(),
-            mode="switch",
+            mode="split",
             residual=False,
             backend="torch",
             n_trials=2,
@@ -128,7 +128,7 @@ def test_classification_final_eval_reports_roc_auc_and_accuracy() -> None:
     cfg = BenchmarkConfig(
         dataset="syn",
         backend="torch",
-        mode="switch",
+        mode="split",
         residual=False,
         depth=1,
         width=8,
@@ -154,7 +154,7 @@ def test_final_eval_reports_all_seeds() -> None:
     b = _bundle()
     res = search(
         b,
-        mode="switch",
+        mode="split",
         residual=False,
         backend="torch",
         n_trials=2,
@@ -166,7 +166,7 @@ def test_final_eval_reports_all_seeds() -> None:
     agg, rows = final_eval(
         b,
         res.best_params,
-        mode="switch",
+        mode="split",
         residual=False,
         backend="torch",
         seeds=range(6),
@@ -199,7 +199,7 @@ def test_run_dataset_persists_secondary_accuracy_for_classification(
     paths = run_dataset(
         "syn",
         backend="torch",
-        flavors=(("switch", False, False),),
+        flavors=(("split", False, False),),
         n_trials=2,
         epochs=1,
         final_seeds=range(3),

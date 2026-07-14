@@ -18,7 +18,7 @@ class ResultRow:
 
     :param dataset: Dataset name.
     :param backend: Backend used ("torch", "jax", or "keras").
-    :param mode: Monotonicity mode ("switch" or "absolute").
+    :param mode: Monotonicity mode ("split" or "mixed").
     :param residual: Whether residual connections were used.
     :param seed: Random seed for this run.
     :param scores: Dict mapping metric names to scalar values.

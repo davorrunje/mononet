@@ -8,7 +8,7 @@ and instead sweeps the *input scale* `s`, with `x ~ U(0, s)` and the teacher
 target standardized as before.
 
 The story: the near-zero-F fix keeps each block near-identity *at init*
-regardless of `s` (`init_f_rms_last` stays tiny), but the `absolute`-mode
+regardless of `s` (`init_f_rms_last` stays tiny), but the `mixed`-mode
 first layer and the near-open `softplus` gate (`g_beta(0) = softplus(0)
 ~= 0.69`, not 0) both scale with the raw input magnitude. So the last
 block's total output RMS (`init_block_out_rms_last`) grows with `s`, and
@@ -61,9 +61,9 @@ def _run(scale: float, *, device: torch.device, seed: int = 0) -> dict[str, floa
     ).unsqueeze(1)
 
     net = nn.Sequential(
-        MonoLinear(_D, _W, mode="absolute", activation="elu"),
+        MonoLinear(_D, _W, mode="mixed", activation="elu"),
         *[_Block(a_mode="nearzero", softplus_gate=True) for _ in range(_DEPTH)],
-        MonoLinear(_W, 1, mode="absolute"),
+        MonoLinear(_W, 1, mode="mixed"),
     ).to(device)
     blocks = [m for m in net if isinstance(m, _Block)]
     last = blocks[-1]
@@ -101,8 +101,7 @@ def main(out: Path | None = None) -> None:
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(  # noqa: T201
-        "depth=16, absolute mode, A=nearzero B=softplus (the fix) | "
-        "sweeping input scale s"
+        "depth=16, mixed mode, A=nearzero B=softplus (the fix) | sweeping input scale s"
     )
     rows = []
     for scale in _SCALES:

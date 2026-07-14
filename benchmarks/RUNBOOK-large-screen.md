@@ -62,7 +62,7 @@ uv run --extra torch-gpu --group bench python -m benchmarks.large_screen_run \
 ```
 
 This loads the dataset, runs the standard search for both `deep` and `shallow`
-`absolute`-residual arms at the full train size, refits with multiple seeds on
+`mixed`-residual arms at the full train size, refits with multiple seeds on
 the untouched test set, and writes a record with:
 - `n_full`: the full train split size
 - `deep_iqm` / `shallow_iqm`: the test-set IQM accuracies per arm
