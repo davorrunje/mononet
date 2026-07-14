@@ -80,4 +80,48 @@ are filled from these artifacts.
 - [x] **Figures** — reconstruction slices + L¹/L²/admissibility crossover curves
       wired into `experiments/figures.py` (writes `paper/figures/*.png`). TV(t)
       curves remain a forward-tier nicety, not yet generated.
+- [x] **Real-data figures** — reconstruction/window-heatmap/metric-bars for the
+      NGSIM window wired into `experiments/figures.py --real` (see below).
 - [ ] **Notebook** render into Sphinx docs.
+
+## Real-data validation (NGSIM I-80)
+
+Validates the hard-monotone field against real freeway data, not just the
+synthetic Riemann problems above. Runs on CPU; no GPU needed.
+
+```bash
+# 0. Obtain raw NGSIM I-80 trajectories -> applications/pinn/data/raw/i80.csv
+#    (manual; canonical hosts are unreachable from the dev container). Gitignored.
+
+# 1. Build the derived dataset (Edie field + window scan + FD) -> LFS .npz
+uv run python -m applications.pinn.data.ngsim \
+    --raw applications/pinn/data/raw/i80.csv \
+    --out applications/pinn/data/ngsim-i80-wave.npz
+```
+
+**Gate:** after step 1, inspect the printed `monotonicity_defect` and the
+`window-ngsim` heatmap. If defect >= 0.05 or the window is too small for a
+detector split, **do not proceed** to step 2 — re-run with a different
+`--lane`/window, or pivot to wave-following coordinates (spec §1a).
+
+```bash
+# 2. Inverse detector-mode headline on the real field (tune-once + multi-seed)
+uv run python -m applications.pinn.experiments.headline \
+    --problem ngsim_wave --tier inverse --observations detectors \
+    --out applications/pinn/results/real-ngsim.json
+
+# 3. Figures (reconstruction, window heatmap, metric bars; PDF+PNG)
+uv run python -m applications.pinn.experiments.figures --real
+```
+
+`figures.py --real` computes the ASM + RBF-smoother baselines inline (from the
+same detector observations) — no separate `baselines.py` CLI run is needed for
+the real-data panel.
+
+`results/real-ngsim.json` does not record the detector counts used to produce
+it (`run_panel`'s output only carries tuned per-method params). Step 2's
+`--n-detectors`/`--n-holdout-detectors` must therefore match the constants
+`figures.py --real` assumes when it retrains for reconstruction — currently
+`n_detectors=8`, `n_holdout_detectors=4` (both also `headline.py`'s defaults,
+so the commands above already agree; only a concern if you override either
+flag).
