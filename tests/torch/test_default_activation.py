@@ -9,7 +9,7 @@ from mononet.torch import MonoLinear  # noqa: E402
 
 def test_default_activation_is_affine() -> None:
     # identity default => affine map => midpoint-preserving.
-    layer = MonoLinear(4, 8, mode="switch")
+    layer = MonoLinear(4, 8, mode="split")
     x1 = torch.randn(5, 4)
     x2 = torch.randn(5, 4)
     mid = layer((x1 + x2) / 2)

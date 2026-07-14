@@ -7,7 +7,7 @@ trap's mechanics are visible over training rather than asserted from the
 endpoint alone.
 
 The construction mirrors the ablation's `("off", False)` row: a deep
-`absolute`-mode stack of 16 residual blocks with random (not near-identity)
+`mixed`-mode stack of 16 residual blocks with random (not near-identity)
 `F` and the dead-zone `scaled_elu` beta-gate, trained on the same synthetic
 monotone teacher. At every step it records, aggregated over the 16 blocks:
 `g_beta` min/max, raw `beta` min/max, mean block-output RMS (on a small fixed
@@ -81,9 +81,9 @@ def main(out: Path | None = None) -> None:
     ).unsqueeze(1)
     # Pre-fix trap: random (non-near-zero) F + dead-zone scaled_elu gate.
     net = nn.Sequential(
-        MonoLinear(_D, _W, mode="absolute", activation="elu"),
+        MonoLinear(_D, _W, mode="mixed", activation="elu"),
         *[_Block(a_mode="off", softplus_gate=False) for _ in range(_DEPTH)],
-        MonoLinear(_W, 1, mode="absolute"),
+        MonoLinear(_W, 1, mode="mixed"),
     ).to(device)
     blocks = [m for m in net if isinstance(m, _Block)]
     input_layer = net[0]

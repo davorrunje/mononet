@@ -60,12 +60,12 @@ class MonoLinear(nn.Module):
 
     :param in_features: Number of input features.
     :param units: Number of output features.
-    :param mode: `"absolute"` (default) or `"switch"`.
+    :param mode: `"mixed"` (default) or `"split"`.
     :param activation: Base activation, one of `"relu"`, `"elu"`, `"selu"`,
         `"softplus"`, `"identity"`, or an `ActivationSpec`. `None` (the
         default) means `"identity"` — a linear monotone map, matching
         `torch.nn.Linear`.
-    :param convex_fraction: Convex-neuron fraction (absolute mode).
+    :param convex_fraction: Convex-neuron fraction (mixed mode).
     :param init: Weight initializer name/`InitSpec`/`None` (default `he_normal`).
     :param bias: Whether to include a bias term.
     :param near_zero_scale: Private. When not `None`, the weight is scaled by
@@ -79,7 +79,7 @@ class MonoLinear(nn.Module):
         in_features: int,
         units: int,
         *,
-        mode: Mode = "absolute",
+        mode: Mode = "mixed",
         activation: ActivationSpec | ActivationName | None = None,
         convex_fraction: float = 0.5,
         init: InitSpec | str | None = None,
@@ -95,7 +95,7 @@ class MonoLinear(nn.Module):
         self.convex_fraction = convex_fraction
         self.weight = nn.Parameter(torch.empty(in_features, units))
         bias_fill = 0.0
-        if mode == "absolute" and init is None:
+        if mode == "mixed" and init is None:
             gain, bias_fill = absolute_init_params(
                 self.activation_name, convex_fraction
             )
@@ -133,8 +133,8 @@ class MonoResidual(nn.Module):
         deep stacks initialise its last layer near zero (or pass
         ``beta_gate="scaled_elu"``) to avoid divergence at init. Mutually
         exclusive with `sub_depth`.
-    :param mode: Mode for the default `F`. `"absolute"` (default) or
-        `"switch"`.
+    :param mode: Mode for the default `F`. `"mixed"` (default) or
+        `"split"`.
     :param activation: Activation for the default `F` (default `None`).
         Required when `F` is not provided; mutually exclusive with an
         explicit `F`.
@@ -148,7 +148,7 @@ class MonoResidual(nn.Module):
         weight (bias zeroed) so the block starts near-identity — the deep
         default stack (`softplus` `beta_gate`) would otherwise diverge
         through a randomly-initialized residual branch. `0.0` reproduces
-        exact-zero, which is not recommended: under `absolute` mode `F` uses
+        exact-zero, which is not recommended: under `mixed` mode `F` uses
         `|W|`, whose gradient at `W=0` is `sign(0)=0`, a fixed point that
         freezes the weights. A custom `F` is untouched.
     :raises ValueError: If `F` is `None` and `activation` is not provided,
@@ -161,7 +161,7 @@ class MonoResidual(nn.Module):
         units: int,
         *,
         F: nn.Module | Callable[[int], nn.Module] | None = None,  # noqa: N803
-        mode: Mode = "absolute",
+        mode: Mode = "mixed",
         activation: ActivationSpec | ActivationName | None = None,
         alpha_gate: str = "shifted_elu",
         beta_gate: str = "softplus",

@@ -1,6 +1,6 @@
 {
   "dataset": "auto",
-  "flavor": "absolute-residual",
+  "flavor": "mixed-residual",
   "best_params": {
     "width": 32,
     "depth": 1,

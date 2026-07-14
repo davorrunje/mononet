@@ -1,7 +1,7 @@
 """Stage-2 deep-vs-shallow gate: signed Δ + seed-bootstrap CI + verdict.
 
 Given one dataset's six Stage-A flavor result JSONs
-(``{switch,absolute} x {plain,residual,deep}``), :func:`dataset_delta` picks
+(``{split,mixed} x {plain,residual,deep}``), :func:`dataset_delta` picks
 the best shallow flavor (of the four non-deep) and the best deep flavor (of
 the two deep), and seed-bootstraps a signed Δ (positive == deep is better,
 sign-normalized by metric direction) with a 95% CI. :func:`verdict` then
@@ -23,12 +23,12 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _SHALLOW_FLAVORS: tuple[str, ...] = (
-    "switch-plain",
-    "switch-residual",
-    "absolute-plain",
-    "absolute-residual",
+    "split-plain",
+    "split-residual",
+    "mixed-plain",
+    "mixed-residual",
 )
-_DEEP_FLAVORS: tuple[str, ...] = ("switch-deep", "absolute-deep")
+_DEEP_FLAVORS: tuple[str, ...] = ("split-deep", "mixed-deep")
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,9 +102,9 @@ def dataset_delta(
 ) -> DeltaResult:
     """Load one dataset's 6 flavor result JSONs and compute the deep-vs-shallow Δ.
 
-    Selects the best of the 4 shallow flavors (``{switch,absolute} x
+    Selects the best of the 4 shallow flavors (``{split,mixed} x
     {plain,residual}``) and the best of the 2 deep flavors
-    (``{switch,absolute}-deep``) by their reported ``test_iqm``, then
+    (``{split,mixed}-deep``) by their reported ``test_iqm``, then
     seed-bootstraps the signed Δ (see :func:`_signed_improvement`) between
     their per-seed ``test_values`` via
     :func:`benchmarks._common.results.bootstrap_delta`.

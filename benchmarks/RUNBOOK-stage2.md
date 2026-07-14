@@ -18,7 +18,7 @@ Expect `True` and the 5090 device name.
 
 ## 1. Run the full search
 
-Six flavors per dataset (`{switch,absolute} × {plain,residual,deep}`), default
+Six flavors per dataset (`{split,mixed} × {plain,residual,deep}`), default
 per-dataset budgets (`auto/heart/compas`: 50 trials, 10 seeds, 5-fold CV;
 `loan/blog`: 25 trials, 5 seeds, single holdout):
 
@@ -59,9 +59,9 @@ Edit `docs/benchmarks/deep-residual-accuracy.md` — replace the placeholder
 `—` cells in the Results table. For each dataset:
 - **metric**: MSE (`auto`), RMSE (`blog`), accuracy (`heart`/`compas`/`loan`).
 - **best shallow (mode)**: the better of the four shallow flavors
-  (`{switch,absolute}-{plain,residual}`) by `test_mean` (min for MSE/RMSE, max
+  (`{split,mixed}-{plain,residual}`) by `test_mean` (min for MSE/RMSE, max
   for accuracy); note which mode won.
-- **deep (mode)**: the better of `{switch,absolute}-deep` by `test_mean`.
+- **deep (mode)**: the better of `{split,mixed}-deep` by `test_mean`.
 - Report each as `test_mean ± test_std`; **Δ** = deep − best-shallow (sign per
   the metric's direction — note whether deep helped).
 - **deep depth**: `best_params["depth"]` of the reported deep flavor.

@@ -45,13 +45,13 @@ _SMOKE: dict[str, Any] = {
 def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool, bool], ...]:
     """Parse a comma-separated flavor spec into ``(mode, residual, deep)`` triples.
 
-    :param spec: Comma-separated flavor names like ``switch-plain,absolute-deep``,
+    :param spec: Comma-separated flavor names like ``split-plain,mixed-deep``,
         or ``None``/empty string to return all flavors.
     :returns: Tuple of ``(mode, residual, deep)`` triples.
     """
     if not spec:
         return _ALL_FLAVORS
-    valid_modes = {"switch", "absolute"}
+    valid_modes = {"split", "mixed"}
     valid_kinds = {"plain", "residual", "deep"}
     out: list[tuple[str, bool, bool]] = []
     for name in spec.split(","):
@@ -67,7 +67,7 @@ def _parse_flavors(spec: str | None) -> tuple[tuple[str, bool, bool], ...]:
 def main(
     datasets: str = typer.Option(",".join(_ALL_DATASETS), "--datasets"),
     flavors: str = typer.Option(
-        "", "--flavors", help="e.g. switch-plain,absolute-residual"
+        "", "--flavors", help="e.g. split-plain,mixed-residual"
     ),
     backend: str = typer.Option("torch", "--backend"),
     n_trials: int | None = typer.Option(None, "--n-trials"),

@@ -1,6 +1,6 @@
 {
   "dataset": "compas",
-  "flavor": "absolute-residual",
+  "flavor": "mixed-residual",
   "best_params": {
     "width": 8,
     "depth": 4,

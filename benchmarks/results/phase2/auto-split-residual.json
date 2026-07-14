@@ -1,6 +1,6 @@
 {
   "dataset": "auto",
-  "flavor": "switch-residual",
+  "flavor": "split-residual",
   "best_params": {
     "width": 64,
     "depth": 1,

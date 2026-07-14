@@ -1,6 +1,6 @@
 {
   "dataset": "blog",
-  "flavor": "absolute-plain",
+  "flavor": "mixed-plain",
   "best_params": {
     "width": 32,
     "depth": 1,

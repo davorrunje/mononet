@@ -34,7 +34,7 @@ def test_run_returns_one_row_per_seed_with_finite_metric() -> None:
     cfg = BenchmarkConfig(
         dataset="syn",
         backend="torch",
-        mode="switch",
+        mode="split",
         residual=False,
         depth=1,
         width=8,

@@ -1,7 +1,7 @@
 """MonoResidual gate ablation: why deep monotone-residual depth stays inert.
 
 Evidence backing the skip-connection gate design (see the fix spec/plan). A deep
-``absolute``-mode ``MonoResidual`` stack fails to use its depth because the
+``mixed``-mode ``MonoResidual`` stack fails to use its depth because the
 F-path gate ``g_beta`` (token ``scaled_elu``) sits in a **bootstrap trap**: at
 init F is random (not near-identity), so engaging it *raises* loss, gradient
 descent drives the gate parameter negative, and ``scaled_elu``'s negative-side
@@ -17,7 +17,7 @@ This script isolates two levers on a synthetic monotone teacher target
 * ``B`` — the F gate. ``scaled_elu`` (dead-zone) vs ``softplus`` (dead-zone-free,
   monotone).
 
-Key subtlety: under the ``absolute`` construction ``F`` uses ``|W|``, whose
+Key subtlety: under the ``mixed`` construction ``F`` uses ``|W|``, whose
 gradient at ``W=0`` is ``sign(0)=0`` — so **exact-zero init is a gradient fixed
 point**: the last-layer weights never move and ``F`` degenerates to a per-block
 learned *constant*, not an ``x``-dependent depth function. ``nearzero`` keeps the
@@ -76,8 +76,8 @@ class _Block(nn.Module):
     def __init__(self, *, a_mode: str, softplus_gate: bool) -> None:
         super().__init__()
         self.softplus_gate = softplus_gate
-        self.f_in = MonoLinear(_W, _W, mode="absolute", activation="elu")
-        self.f_out = MonoLinear(_W, _W, mode="absolute", activation="elu")
+        self.f_in = MonoLinear(_W, _W, mode="mixed", activation="elu")
+        self.f_out = MonoLinear(_W, _W, mode="mixed", activation="elu")
         with torch.no_grad():
             if a_mode == "exactzero":
                 self.f_out.weight.zero_()
@@ -124,9 +124,9 @@ def _run(
         ``g_beta_min``, ``g_beta_max``, ``f_moved``, ``n_blocks``.
     """
     net = nn.Sequential(
-        MonoLinear(_D, _W, mode="absolute", activation="elu"),
+        MonoLinear(_D, _W, mode="mixed", activation="elu"),
         *[_Block(a_mode=a_mode, softplus_gate=softplus_gate) for _ in range(depth)],
-        MonoLinear(_W, 1, mode="absolute"),
+        MonoLinear(_W, 1, mode="mixed"),
     ).to(device)
     blocks = [m for m in net if isinstance(m, _Block)]
     w0 = [float(b.f_out.weight.detach().abs().sum()) for b in blocks]
@@ -189,7 +189,7 @@ def main(out: Path | None = None) -> None:
     ).unsqueeze(1)
 
     print(  # noqa: T201
-        "depth=16, absolute mode, monotone teacher target | "
+        "depth=16, mixed mode, monotone teacher target | "
         f"near-zero scale={_NEAR_ZERO_SCALE}"
     )
     grid = [

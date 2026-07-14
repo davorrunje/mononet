@@ -1,6 +1,6 @@
 {
   "dataset": "compas",
-  "flavor": "absolute-plain",
+  "flavor": "mixed-plain",
   "best_params": {
     "width": 21,
     "depth": 3,

@@ -1,6 +1,6 @@
 {
   "dataset": "loan",
-  "flavor": "switch-residual",
+  "flavor": "split-residual",
   "best_params": {
     "width": 8,
     "depth": 2,

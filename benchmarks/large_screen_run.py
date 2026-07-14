@@ -1,6 +1,6 @@
 """Max-size deep/shallow screen: one Δ + gate verdict per dataset.
 
-Runs the standard search for the deep and shallow ``absolute``-residual arms at
+Runs the standard search for the deep and shallow ``mixed``-residual arms at
 the dataset's full train size, multi-seed refit + test, and gates on
 Δ = IQM(deep) - IQM(shallow). See
 docs/superpowers/specs/2026-07-11-large-dataset-screen-design.md.

@@ -28,7 +28,7 @@ def _bundle(n: int = 64, d: int = 7) -> DatasetBundle:
     )
 
 
-def _cfg(mode: Literal["switch", "absolute"], residual: bool) -> BenchmarkConfig:
+def _cfg(mode: Literal["split", "mixed"], residual: bool) -> BenchmarkConfig:
     return BenchmarkConfig(
         dataset="syn",
         backend="torch",
@@ -50,10 +50,10 @@ def _cfg(mode: Literal["switch", "absolute"], residual: bool) -> BenchmarkConfig
     )
 
 
-@pytest.mark.parametrize("mode", ["switch", "absolute"])
+@pytest.mark.parametrize("mode", ["split", "mixed"])
 @pytest.mark.parametrize("residual", [False, True])
 def test_builds_and_output_shape(
-    mode: Literal["switch", "absolute"], residual: bool
+    mode: Literal["split", "mixed"], residual: bool
 ) -> None:
     b = _bundle()
     model = build_model(_cfg(mode, residual), b)
@@ -62,8 +62,8 @@ def test_builds_and_output_shape(
     assert out.shape == (b.X_train.shape[0], 1)
 
 
-@pytest.mark.parametrize("mode", ["switch", "absolute"])
-def test_monotone_in_decreasing_feature(mode: Literal["switch", "absolute"]) -> None:
+@pytest.mark.parametrize("mode", ["split", "mixed"])
+def test_monotone_in_decreasing_feature(mode: Literal["split", "mixed"]) -> None:
     # Output must be non-increasing in column 4 (declared decreasing).
     b = _bundle()
     model = build_model(_cfg(mode, residual=False), b).eval()
@@ -74,11 +74,11 @@ def test_monotone_in_decreasing_feature(mode: Literal["switch", "absolute"]) -> 
         assert torch.all(model(x_hi) <= model(x) + 1e-5)
 
 
-@pytest.mark.parametrize("mode", ["switch", "absolute"])
-def test_head_is_linear_not_relu(mode: Literal["switch", "absolute"]) -> None:
+@pytest.mark.parametrize("mode", ["split", "mixed"])
+def test_head_is_linear_not_relu(mode: Literal["split", "mixed"]) -> None:
     # Regression guard: the read-out head must be a *linear* monotone map
     # (identity activation). A nonlinear head (the MonoLinear default is ReLU)
-    # forces the pre-sigmoid >= 0 in absolute mode, collapsing binary
+    # forces the pre-sigmoid >= 0 in mixed mode, collapsing binary
     # classification to the base rate. See model_builder head construction.
     model = build_model(_cfg(mode, residual=False), _bundle())
     assert model.head.activation_name == "identity"
@@ -105,9 +105,9 @@ def _binary_bundle(n: int = 400, d: int = 6) -> DatasetBundle:
     )
 
 
-@pytest.mark.parametrize("mode", ["switch", "absolute"])
+@pytest.mark.parametrize("mode", ["split", "mixed"])
 def test_binary_classification_beats_base_rate(
-    mode: Literal["switch", "absolute"],
+    mode: Literal["split", "mixed"],
 ) -> None:
     # End-to-end guard against the ReLU-head base-rate collapse: a short train
     # run must clear the majority-class baseline in both modes.

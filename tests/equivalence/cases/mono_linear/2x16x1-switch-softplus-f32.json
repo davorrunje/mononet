@@ -94,7 +94,7 @@
     ]
   },
   "params": {
-    "mode": "switch",
+    "mode": "split",
     "activation": "softplus",
     "convex_fraction": 0.5,
     "dtype": "float32"
@@ -104,7 +104,7 @@
       1.6184425358800907
     ],
     [
-      0.2908164284931154
+      0.2908164284931155
     ]
   ],
   "expected_grads": {},

@@ -1,6 +1,6 @@
 {
   "dataset": "heart",
-  "flavor": "switch-plain",
+  "flavor": "split-plain",
   "best_params": {
     "width": 64,
     "depth": 3,

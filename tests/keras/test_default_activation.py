@@ -11,7 +11,7 @@ from mononet.keras import MonoDense
 
 
 def test_default_activation_is_affine() -> None:
-    layer = MonoDense(8, mode="switch")
+    layer = MonoDense(8, mode="split")
     rng = np.random.default_rng(0)
     x1 = rng.standard_normal((5, 4)).astype("float32")
     x2 = rng.standard_normal((5, 4)).astype("float32")

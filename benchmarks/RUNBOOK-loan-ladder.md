@@ -17,7 +17,7 @@ uv run --extra torch-gpu --group bench python -m benchmarks.loan_size_ladder_run
 
 This loads the `loan` dataset, runs the full N-ladder
 (`5_000, 15_000, 45_000, 135_000, <full>`) for both the `shallow` and `deep`
-`absolute`-residual arms, and writes the committed results JSON to
+`mixed`-residual arms, and writes the committed results JSON to
 `benchmarks/results/size-ladder/loan.json`.
 
 **Expected cost:** the ladder is cheap at small N (each rung tunes and refits

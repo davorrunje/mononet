@@ -5,7 +5,7 @@ Usage::
     python -m benchmarks.run \
         --dataset auto \
         --backend torch \
-        --mode switch \
+        --mode split \
         [--residual] \
         [--epochs N] \
         [--seeds 0 1 2 ...] \
@@ -61,7 +61,7 @@ def _build_config(args: argparse.Namespace, task: str) -> BenchmarkConfig:
     seeds: tuple[int, ...] = tuple(args.seeds) if args.seeds else _DEFAULT_SEEDS
     epochs: int = args.epochs if args.epochs is not None else _DEFAULT_EPOCHS
     backend: Literal["torch", "jax", "keras"] = args.backend
-    mode: Literal["switch", "absolute"] = args.mode
+    mode: Literal["split", "mixed"] = args.mode
 
     metrics: tuple[Literal["accuracy", "rmse", "mse"], ...] = (
         ("accuracy",) if task == "binary_classification" else ("mse", "rmse")
@@ -120,7 +120,7 @@ def main() -> None:
     ap.add_argument(
         "--mode",
         required=True,
-        choices=["switch", "absolute"],
+        choices=["split", "mixed"],
         help="Monotonicity enforcement mode.",
     )
     ap.add_argument(

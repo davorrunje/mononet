@@ -38,7 +38,7 @@ def test_smoke_one_flavor_trains() -> None:
     cfg = BenchmarkConfig(
         dataset="syn",
         backend=BACKEND,
-        mode="switch",
+        mode="split",
         residual=False,
         depth=1,
         width=8,

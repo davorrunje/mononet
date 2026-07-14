@@ -26,8 +26,8 @@ def test_verdict(lo: float, point: float, margin: float, expect: str) -> None:
         delta_point=point,
         delta_lo=lo,
         delta_hi=point + 0.01,
-        best_shallow_flavor="absolute-plain",
-        best_deep_flavor="absolute-deep",
+        best_shallow_flavor="mixed-plain",
+        best_deep_flavor="mixed-deep",
     )
     assert verdict(d, margin=margin) == expect
 
@@ -83,12 +83,12 @@ def test_dataset_delta_smoke(tmp_path: Path) -> None:
     dataset = "toy"
     metric = "accuracy"  # higher is better
     shallow_flavors = (
-        "switch-plain",
-        "switch-residual",
-        "absolute-plain",
-        "absolute-residual",
+        "split-plain",
+        "split-residual",
+        "mixed-plain",
+        "mixed-residual",
     )
-    deep_flavors = ("switch-deep", "absolute-deep")
+    deep_flavors = ("split-deep", "mixed-deep")
     for i, flavor in enumerate(shallow_flavors):
         _write_flavor(
             tmp_path, dataset, flavor, metric=metric, values=[0.50 + i * 0.01, 0.51]

@@ -16,14 +16,14 @@ def _train_absolute(
     x_np, y_np = synthetic_monotone(512, 8, seed=seed)
     width = 32
     layers: list[nn.Module] = [
-        MonoLinear(8, width, mode="absolute", activation="elu", init=init)  # type: ignore[arg-type]
+        MonoLinear(8, width, mode="mixed", activation="elu", init=init)  # type: ignore[arg-type]
     ]
     layers += [
-        MonoLinear(width, width, mode="absolute", activation="elu", init=init)  # type: ignore[arg-type]
+        MonoLinear(width, width, mode="mixed", activation="elu", init=init)  # type: ignore[arg-type]
         for _ in range(depth - 1)
     ]
     layers.append(
-        MonoLinear(width, 1, mode="absolute", activation="elu", init=init)  # type: ignore[arg-type]
+        MonoLinear(width, 1, mode="mixed", activation="elu", init=init)  # type: ignore[arg-type]
     )
     net = nn.Sequential(*[layer.double() for layer in layers])
     x = torch.tensor(x_np, dtype=torch.float64)

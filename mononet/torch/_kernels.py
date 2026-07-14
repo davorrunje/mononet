@@ -83,26 +83,26 @@ def monotonic_dense(
     :param x: Input tensor of shape ``(batch, in_features)``.
     :param weights: Weight matrix of shape ``(in_features, units)``.
     :param bias: Bias vector of shape ``(units,)``.
-    :param mode: ``switch`` or ``absolute``.
+    :param mode: ``split`` or ``mixed``.
     :param activation_name: Base activation name.
-    :param convex_fraction: Fraction of units with convex activation (absolute mode).
+    :param convex_fraction: Fraction of units with convex activation (mixed mode).
     :returns: Output tensor of shape ``(batch, units)``.
-    :raises ValueError: If ``mode`` is not ``switch`` or ``absolute``.
+    :raises ValueError: If ``mode`` is not ``split`` or ``mixed``.
     """
-    if mode == "switch":
+    if mode == "split":
         w_pos = torch.clamp(weights, min=0.0)
         w_neg = torch.clamp(weights, max=0.0)
         return activation(activation_name, x @ w_pos + bias) - activation(
             activation_name, x @ w_neg + bias
         )
-    if mode == "absolute":
+    if mode == "mixed":
         h = x @ torch.abs(weights) + bias
         m = weights.shape[1]
         c = math.ceil(convex_fraction * m)
         left = activation(activation_name, h[:, :c])
         right = concave_reflection(activation_name, h[:, c:])
         return torch.cat([left, right], dim=1)
-    raise ValueError(f"mode must be 'switch' or 'absolute'; got {mode!r}")
+    raise ValueError(f"mode must be 'mixed' or 'split'; got {mode!r}")
 
 
 def monotonic_residual(
@@ -128,7 +128,7 @@ def monotonic_residual(
     :param beta: Raw transform-gate parameter.
     :param mode: Passed to :func:`monotonic_dense`.
     :param activation_name: Base activation name.
-    :param convex_fraction: Fraction of convex units (absolute mode).
+    :param convex_fraction: Fraction of convex units (mixed mode).
     :param alpha_gate: Gate token for the skip path.
     :param beta_gate: Gate token for the transform path.
     :param skip_weight: Optional log-scale skip weight; if given, skip is

@@ -71,28 +71,28 @@ def monotonic_dense(
     :param x: Input tensor of shape ``(batch, in_features)``.
     :param weights: Weight matrix of shape ``(in_features, units)``.
     :param bias: Bias vector of shape ``(units,)``.
-    :param mode: Either ``switch`` or ``absolute``.
+    :param mode: Either ``split`` or ``mixed``.
     :param activation_name: Base activation name (``relu``, ``elu``, ``selu``,
         ``softplus``).
     :param convex_fraction: Fraction of output units that use the convex
         activation; remainder use the concave reflection. Only used for
-        ``absolute`` mode.
+        ``mixed`` mode.
     :returns: Output tensor of shape ``(batch, units)``.
-    :raises ValueError: If `mode` is not ``switch`` or ``absolute``.
+    :raises ValueError: If `mode` is not ``split`` or ``mixed``.
     """
-    if mode == "switch":
+    if mode == "split":
         w_pos = ops.maximum(weights, 0.0)
         w_neg = ops.minimum(weights, 0.0)
         return activation(activation_name, ops.matmul(x, w_pos) + bias) - activation(
             activation_name, ops.matmul(x, w_neg) + bias
         )
-    if mode == "absolute":
+    if mode == "mixed":
         h = ops.matmul(x, ops.abs(weights)) + bias
         c = math.ceil(convex_fraction * int(weights.shape[1]))
         left = activation(activation_name, h[:, :c])
         right = concave_reflection(activation_name, h[:, c:])
         return ops.concatenate([left, right], axis=1)
-    raise ValueError(f"mode must be 'switch' or 'absolute'; got {mode!r}")
+    raise ValueError(f"mode must be 'mixed' or 'split'; got {mode!r}")
 
 
 def monotonic_residual(
@@ -116,11 +116,11 @@ def monotonic_residual(
     :param bias: Bias vector of shape ``(units,)``.
     :param alpha: Unconstrained skip-gate parameter (scalar or broadcastable).
     :param beta: Unconstrained dense-gate parameter (scalar or broadcastable).
-    :param mode: Either ``switch`` or ``absolute``; forwarded to
+    :param mode: Either ``split`` or ``mixed``; forwarded to
         :func:`monotonic_dense`.
     :param activation_name: Base activation name; forwarded to
         :func:`monotonic_dense`.
-    :param convex_fraction: Convex fraction for ``absolute`` mode.
+    :param convex_fraction: Convex fraction for ``mixed`` mode.
     :param alpha_gate: Gate token for the skip path (default ``shifted_elu``).
     :param beta_gate: Gate token for the dense path (default ``softplus``).
     :param skip_weight: Optional projection log-weight matrix of shape

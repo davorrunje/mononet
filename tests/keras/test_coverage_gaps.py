@@ -37,11 +37,11 @@ def test_kernel_dense_rejects_unknown_mode() -> None:
 
 
 def test_residual_get_config_roundtrips() -> None:
-    block = MonoResidual(4, mode="switch", activation="relu")
+    block = MonoResidual(4, mode="split", activation="relu")
     block(ops.zeros((2, 4)))  # build so config fields are populated
     cfg = block.get_config()
     assert cfg["units"] == 4
-    assert cfg["mode"] == "switch"
+    assert cfg["mode"] == "split"
     assert cfg["activation"] == "relu"
     assert cfg["alpha_gate"] == "shifted_elu"
     assert cfg["beta_gate"] == "softplus"

@@ -2,8 +2,8 @@
 
 PR #72 found deep monotone residual stacks beat shallow ones **only** on
 `loan`, the largest dataset. This experiment isolates the cause: it holds
-`loan` fixed and varies the training-set size N, tuning a **deep** (`absolute`
-residual, depth ∈ {6, 10, 16}) and a **shallow** (`absolute` residual, depth ∈
+`loan` fixed and varies the training-set size N, tuning a **deep** (`mixed`
+residual, depth ∈ {6, 10, 16}) and a **shallow** (`mixed` residual, depth ∈
 [1, 4]) arm independently at each N, then reports
 
 $$\Delta(N) = \mathrm{IQM}_{\text{deep}}(N) - \mathrm{IQM}_{\text{shallow}}(N)$$

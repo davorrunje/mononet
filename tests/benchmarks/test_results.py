@@ -14,7 +14,7 @@ def _rows(values: Sequence[float]) -> list[ResultRow]:
         ResultRow(
             dataset="auto",
             backend="torch",
-            mode="switch",
+            mode="split",
             residual=False,
             seed=i,
             scores={"mse": v},

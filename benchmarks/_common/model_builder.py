@@ -133,7 +133,7 @@ def _build_torch(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
             # Linear monotone read-out: `identity` keeps the head a plain
             # monotone affine map (|W|h + b). Any nonlinear activation here
             # (the layer default is ReLU) would force the pre-sigmoid >= 0 in
-            # absolute mode -> constant positive prediction -> base-rate collapse.
+            # mixed mode -> constant positive prediction -> base-rate collapse.
             self.head = MonoLinear(stack_out, 1, mode=cfg.mode, activation="identity")
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -273,7 +273,7 @@ def _build_jax(cfg: BenchmarkConfig, bundle: DatasetBundle, *, seed: int = 0) ->
     raw_mono, prev = _build_jax_stack(cfg, stack_in, rngs)
 
     # Linear monotone read-out (see torch builder): `identity` avoids the
-    # ReLU-head base-rate collapse in absolute mode.
+    # ReLU-head base-rate collapse in mixed mode.
     head = MonoLinear(prev, 1, mode=cfg.mode, activation="identity", rngs=rngs)
     mono_input_layer = MonoInput(MonotonicityMask(signs)) if mono_cols else None
 
@@ -386,7 +386,7 @@ def _build_keras(cfg: BenchmarkConfig, bundle: DatasetBundle) -> Any:
             )(z)
 
     # Linear monotone read-out (see torch builder): `identity` avoids the
-    # ReLU-head base-rate collapse in absolute mode.
+    # ReLU-head base-rate collapse in mixed mode.
     y = MonoDense(1, mode=cfg.mode, activation="identity")(z)
     if binary:
         y = keras.layers.Activation("sigmoid")(y)

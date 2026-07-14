@@ -18,7 +18,7 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 - [Reproducing the paper](paper-reproduction/index.md) — per-dataset notebooks and
   summary tables for all five benchmark datasets from the ICML 2023 paper.
 - [Flavor comparison](flavor-comparison.ipynb) — Phase 2a Optuna HP-search results
-  comparing the four `mode × residual` flavors (`absolute`/`switch` × `plain`/`residual`).
+  comparing the four `mode × residual` flavors (`mixed`/`split` × `plain`/`residual`).
 - [Deep residual accuracy](deep-residual-accuracy.md) — does the now-trainable
   depth (residual `sub_depth=2` skips) improve real-dataset test accuracy over
   the shallow tuned flavors?
@@ -27,7 +27,7 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
 - [Large-dataset screen](large-dataset-screen.md) — max-size deep vs shallow on
   the benchmark roster; gates each dataset to a full ladder study or the
   standard benchmark by the Δ criterion.
-- [Deep-network init](deep-init.ipynb) — the static `absolute` init that fixes moderate-depth
+- [Deep-network init](deep-init.ipynb) — the static `mixed` init that fixes moderate-depth
   trainability, and the deep-depth limitation it does not solve.
 
 ```{toctree}

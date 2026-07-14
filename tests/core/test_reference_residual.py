@@ -21,7 +21,7 @@ def test_warm_start_is_near_identity() -> None:
         b,
         np.array(0.0),
         np.array(0.0),
-        mode="switch",
+        mode="split",
         activation=ActivationSpec("relu"),
         beta_gate="scaled_elu",
     )
@@ -41,7 +41,7 @@ def test_projection_when_dims_differ() -> None:
         b,
         np.array(0.0),
         np.array(0.0),
-        mode="switch",
+        mode="split",
         activation=ActivationSpec("relu"),
         skip_weight=skip,
     )
@@ -57,9 +57,9 @@ def test_residual_is_nondecreasing() -> None:
     bump[:, 0] = 0.4
     act = ActivationSpec("relu")
     y0 = ref.monotonic_residual(
-        x, w, b, np.array(0.3), np.array(0.5), mode="switch", activation=act
+        x, w, b, np.array(0.3), np.array(0.5), mode="split", activation=act
     )
     y1 = ref.monotonic_residual(
-        x + bump, w, b, np.array(0.3), np.array(0.5), mode="switch", activation=act
+        x + bump, w, b, np.array(0.3), np.array(0.5), mode="split", activation=act
     )
     assert np.all(y1 - y0 >= -1e-9)

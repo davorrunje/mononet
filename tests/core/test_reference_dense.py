@@ -21,11 +21,11 @@ def test_switch_reduces_to_abs_weights_in_linear_regime() -> None:
     x = rng.normal(size=(5, 3)).astype(np.float64)
     w = rng.normal(size=(3, 4)).astype(np.float64)
     b = np.zeros(4)
-    y = ref.monotonic_dense(x, w, b, "switch", ActivationSpec("relu"), 0.5)
+    y = ref.monotonic_dense(x, w, b, "split", ActivationSpec("relu"), 0.5)
     assert y.shape == (5, 4)
 
 
-@pytest.mark.parametrize("mode", ["switch", "absolute"])
+@pytest.mark.parametrize("mode", ["split", "mixed"])
 @pytest.mark.parametrize("name", ["relu", "elu", "selu", "softplus"])
 def test_nondecreasing_in_every_input(mode: str, name: str) -> None:
     rng = _rng(7)
@@ -47,8 +47,8 @@ def test_absolute_convex_fraction_endpoints() -> None:
     b = rng.normal(size=6).astype(np.float64)
     spec = ActivationSpec("relu")
     h = x @ np.abs(w) + b
-    all_convex = ref.monotonic_dense(x, w, b, "absolute", spec, 1.0)
-    all_concave = ref.monotonic_dense(x, w, b, "absolute", spec, 0.0)
+    all_convex = ref.monotonic_dense(x, w, b, "mixed", spec, 1.0)
+    all_concave = ref.monotonic_dense(x, w, b, "mixed", spec, 0.0)
     np.testing.assert_allclose(all_convex, ref.base_activation("relu", h))
     np.testing.assert_allclose(all_concave, ref.concave_reflection("relu", h))
 

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 @settings(deadline=None, max_examples=40)
-@given(mode=st.sampled_from(["switch", "absolute"]), seed=st.integers(0, 10_000))
+@given(mode=st.sampled_from(["split", "mixed"]), seed=st.integers(0, 10_000))
 def test_mono_linear_nondecreasing(mode: Mode, seed: int) -> None:
     layer = MonoLinear(3, 4, mode=mode, rngs=nnx.Rngs(seed))
     key = jax.random.key(seed)
