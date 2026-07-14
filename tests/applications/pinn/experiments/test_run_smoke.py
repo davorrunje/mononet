@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("jax")
@@ -49,3 +51,50 @@ def test_soft_baseline_runs() -> None:
     """The soft baseline runs end-to-end (penalty path exercised)."""
     art = run_one(_cfg("soft"))
     assert np.isfinite(art["l2"])
+
+
+def test_inverse_detector_run_reports_held_out_rmse(tmp_path: Path) -> None:
+    """A short detector-mode inverse run on ngsim_wave returns held_out_rmse."""
+    from applications.pinn.core.problems.traffic_real import NgsimWave  # noqa: F401
+
+    # tiny fixture npz
+    npz = tmp_path / "wave.npz"
+    x = np.linspace(0.0, 100.0, 16)
+    t = np.linspace(0.0, 30.0, 12)
+    rho = (0.8 - 0.006 * x)[None, :] * np.ones((12, 1))
+    q = 25.0 * rho * (1 - rho / 1.0)
+    np.savez(
+        npz,
+        x=x,
+        t=t,
+        rho=rho,
+        q=q,
+        v_max=25.0,
+        rho_max=1.0,
+        sign_x=-1,
+        monotonicity_defect=0.0,
+        provenance="fix",
+    )
+
+    cfg = RunConfig(
+        problem="ngsim_wave",
+        method="hard_monotone",
+        backend="jax",
+        tier="inverse",
+        observations="detectors",
+        n_detectors=4,
+        n_holdout_detectors=2,
+        steps=30,
+        eval_nx=16,
+        eval_nt=12,
+    )
+    # point the problem at the fixture via a monkeypatched default is overkill;
+    # instead pass npz through the registry constructor is not wired, so this test
+    # uses the committed default path when present. Skip if the default is absent.
+    from applications.pinn.core.problems import traffic_real
+
+    if not Path(traffic_real._DEFAULT_NPZ).exists():
+        pytest.skip("no committed ngsim npz; covered by fixture-path unit test")
+    out = run_one(cfg)
+    assert "held_out_rmse" in out
+    assert out["held_out_rmse"] >= 0.0

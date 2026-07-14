@@ -34,6 +34,11 @@ class RunConfig:
         (ignored otherwise; the whole point is that only ``soft`` uses it).
     :param eval_nx: Evaluation-grid spatial resolution.
     :param eval_nt: Evaluation-grid temporal resolution.
+    :param observations: Inverse tier: ``"scatter"`` (random cells) or
+        ``"detectors"`` (fixed x-lines observed at all times; real-data mode).
+    :param n_detectors: Detector mode: number of fit detectors.
+    :param n_holdout_detectors: Detector mode: number of disjoint held-out
+        detectors.
     """
 
     problem: str
@@ -62,3 +67,10 @@ class RunConfig:
     data_weight: float = 10.0
     #: Optax global-norm gradient clip (stabilises the constrained-field residual).
     grad_clip: float = 1.0
+    #: Inverse tier: ``"scatter"`` (random cells) or ``"detectors"`` (fixed
+    #: x-lines observed at all times; real-data mode).
+    observations: str = "scatter"
+    #: Detector mode: number of fit detectors.
+    n_detectors: int = 8
+    #: Detector mode: number of disjoint held-out detectors.
+    n_holdout_detectors: int = 4

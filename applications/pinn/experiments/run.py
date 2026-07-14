@@ -104,6 +104,8 @@ class FieldResult:
     :param obs: Inverse-tier observations ``(coords (N, 2), values (N,))``, else
         ``None`` (forward tier).
     :param sign_x: Admissible sign of ``du/dx`` (``+1``/``-1``).
+    :param holdout: Held-out-detector fields ``(coords (M, 2), true (M,),
+        pred (M,))`` when ``cfg.observations == "detectors"``, else ``None``.
     """
 
     x_values: Array
@@ -112,6 +114,7 @@ class FieldResult:
     pred: Array
     obs: tuple[Array, Array] | None
     sign_x: int
+    holdout: tuple[Array, Array, Array] | None = None
 
 
 def predict_field(cfg: RunConfig) -> FieldResult:
@@ -131,20 +134,32 @@ def predict_field(cfg: RunConfig) -> FieldResult:
     x_values, t_values = sampling.eval_grid(domain, cfg.eval_nx, cfg.eval_nt)
     collocation = sampling.collocation(domain, cfg.n_collocation, seed=cfg.seed)
     obs: tuple[Array, Array] | None = None
+    holdout: tuple[Array, Array, Array] | None = None
     if cfg.tier == "inverse":
         # Reconstruct from sparse noisy observations of the reference field.
         ref_field = _ground_truth(
             problem, *(a.ravel() for a in np.meshgrid(x_values, t_values))
         ).reshape(cfg.eval_nt, cfg.eval_nx)
-        obs_coords, obs_vals = sampling.observations(
-            ref_field,
-            x_values,
-            t_values,
-            n_obs=cfg.n_obs,
-            noise_std=cfg.noise_std,
-            seed=cfg.seed + 3,
-        )
-        obs = (obs_coords, obs_vals)
+        if cfg.observations == "detectors":
+            oc, ov, hc, hv = sampling.detector_observations(
+                ref_field,
+                x_values,
+                t_values,
+                n_detectors=cfg.n_detectors,
+                n_holdout=cfg.n_holdout_detectors,
+                seed=cfg.seed + 3,
+            )
+            obs = (oc, ov)
+            holdout = (hc, hv, np.empty(0))  # pred filled after training
+        else:
+            obs = sampling.observations(
+                ref_field,
+                x_values,
+                t_values,
+                n_obs=cfg.n_obs,
+                noise_std=cfg.noise_std,
+                seed=cfg.seed + 3,
+            )
         data = TrainingData(collocation=collocation, obs=obs)
     else:
         ic_pts = sampling.initial_points(domain, cfg.n_ic, seed=cfg.seed + 1)
@@ -164,7 +179,11 @@ def predict_field(cfg: RunConfig) -> FieldResult:
         cfg.eval_nt, cfg.eval_nx
     )
     sign_x = int(problem.admissibility().mask[0])
-    return FieldResult(x_values, t_values, ref, pred, obs, sign_x)
+    if holdout is not None:
+        hc, hv, _ = holdout
+        hpred = _predict(trained, hc, cfg.backend)
+        holdout = (hc, hv, hpred)
+    return FieldResult(x_values, t_values, ref, pred, obs, sign_x, holdout)
 
 
 def run_one(cfg: RunConfig) -> dict[str, Any]:
@@ -182,6 +201,11 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
     # range — i.e. unphysical over/undershoot the reference cannot contain.
     lo, hi = float(ref.min()), float(ref.max())
     oob_frac = float(np.mean((pred < lo) | (pred > hi)))
+    if r.holdout is not None:
+        _, htrue, hpred = r.holdout
+        held_out_rmse = float(np.sqrt(np.mean((hpred - htrue) ** 2)))
+    else:
+        held_out_rmse = 0.0
     return {
         "problem": cfg.problem,
         "method": cfg.method,
@@ -192,6 +216,7 @@ def run_one(cfg: RunConfig) -> dict[str, Any]:
         "admissibility_violation": viol,
         "overshoot": over,
         "oob_frac": oob_frac,
+        "held_out_rmse": held_out_rmse,
     }
 
 
