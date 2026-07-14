@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING
 import torch
 from torch import nn
 
-from mononet.core.init import absolute_init_params
+from mononet.core.init import (
+    absolute_init_params,
+    alternating_init_params,
+    alternating_weight_bias,
+)
 from mononet.core.types import (
     ActivationName,
     ActivationSpec,
@@ -60,18 +64,34 @@ class MonoLinear(nn.Module):
 
     :param in_features: Number of input features.
     :param units: Number of output features.
-    :param mode: `"mixed"` (default) or `"split"`.
+    :param mode: `"mixed"` (default), `"split"`, or `"alternate"`. Under
+        `"alternate"` the layer is a *pure* (all-convex or all-concave) `|W|`
+        layer whose phase and incoming mean are derived from `prev` — see
+        `prev`.
     :param activation: Base activation, one of `"relu"`, `"elu"`, `"selu"`,
         `"softplus"`, `"identity"`, or an `ActivationSpec`. `None` (the
         default) means `"identity"` — a linear monotone map, matching
         `torch.nn.Linear`.
-    :param convex_fraction: Convex-neuron fraction (mixed mode).
+    :param convex_fraction: Convex-neuron fraction (mixed mode). Not
+        configurable under `mode="alternate"` (must be left at `0.5`) — the
+        layer sets it internally to `1.0` or `0.0` depending on phase.
     :param init: Weight initializer name/`InitSpec`/`None` (default `he_normal`).
+        Not configurable under `mode="alternate"` — the layer derives its own
+        composition-aware init.
     :param bias: Whether to include a bias term.
     :param near_zero_scale: Private. When not `None`, the weight is scaled by
         this factor after init and the bias is zeroed — used by
         `MonoResidual` to near-zero-initialize the last layer of its default
         `F`.
+    :param prev: Only valid under `mode="alternate"`. The preceding
+        `MonoLinear` in an alternating stack, or `None` for the entry layer.
+        The layer's phase is the opposite of `prev._alt_convex` (entry is
+        convex), and its incoming per-coordinate mean is `prev._alt_out_mean`
+        (`0.0` for the entry layer). `prev` must itself be an
+        `mode="alternate"` `MonoLinear`; it is not retained after `__init__`.
+    :raises ValueError: If `convex_fraction != 0.5` or `init is not None`
+        under `mode="alternate"`; if `prev` is given under a non-`alternate`
+        mode; if `prev` is given but is not an `alternate`-mode `MonoLinear`.
     """
 
     def __init__(
@@ -85,6 +105,7 @@ class MonoLinear(nn.Module):
         init: InitSpec | str | None = None,
         bias: bool = True,
         near_zero_scale: float | None = None,
+        prev: MonoLinear | None = None,
     ) -> None:
         """Initialise MonoLinear."""
         super().__init__()
@@ -92,23 +113,50 @@ class MonoLinear(nn.Module):
         self.activation_name = (
             "identity" if activation is None else _act_name(activation)
         )
-        self.convex_fraction = convex_fraction
         self.weight = nn.Parameter(torch.empty(in_features, units))
         bias_fill = 0.0
-        if mode == "mixed" and init is None:
-            gain, bias_fill = absolute_init_params(
-                self.activation_name, convex_fraction
-            )
+        if mode == "alternate":
+            if convex_fraction != 0.5:
+                raise ValueError(
+                    "convex_fraction is not configurable for mode='alternate'"
+                )
+            if init is not None:
+                raise ValueError("init is not configurable for mode='alternate'")
+            convex, m_in = self._alternate_phase(prev)
+            self.convex_fraction = 1.0 if convex else 0.0
+            gain, out_mean = alternating_init_params(self.activation_name, m_in, convex)
+            w_std, bias_fill = alternating_weight_bias(gain, m_in, in_features)
+            self._alt_convex = convex
+            self._alt_out_mean = out_mean
             with torch.no_grad():
-                self.weight.normal_(0.0, gain / math.sqrt(in_features))
+                self.weight.normal_(0.0, w_std)
         else:
-            _init_weight(self.weight, init)
+            if prev is not None:
+                raise ValueError("prev is only valid for mode='alternate'")
+            self.convex_fraction = convex_fraction
+            if mode == "mixed" and init is None:
+                gain, bias_fill = absolute_init_params(
+                    self.activation_name, convex_fraction
+                )
+                with torch.no_grad():
+                    self.weight.normal_(0.0, gain / math.sqrt(in_features))
+            else:
+                _init_weight(self.weight, init)
         self.bias = nn.Parameter(torch.full((units,), bias_fill)) if bias else None
         if near_zero_scale is not None:
             with torch.no_grad():
                 self.weight.mul_(near_zero_scale)
                 if self.bias is not None:
                     self.bias.zero_()
+
+    @staticmethod
+    def _alternate_phase(prev: MonoLinear | None) -> tuple[bool, float]:
+        """Return ``(convex, m_in)`` for an alternate layer given its predecessor."""
+        if prev is None:
+            return True, 0.0  # entry: convex, standardized input
+        if getattr(prev, "mode", None) != "alternate":
+            raise ValueError("prev must be an alternate-mode MonoLinear")
+        return (not prev._alt_convex), prev._alt_out_mean
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the monotonic dense transformation."""
@@ -117,8 +165,14 @@ class MonoLinear(nn.Module):
             if self.bias is not None
             else torch.zeros(self.weight.shape[1], dtype=x.dtype, device=x.device)
         )
+        kernel_mode = "mixed" if self.mode == "alternate" else self.mode
         return _kernels.monotonic_dense(
-            x, self.weight, bias, self.mode, self.activation_name, self.convex_fraction
+            x,
+            self.weight,
+            bias,
+            kernel_mode,
+            self.activation_name,
+            self.convex_fraction,
         )
 
 
@@ -134,7 +188,9 @@ class MonoResidual(nn.Module):
         ``beta_gate="scaled_elu"``) to avoid divergence at init. Mutually
         exclusive with `sub_depth`.
     :param mode: Mode for the default `F`. `"mixed"` (default) or
-        `"split"`.
+        `"split"`. `"alternate"` is rejected: the default `F` builder can't
+        thread `prev=` through its `MonoLinear` layers, so pass a custom `F`
+        built from `prev`-chained alternate `MonoLinear` layers instead.
     :param activation: Activation for the default `F` (default `None`).
         Required when `F` is not provided; mutually exclusive with an
         explicit `F`.
@@ -152,7 +208,8 @@ class MonoResidual(nn.Module):
         `|W|`, whose gradient at `W=0` is `sign(0)=0`, a fixed point that
         freezes the weights. A custom `F` is untouched.
     :raises ValueError: If `F` is `None` and `activation` is not provided,
-        or if both `F` and `activation` are provided.
+        or if both `F` and `activation` are provided, or if `mode` is
+        `"alternate"`.
     """
 
     def __init__(
@@ -176,6 +233,11 @@ class MonoResidual(nn.Module):
             behaviour). Must be >= 1. Mutually exclusive with `F`.
         """
         super().__init__()
+        if mode == "alternate":
+            raise ValueError(
+                "mode='alternate' is not supported in MonoResidual; build a custom "
+                "F of alternate MonoLinear layers chained with prev= instead"
+            )
         if sub_depth is not None and sub_depth < 1:
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
         if F is not None and sub_depth is not None:

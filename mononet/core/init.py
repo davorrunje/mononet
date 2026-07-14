@@ -8,6 +8,7 @@ layer-mean-centering ``bias`` for ``mode="mixed"``.
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -133,3 +134,47 @@ def absolute_init_params(
         bias = _solve_bias(name, gain, convex_fraction)
         gain = _solve_gain(name, bias)
     return gain, bias
+
+
+def alternating_init_params(
+    activation: ActivationSpec | str, m_in: float, convex: bool
+) -> tuple[float, float]:
+    """Derive ``(gain, out_mean)`` for one layer of the ``alternate`` construction.
+
+    Composition-aware, pre-activation-centering init for a *pure* (all-convex or
+    all-concave) ``|W|`` layer whose input has per-coordinate mean ``m_in`` and unit
+    variance. Reuses the ``mixed`` unit-variance gain ``G`` (:func:`_solve_gain`):
+    forcing unit *output* variance fixes the pre-activation std to ``G`` regardless of
+    ``m_in``, so ``gain = G / s`` with ``s = sqrt(1 + m_in**2 * (1 - 2/pi))``. The
+    per-coordinate output mean is a per-activation constant ``E[act(G*H)]``, signed by
+    the layer's class; feed it back as the next layer's ``m_in``.
+
+    :param activation: Base activation name or :class:`ActivationSpec`.
+    :param m_in: Per-coordinate mean of the layer input (``0.0`` for the entry layer).
+    :param convex: Whether this layer uses the convex activation (else its concave
+        reflection).
+    :returns: ``(gain, out_mean)``.
+    :raises ValueError: If the activation is unknown.
+    """
+    name = activation if isinstance(activation, str) else activation.name
+    _act(name, np.zeros(1))  # validate name early (raises on unknown)
+    g_unit = _solve_gain(name, 0.0)
+    out_convex = _expect(name, 0.0, g_unit, moment=1)
+    s = math.sqrt(1.0 + m_in * m_in * (1.0 - 2.0 / math.pi))
+    gain = g_unit / s
+    return gain, (out_convex if convex else -out_convex)
+
+
+def alternating_weight_bias(
+    gain: float, m_in: float, fan_in: int
+) -> tuple[float, float]:
+    """Weight std and pre-activation-centering bias for an ``alternate`` layer.
+
+    :param gain: Per-layer gain from :func:`alternating_init_params`.
+    :param m_in: Per-coordinate mean of the layer input.
+    :param fan_in: Number of input features.
+    :returns: ``(weight_std, bias)`` — ``weight_std = gain / sqrt(fan_in)``,
+        ``bias = -gain * sqrt(2/pi) * sqrt(fan_in) * m_in``.
+    """
+    root_fan = math.sqrt(fan_in)
+    return gain / root_fan, -gain * math.sqrt(2.0 / math.pi) * root_fan * m_in

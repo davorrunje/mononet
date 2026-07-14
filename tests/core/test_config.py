@@ -91,6 +91,15 @@ def test_old_mode_names_rejected_with_hint(old: str, new: str) -> None:
         )
 
 
+def test_alternate_mode_accepted() -> None:
+    from mononet.core.config import MonoConfig
+
+    cfg = MonoConfig(units=4, mode="alternate")
+    assert cfg.mode == "alternate"
+    assert cfg.to_dict()["mode"] == "alternate"
+    assert MonoConfig.from_json(cfg.to_json()).mode == "alternate"
+
+
 def test_from_dict_rejects_old_mode() -> None:
     with pytest.raises(ValueError, match="mixed"):
         MonoConfig.from_dict(
