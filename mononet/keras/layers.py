@@ -10,7 +10,11 @@ import keras
 import numpy as np
 from keras import ops
 
-from mononet.core.init import absolute_init_params
+from mononet.core.init import (
+    absolute_init_params,
+    alternating_init_params,
+    alternating_weight_bias,
+)
 from mononet.core.types import (
     ActivationName,
     ActivationSpec,
@@ -53,20 +57,44 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
     by the ``split`` or ``mixed`` mode, as described in the paper.
 
     :param units: Output dimensionality.
-    :param mode: One of ``mixed`` (default) or ``split``.
+    :param mode: One of ``mixed`` (default), ``split``, or ``alternate``.
+        Under ``alternate`` the layer is a *pure* (all-convex or all-concave)
+        ``|W|`` layer whose phase and incoming mean are derived from ``prev``
+        — see ``prev``.
     :param activation: Base activation, one of ``"relu"``, ``"elu"``,
         ``"selu"``, ``"softplus"``, ``"identity"``, or an
         :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
         means ``"identity"`` — a linear monotone map, matching
         ``keras.layers.Dense``.
     :param convex_fraction: Fraction of output units using the convex branch
-        (only used in ``mixed`` mode).
+        (only used in ``mixed`` mode). Not configurable under
+        ``mode="alternate"`` (must be left at ``0.5``) — the layer sets it
+        internally to ``1.0`` or ``0.0`` depending on phase.
     :param init: Initializer name or :class:`~mononet.core.types.InitSpec`.
+        Not configurable under ``mode="alternate"`` — the layer derives its
+        own composition-aware init.
     :param bias: Whether to include a bias term (default ``True``).
     :param near_zero_scale: Private. When not ``None``, the weight is scaled
         by this factor after init and the bias is zeroed — used by
         :class:`MonoResidual` to near-zero-initialize the last layer of its
         default ``F``.
+    :param prev: Only valid under ``mode="alternate"``. The preceding
+        ``MonoDense`` in an alternating stack, or ``None`` for the entry
+        layer. The layer's phase is the opposite of ``prev._alt_convex``
+        (entry is convex), and its incoming per-coordinate mean is
+        ``prev._alt_out_mean`` (``0.0`` for the entry layer). ``prev`` must
+        itself be a ``mode="alternate"`` ``MonoDense``. Because Keras builds
+        weights lazily, only the fan-in-independent part of the chain
+        (phase, incoming mean, gain, outgoing mean) is resolved here; the
+        fan-in-dependent weight std / bias fill are computed in
+        :meth:`build`. ``prev`` is an init-time reference only — it is not
+        retained on ``self`` and is *not* serialized by :meth:`get_config`,
+        so a layer deserialized from config loses its ``alternate`` chain
+        (re-chaining is a build-time concern, not a config concern).
+    :raises ValueError: If ``convex_fraction != 0.5`` or ``init is not
+        None`` under ``mode="alternate"``; if ``prev`` is given under a
+        non-``alternate`` mode; if ``prev`` is given but is not an
+        ``alternate``-mode ``MonoDense``.
     """
 
     def __init__(
@@ -79,6 +107,7 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         init: InitSpec | str | None = None,
         bias: bool = True,
         near_zero_scale: float | None = None,
+        prev: MonoDense | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialise MonoDense."""
@@ -93,6 +122,39 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         self._absolute_default = mode == "mixed" and init is None
         self.use_bias = bias
         self.near_zero_scale = near_zero_scale
+        self._is_alternate = mode == "alternate"
+        if self._is_alternate:
+            if convex_fraction != 0.5:
+                raise ValueError(
+                    "convex_fraction is not configurable for mode='alternate'"
+                )
+            if init is not None:
+                raise ValueError("init is not configurable for mode='alternate'")
+            convex, self._alt_m_in = self._alternate_phase(prev)
+            self.convex_fraction = 1.0 if convex else 0.0
+            self._alt_gain, out_mean = alternating_init_params(
+                self.activation_name, self._alt_m_in, convex
+            )
+            self._alt_convex = convex
+            self._alt_out_mean = out_mean
+        elif prev is not None:
+            raise ValueError("prev is only valid for mode='alternate'")
+
+    @staticmethod
+    def _alternate_phase(prev: MonoDense | None) -> tuple[bool, float]:
+        """Return ``(convex, m_in)`` for an alternate layer given its predecessor.
+
+        :param prev: Preceding ``alternate``-mode ``MonoDense``, or ``None``
+            for the entry layer.
+        :returns: ``(convex, m_in)`` for this layer.
+        :raises ValueError: If ``prev`` is given but is not an
+            ``alternate``-mode ``MonoDense``.
+        """
+        if prev is None:
+            return True, 0.0  # entry: convex, standardized input
+        if getattr(prev, "mode", None) != "alternate":
+            raise ValueError("prev must be an alternate-mode MonoDense")
+        return (not prev._alt_convex), prev._alt_out_mean
 
     def build(self, input_shape: Any) -> None:
         """Create weights once the input width is known.
@@ -100,7 +162,13 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         :param input_shape: Shape tuple; ``input_shape[-1]`` is ``in_features``.
         """
         in_f = int(input_shape[-1])
-        if self._absolute_default:
+        if self._is_alternate:
+            w_std, bias_fill = alternating_weight_bias(
+                self._alt_gain, self._alt_m_in, in_f
+            )
+            w_init = keras.initializers.RandomNormal(stddev=w_std)
+            b_init = keras.initializers.Constant(bias_fill)
+        elif self._absolute_default:
             gain, bias_fill = absolute_init_params(
                 self.activation_name, self.convex_fraction
             )
@@ -135,17 +203,23 @@ class MonoDense(keras.layers.Layer):  # type: ignore[misc]
         :returns: Output tensor of shape ``(batch, units)``.
         """
         bias = self.b if self.b is not None else ops.zeros((self.units,))
+        kernel_mode = "mixed" if self.mode == "alternate" else self.mode
         return _kernels.monotonic_dense(
             inputs,
             self.w,
             bias,
-            self.mode,
+            kernel_mode,
             self.activation_name,
             self.convex_fraction,
         )
 
     def get_config(self) -> dict[str, Any]:
         """Serialize token/scalar fields (callables are not serializable).
+
+        ``prev`` (an init-time-only reference; see ``__init__``) is
+        deliberately not part of the config: a deserialized ``alternate``
+        layer loses its chain and must be re-``prev``-chained by the caller
+        if reused as a template for further layers.
 
         :returns: Config dict suitable for :meth:`from_config`.
         """
@@ -176,7 +250,10 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         its last layer near zero (or pass ``beta_gate="scaled_elu"``) to avoid
         divergence at init.
     :param mode: Forwarded to the default ``F``. ``mixed`` (default) or
-        ``split``.
+        ``split``. ``alternate`` is rejected: the default ``F`` builder can't
+        thread ``prev=`` through its ``MonoDense`` layers, so pass a custom
+        ``F`` built from ``prev``-chained alternate ``MonoDense`` layers
+        instead.
     :param activation: Forwarded to the default ``F`` (default ``None``).
         Required when ``F`` is not provided; mutually exclusive with an
         explicit ``F``. A custom ``F`` is not serializable, so
@@ -194,7 +271,8 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
         uses ``|W|``, whose gradient at ``W=0`` is ``sign(0)=0``, a fixed
         point that freezes the weights. A custom ``F`` is untouched.
     :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
-        provided, or if both ``F`` and ``activation`` are provided.
+        provided, or if both ``F`` and ``activation`` are provided, or if
+        ``mode`` is ``"alternate"``.
     """
 
     def __init__(
@@ -218,6 +296,11 @@ class MonoResidual(keras.layers.Layer):  # type: ignore[misc]
             behaviour.  Mutually exclusive with ``F``.
         """
         super().__init__(**kwargs)
+        if mode == "alternate":
+            raise ValueError(
+                "mode='alternate' is not supported in MonoResidual; build a custom "
+                "F of alternate MonoDense layers chained with prev= instead"
+            )
         self.units = units
         self.mode = mode
         self.init_name = _init_name(init)
