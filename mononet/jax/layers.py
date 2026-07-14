@@ -11,7 +11,11 @@ import jax.numpy as jnp
 import numpy as np
 from flax import nnx
 
-from mononet.core.init import absolute_init_params
+from mononet.core.init import (
+    absolute_init_params,
+    alternating_init_params,
+    alternating_weight_bias,
+)
 from mononet.core.types import (
     ActivationName,
     ActivationSpec,
@@ -67,19 +71,38 @@ class MonoLinear(nnx.Module):
 
     :param in_features: Number of input features.
     :param units: Number of output units.
-    :param mode: ``mixed`` (default) or ``split``.
+    :param mode: ``"mixed"`` (default), ``"split"``, or ``"alternate"``.
+        Under ``"alternate"`` the layer is a *pure* (all-convex or
+        all-concave) ``|W|`` layer whose phase and incoming mean are derived
+        from ``prev`` — see ``prev``.
     :param activation: Base activation, one of ``"relu"``, ``"elu"``,
         ``"selu"``, ``"softplus"``, ``"identity"``, or an
         :class:`~mononet.core.types.ActivationSpec`. ``None`` (the default)
         means ``"identity"`` — a linear monotone map, matching ``nnx.Linear``.
     :param convex_fraction: Fraction of convex units (``mixed`` mode only).
-    :param init: Weight initializer; defaults to ``he_normal``.
+        Not configurable under ``mode="alternate"`` (must be left at
+        ``0.5``) — the layer sets it internally to ``1.0`` or ``0.0``
+        depending on phase.
+    :param init: Weight initializer; defaults to ``he_normal``. Not
+        configurable under ``mode="alternate"`` — the layer derives its own
+        composition-aware init.
     :param bias: Whether to include a bias vector.
     :param near_zero_scale: Private. When not ``None``, the weight is scaled
         by this factor after init and the bias is zeroed — used by
         ``MonoResidual`` to near-zero-initialize the last layer of its
         default ``F``.
+    :param prev: Only valid under ``mode="alternate"``. The preceding
+        ``MonoLinear`` in an alternating stack, or ``None`` for the entry
+        layer. The layer's phase is the opposite of ``prev._alt_convex``
+        (entry is convex), and its incoming per-coordinate mean is
+        ``prev._alt_out_mean`` (``0.0`` for the entry layer). ``prev`` must
+        itself be a ``mode="alternate"`` ``MonoLinear``; it is not retained
+        after ``__init__``.
     :param rngs: Flax NNX RNG container.
+    :raises ValueError: If ``convex_fraction != 0.5`` or ``init is not
+        None`` under ``mode="alternate"``; if ``prev`` is given under a
+        non-``alternate`` mode; if ``prev`` is given but is not an
+        ``alternate``-mode ``MonoLinear``.
     """
 
     def __init__(
@@ -93,6 +116,7 @@ class MonoLinear(nnx.Module):
         init: InitSpec | str | None = None,
         bias: bool = True,
         near_zero_scale: float | None = None,
+        prev: MonoLinear | None = None,
         rngs: nnx.Rngs,
     ) -> None:
         """Initialise MonoLinear with weights and optional bias."""
@@ -100,18 +124,36 @@ class MonoLinear(nnx.Module):
         self.activation_name = (
             "identity" if activation is None else _act_name(activation)
         )
-        self.convex_fraction = convex_fraction
         bias_fill = 0.0
-        if mode == "mixed" and init is None:
-            gain, bias_fill = absolute_init_params(
-                self.activation_name, convex_fraction
-            )
-            w = jinit.normal(stddev=gain / math.sqrt(in_features))(
-                rngs.params(), (in_features, units)
-            )
+        if mode == "alternate":
+            if convex_fraction != 0.5:
+                raise ValueError(
+                    "convex_fraction is not configurable for mode='alternate'"
+                )
+            if init is not None:
+                raise ValueError("init is not configurable for mode='alternate'")
+            convex, m_in = self._alternate_phase(prev)
+            self.convex_fraction = 1.0 if convex else 0.0
+            gain, out_mean = alternating_init_params(self.activation_name, m_in, convex)
+            w_std, bias_fill = alternating_weight_bias(gain, m_in, in_features)
+            self._alt_convex = convex
+            self._alt_out_mean = out_mean
+            w = jinit.normal(stddev=w_std)(rngs.params(), (in_features, units))
             self.weight = nnx.Param(w)
         else:
-            self.weight = nnx.Param(_init_array((in_features, units), init, rngs))
+            if prev is not None:
+                raise ValueError("prev is only valid for mode='alternate'")
+            self.convex_fraction = convex_fraction
+            if mode == "mixed" and init is None:
+                gain, bias_fill = absolute_init_params(
+                    self.activation_name, convex_fraction
+                )
+                w = jinit.normal(stddev=gain / math.sqrt(in_features))(
+                    rngs.params(), (in_features, units)
+                )
+                self.weight = nnx.Param(w)
+            else:
+                self.weight = nnx.Param(_init_array((in_features, units), init, rngs))
         self.bias: nnx.Param[jnp.ndarray] | None = (
             nnx.Param(jnp.full((units,), bias_fill)) if bias else None
         )
@@ -119,6 +161,15 @@ class MonoLinear(nnx.Module):
             self.weight[...] = self.weight[...] * near_zero_scale
             if self.bias is not None:
                 self.bias[...] = jnp.zeros_like(self.bias[...])
+
+    @staticmethod
+    def _alternate_phase(prev: MonoLinear | None) -> tuple[bool, float]:
+        """Return ``(convex, m_in)`` for an alternate layer given its predecessor."""
+        if prev is None:
+            return True, 0.0  # entry: convex, standardized input
+        if getattr(prev, "mode", None) != "alternate":
+            raise ValueError("prev must be an alternate-mode MonoLinear")
+        return (not prev._alt_convex), prev._alt_out_mean
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         """Apply the monotonic dense transformation.
@@ -131,11 +182,12 @@ class MonoLinear(nnx.Module):
             if self.bias is not None
             else jnp.zeros((self.weight[...].shape[1],), dtype=x.dtype)
         )
+        kernel_mode = "mixed" if self.mode == "alternate" else self.mode
         return _kernels.monotonic_dense(
             x,
             self.weight[...],
             bias,
-            self.mode,
+            kernel_mode,
             self.activation_name,
             self.convex_fraction,
         )
@@ -151,7 +203,11 @@ class MonoResidual(nnx.Module):
         A custom ``F`` is not near-zero-initialised; for deep stacks initialise
         its last layer near zero (or pass ``beta_gate="scaled_elu"``) to avoid
         divergence at init.
-    :param mode: ``mixed`` (default) or ``split``.
+    :param mode: Mode for the default ``F``. ``"mixed"`` (default) or
+        ``"split"``. ``"alternate"`` is rejected: the default ``F`` builder
+        can't thread ``prev=`` through its ``MonoLinear`` layers, so pass a
+        custom ``F`` built from ``prev``-chained alternate ``MonoLinear``
+        layers instead.
     :param activation: Base activation name or spec for the default ``F``
         (default ``None``). Required when ``F`` is not provided; mutually
         exclusive with an explicit ``F``.
@@ -170,7 +226,8 @@ class MonoResidual(nnx.Module):
         point that freezes the weights. A custom ``F`` is untouched.
     :param rngs: Flax NNX RNG container.
     :raises ValueError: If ``F`` is ``None`` and ``activation`` is not
-        provided, or if both ``F`` and ``activation`` are provided.
+        provided, or if both ``F`` and ``activation`` are provided, or if
+        ``mode`` is ``"alternate"``.
     """
 
     def __init__(
@@ -189,6 +246,11 @@ class MonoResidual(nnx.Module):
         rngs: nnx.Rngs,
     ) -> None:
         """Initialise MonoResidual with sublayer F and scalar gate params."""
+        if mode == "alternate":
+            raise ValueError(
+                "mode='alternate' is not supported in MonoResidual; build a custom "
+                "F of alternate MonoLinear layers chained with prev= instead"
+            )
         if sub_depth is not None and sub_depth < 1:
             raise ValueError(f"sub_depth must be >= 1, got {sub_depth}")
         if F is not None and sub_depth is not None:
