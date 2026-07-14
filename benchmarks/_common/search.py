@@ -93,6 +93,9 @@ def search(
     search_seeds: int = 3,
     metric: str | None = None,
     storage: str | None = None,
+    search_activation: bool = False,
+    max_depth: int = 4,
+    embed_layers: int = 1,
 ) -> StudyResult:
     """Tune (dataset, flavor) HPs by a **stability-aware** k-fold CV objective.
 
@@ -120,6 +123,9 @@ def search(
             metric=metric,  # type: ignore[arg-type]
             n_train=int(bundle.X_train.shape[0]),
             deep=deep,
+            search_activation=search_activation,
+            max_depth=max_depth,
+            embed_layers=embed_layers,
         )
         cfg = dataclasses.replace(cfg, seeds=tuple(range(search_seeds)))
         scores: list[float] = []
@@ -160,6 +166,7 @@ def final_eval(
     metric: str | None = None,
     seeds: Iterable[int] = range(10),
     epochs: int = 50,
+    embed_layers: int = 1,
 ) -> tuple[Aggregate, list[ResultRow]]:
     """Refit best HPs on the full train split; report TEST mean±std over all seeds.
 
@@ -182,9 +189,9 @@ def final_eval(
         residual=residual,  # type: ignore[arg-type]
         depth=int(best_params["depth"]),
         width=width,
-        activation="elu",
+        activation=str(best_params.get("activation", "elu")),  # type: ignore[arg-type]
         convex_fraction=float(best_params.get("convex_fraction", 0.5)),
-        embed_hidden=(width,),
+        embed_hidden=tuple(width for _ in range(embed_layers)),
         dropout=float(best_params["dropout"]),
         optimizer=OptimizerSpec(
             "adam", float(best_params["lr"]), float(best_params["weight_decay"])
@@ -195,6 +202,7 @@ def final_eval(
         early_stopping=None,
         seeds=tuple(seeds),
         metrics=metrics,  # type: ignore[arg-type]
+        alt_init="composition" if mode == "alternate" else None,
     )
     rows = run(cfg, bundle)
     agg = aggregate(
@@ -336,6 +344,9 @@ def run_dataset(
     data_dir: Path | None = None,
     out_dir: Path | None = None,
     storage_dir: Path | None = None,
+    search_activation: bool = False,
+    max_depth: int = 4,
+    embed_layers: int = 1,
 ) -> list[Path]:
     """Search + final_eval each flavor of one dataset; write per-flavor JSON.
 
@@ -373,6 +384,9 @@ def run_dataset(
             n_splits=n_splits,
             search_seeds=search_seeds,
             storage=storage,
+            search_activation=search_activation,
+            max_depth=max_depth,
+            embed_layers=embed_layers,
         )
         agg, eval_rows = final_eval(
             bundle,
@@ -382,6 +396,7 @@ def run_dataset(
             backend=backend,
             seeds=final_seeds,
             epochs=epochs,
+            embed_layers=embed_layers,
         )
         base_rate = max(
             float(np.mean(bundle.y_test)), 1.0 - float(np.mean(bundle.y_test))

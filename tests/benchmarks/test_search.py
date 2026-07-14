@@ -211,3 +211,67 @@ def test_run_dataset_persists_secondary_accuracy_for_classification(
     sec = rec["secondary"]["accuracy"]
     assert np.isfinite(sec["iqm"])
     assert len(sec["values"]) == 3
+
+
+def _tiny_reg_bundle() -> DatasetBundle:
+    rng = np.random.default_rng(0)
+    x = rng.uniform(-1, 1, (80, 3)).astype("float32")
+    y = x.sum(1).astype("float32")
+    return DatasetBundle(
+        name="t",
+        task="regression",
+        X_train=x,
+        y_train=y,
+        X_test=x,
+        y_test=y,
+        mono_increasing=(0, 1, 2),
+        mono_decreasing=(),
+        feature_names=("a", "b", "c"),
+        metadata={},
+    )
+
+
+def test_final_eval_honors_activation_and_alt_init() -> None:
+    b = _tiny_reg_bundle()
+    params = {
+        "width": 8,
+        "depth": 2,
+        "dropout": 0.0,
+        "lr": 1e-2,
+        "weight_decay": 0.0,
+        "lr_decay": 1.0,
+        "batch_size": 32,
+        "activation": "relu",
+    }
+    _agg, rows = final_eval(
+        b,
+        params,
+        mode="alternate",
+        residual=False,
+        backend="torch",
+        seeds=range(2),
+        epochs=2,
+        embed_layers=2,
+    )
+    assert len(rows) == 2
+    assert all("mse" in r.scores for r in rows)
+
+
+def test_search_alternate_shallow_runs() -> None:
+    b = _tiny_reg_bundle()
+    res = search(
+        b,
+        mode="alternate",
+        residual=False,
+        backend="torch",
+        n_trials=2,
+        epochs=2,
+        n_splits=2,
+        search_seeds=1,
+        search_activation=True,
+        max_depth=3,
+        embed_layers=2,
+    )
+    assert res.flavor == "alternate-plain"
+    assert 1 <= res.best_params["depth"] <= 3
+    assert res.best_params["activation"] in ("relu", "elu", "softplus", "selu")
