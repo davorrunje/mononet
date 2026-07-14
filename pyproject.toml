@@ -84,7 +84,7 @@ lint = [
     "types-setuptools==83.0.0.20260706",
     "ruff==0.15.21",
     "bandit==1.9.4",
-    "semgrep==1.168.0",
+    "semgrep==1.169.0",
     "codespell==2.4.2",
     "detect-secrets==1.5.0",
 ]
