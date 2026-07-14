@@ -32,6 +32,7 @@ _FLAVS = [
     "mixed-residual",
     "mixed-deep",
 ]
+_DETAIL_FLAVS = ["split-plain", "mixed-plain", "alternate-plain"]
 
 
 def _layers(flavor: str, depth: int) -> int:
@@ -137,6 +138,107 @@ def _render_verdict_section(
     return out
 
 
+def _detail_winner(d: dict[str, dict[str, Any]], ds: str, lower: bool) -> str | None:
+    """Flavor with the best IQM among the present detailed-table flavors."""
+    present = [(fl, d[fl]) for fl in _DETAIL_FLAVS if d.get(fl)]
+    if not present:
+        return None
+    scored = [(fl, _stats(r, ds)[3]) for fl, r in present]
+    return (min if lower else max)(scored, key=lambda t: t[1])[0]
+
+
+def _detail_rows_cell(d: dict[str, dict[str, Any]]) -> str:
+    """``n_train`` (with thousands separator) from the first record that has it."""
+    for fl in _DETAIL_FLAVS:
+        r = d.get(fl)
+        if r is not None:
+            n_train = r.get("n_train")
+            return f"{n_train:,}" if n_train is not None else "—"
+    return "—"
+
+
+def _detail_hp_cells(bp: dict[str, Any], fl: str) -> list[str]:
+    """``act/layers/width/lr/wdec/drop/lrdec/batch`` cells from ``best_params``.
+
+    ``activation`` is guarded with a fallback: it is absent from result JSONs
+    written before the activation search was added (e.g. ``phase2``).
+    """
+    return [
+        str(bp.get("activation", "—")),
+        str(_layers(fl, bp["depth"])),
+        str(bp["width"]),
+        f"{bp['lr']:.4f}",
+        f"{bp['weight_decay']:.3f}",
+        f"{bp['dropout']:.2f}",
+        f"{bp['lr_decay']:.3f}",
+        str(bp["batch_size"]),
+    ]
+
+
+def _detail_row(
+    ds: str,
+    label: str,
+    rows_cell: str,
+    fl: str,
+    r: dict[str, Any] | None,
+    is_winner: bool,
+) -> str:
+    """Render one row of the detailed table for a single ``(dataset, flavor)``."""
+    name = fl.removesuffix("-plain")
+    if r is None:
+        blanks = [""] * 9
+        cells = [label, rows_cell, name, "_running_", *blanks, "⏳"]
+        return "| " + " | ".join(cells) + " |"
+    me, sd, _, iqm = _stats(r, ds)
+    iqmc = _num(iqm, ds)
+    if is_winner:
+        name = f"{name} 🥇"
+        iqmc = f"**{iqmc}**"
+    cells = [
+        label,
+        rows_cell,
+        name,
+        iqmc,
+        f"{_num(me, ds)} ± {_num(sd, ds)}",
+        *_detail_hp_cells(r["best_params"], fl),
+        "✅",
+    ]
+    return "| " + " | ".join(cells) + " |"
+
+
+def render_detailed(root: Path | None = None) -> str:
+    """Return a detailed per-flavor Markdown table (data size, HPs, winner medal).
+
+    One row per ``(dataset, flavor)`` for the plain-only flavors ``split``,
+    ``mixed``, ``alternate``. The per-dataset best IQM (direction taken from
+    :data:`_DISP`) is marked with a 🥇 and bolded; flavors missing from the
+    result JSONs (partial runs) render as ``_running_`` / ``⏳``.
+
+    :param root: Directory containing per-flavor result JSONs. Defaults to
+        ``benchmarks/results/phase2``.
+    :returns: The rendered Markdown table.
+    """
+    rows = _load(root)
+    out = [
+        "| dataset | rows | flavor | IQM | mean ± std | act | layers | width "
+        "| lr | wdec | drop | lrdec | batch | done |",
+        "|---|--:|---|--:|--:|---|--:|--:|--:|--:|--:|--:|--:|:-:|",
+    ]
+    for ds in _ORDER:
+        d = rows.get(ds, {})
+        if not d:
+            continue
+        m, arrow = _DISP[ds]
+        lower = m in ("MSE", "RMSE")
+        winner = _detail_winner(d, ds, lower)
+        rows_cell = _detail_rows_cell(d)
+        for i, fl in enumerate(_DETAIL_FLAVS):
+            label = f"{ds} ({m} {arrow})" if i == 0 else ""
+            rc = rows_cell if i == 0 else ""
+            out.append(_detail_row(ds, label, rc, fl, d.get(fl), fl == winner))
+    return "\n".join(out)
+
+
 def render(root: Path | None = None) -> str:
     """Return the main + robustness Markdown tables as one string.
 
@@ -206,8 +308,17 @@ def render(root: Path | None = None) -> str:
 
 
 def main() -> None:
-    """Print the rendered tables to stdout."""
-    print(render())  # noqa: T201
+    """Print the rendered tables to stdout.
+
+    Pass ``--detailed`` to print :func:`render_detailed` instead of the
+    default compact :func:`render` output.
+    """
+    import sys
+
+    if "--detailed" in sys.argv[1:]:
+        print(render_detailed())  # noqa: T201
+    else:
+        print(render())  # noqa: T201
 
 
 if __name__ == "__main__":

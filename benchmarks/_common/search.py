@@ -443,6 +443,7 @@ def run_dataset(
             ),
             "n_diverged": sum(1 for r in eval_rows if r.diverged),
             "n_seeds": agg.n_seeds,
+            "n_train": int(bundle.X_train.shape[0]),
         }
         path = out_dir / f"{dataset}-{fname}.json"
         path.write_text(json.dumps(rec, indent=2) + "\n")
