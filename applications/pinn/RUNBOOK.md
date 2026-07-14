@@ -118,6 +118,17 @@ uv run python -m applications.pinn.experiments.figures --real
 same detector observations) — no separate `baselines.py` CLI run is needed for
 the real-data panel.
 
+**Tune the ASM baseline at this gate (do not trust the defaults).** The inline
+Adaptive Smoothing Method is currently wired with `v_cong = -v_max` (Greenshields
+ties the congested backward-wave speed to `-v_max`, which is unrealistically fast;
+real congested waves are ~-5 m/s) and a congestion blend whose `dv`/`v_thr`
+thresholds are speed-scale while it operates on a **density** field — so on real
+data the blend degenerates toward a symmetric average and ASM is an unfairly weak
+comparator. Before reporting numbers, set a realistic congested wave speed and
+scale the blend to the density range (eyeball the reconstruction figure), so the
+"hard-monotone beats ASM" comparison is fair. See the final-review note in
+`.superpowers/sdd/progress.md` (Important-1) for specifics.
+
 `results/real-ngsim.json` does not record the detector counts used to produce
 it (`run_panel`'s output only carries tuned per-method params). Step 2's
 `--n-detectors`/`--n-holdout-detectors` must therefore match the constants
