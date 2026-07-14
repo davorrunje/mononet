@@ -20,8 +20,8 @@ Source papers live under [docs/references/](docs/references/). PDFs are accompan
 
 | Paper | Implements | Files |
 |---|---|---|
-| Runje & Shankaranarayana, *Constrained Monotonic Neural Networks*, ICML 2023 — arXiv:2205.11775 | The base CMFCL (`mode="absolute"`): `\|W\|_t` weight constraint. Paper uses a 3-class activation split `(s̆, ŝ, s̃)`; `mononet` uses a 2-class convex/concave split (see digest). | [PDF](docs/references/2205.11775v4.pdf) · [digest](docs/references/2205.11775-runje-2023-constrained-mnn.md) |
-| Sartor et al., *Advancing Constrained Monotonic Neural Networks*, ICML 2025 — arXiv:2505.02537 | The activation switch (`mode="switch"`): `f̂(x)=σ(W⁺x+b)−σ(W⁻x+b)`, no activation-split tuning. | [PDF](docs/references/2505.02537v2.pdf) · [digest](docs/references/2505.02537-sartor-2025-advancing-cmnn.md) |
+| Runje & Shankaranarayana, *Constrained Monotonic Neural Networks*, ICML 2023 — arXiv:2205.11775 | The base CMFCL (`mode="mixed"`): `\|W\|_t` weight constraint. Paper uses a 3-class activation split `(s̆, ŝ, s̃)`; `mononet` uses a 2-class convex/concave split (see digest). | [PDF](docs/references/2205.11775v4.pdf) · [digest](docs/references/2205.11775-runje-2023-constrained-mnn.md) |
+| Sartor et al., *Advancing Constrained Monotonic Neural Networks*, ICML 2025 — arXiv:2505.02537 | The activation switch (`mode="split"`): `f̂(x)=σ(W⁺x+b)−σ(W⁻x+b)`, no activation-split tuning. | [PDF](docs/references/2505.02537v2.pdf) · [digest](docs/references/2505.02537-sartor-2025-advancing-cmnn.md) |
 
 ## Workflow conventions
 
