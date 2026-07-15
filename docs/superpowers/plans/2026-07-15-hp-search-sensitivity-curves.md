@@ -557,7 +557,8 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from benchmarks._common.bundle import load_bundle  # provides a DatasetBundle
+from benchmarks.datasets.download import default_dest
+from benchmarks.datasets.registry import load  # load(dataset, data_dir) -> DatasetBundle
 from benchmarks._common.search import _lower_is_better, _primary_metric
 from benchmarks._common.sensitivity_report import (
     best_so_far,
@@ -623,7 +624,7 @@ def main() -> None:
     series: dict[str, dict[str, tuple[list[float], list[float] | None]]] = {}
     table_rows: list[dict[str, Any]] = []
     for ds in args.datasets:
-        bundle = load_bundle(ds)
+        bundle = load(ds, data_dir=default_dest())
         metric = _primary_metric(bundle)
         lower = _lower_is_better(metric)
         dbs = sorted(store.glob(f"{ds}-*.db"))
@@ -661,7 +662,7 @@ if __name__ == "__main__":
     main()
 ```
 
-> **Implementer note:** confirm the bundle loader import (`benchmarks._common.bundle.load_bundle`) against the merged tree; the base run used `default_dest()`-based loading for all five datasets (heart/auto included). If the public helper has a different name, use the same one `search.run_dataset` uses. This is the one interface this plan cannot pin without the merged code — match the existing caller.
+> **Note:** bundle loading mirrors `search.run_dataset` exactly — `load(dataset, data_dir=default_dest())` from `benchmarks.datasets.registry` / `benchmarks.datasets.download`. Confirmed against the merged tree.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -699,21 +700,30 @@ from benchmarks._common.search import search
 
 
 @pytest.mark.slow
-def test_log_test_trajectory_sets_user_attr():
-    bundle = load_bundle("heart")
+def test_log_test_trajectory_sets_user_attr(tmp_path):
+    import optuna
+    from benchmarks.datasets.download import default_dest
+    from benchmarks.datasets.registry import load
+
+    bundle = load("heart", data_dir=default_dest())
+    storage = f"sqlite:///{tmp_path}/heart-split-plain.db"
     res = search(
         bundle, mode="split", residual=False, backend="torch",
         n_trials=2, n_splits=2, search_seeds=1, epochs=2,
-        log_test_trajectory=True,
+        embed_layers=2, storage=storage, log_test_trajectory=True,
     )
-    import optuna
-    study = optuna.load_study  # sanity: study object accessible via res if exposed
     assert res.n_trials == 2
-    # Every completed trial carries a numeric test_metric user-attr.
-    # (Access via the study handle the search created; see implementation.)
+    study = optuna.load_study(study_name="heart-split-plain", storage=storage)
+    done = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    assert done and all(
+        isinstance(t.user_attrs.get("test_metric"), float) for t in done
+    )
 ```
 
-> **Implementer note:** if `search()` does not currently return or expose the `study`, thread the assertion through a small hook (e.g. have `search` attach `study` to `StudyResult` under a private field, or re-load from `storage` when one is passed). Keep the change minimal; the behavioral contract under test is "each completed trial has a numeric `test_metric` user-attr when the flag is on."
+`search()` returns `StudyResult`, not the study, so the test reloads the study
+from the `storage` path it passed — no change to `StudyResult` needed. The
+study name is `{dataset}-{flavor}` = `heart-split-plain` (from
+`_run_flavor_label`).
 
 - [ ] **Step 2: Run test to verify it fails**
 
