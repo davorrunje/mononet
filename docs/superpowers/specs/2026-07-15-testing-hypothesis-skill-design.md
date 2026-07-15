@@ -77,6 +77,10 @@ Each document is created when its stage arrives; a hypothesis logged today has o
 `hypothesis.md`. Folder id is **date-prefixed** `YYYY-MM-DD-<slug>`, consistent with the
 repo's spec/plan filename convention.
 
+`docs/research/` is a research-record track, **excluded from the Sphinx site build**
+(`exclude_patterns` in `docs/conf.py`, alongside `superpowers` and `references`) — these
+are working records, not published documentation pages.
+
 ### Index
 
 `docs/research/hypotheses/README.md` — a registry table (`status · label · slug ·
