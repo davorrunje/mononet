@@ -85,7 +85,10 @@ def _pick_residual(
 
 
 def render_verdict(ds: str, d: dict[str, dict[str, Any]], lower: bool) -> str:
-    """One-line bootstrap verdict: alternate vs best-of-{split,mixed} plain.
+    """One-line bootstrap verdict: alternate vs best-of-others plain.
+
+    "Others" is the best non-alternate flavor present: ``split``, ``mixed``,
+    and ``mixed-fixed`` (the latter only when its record exists).
 
     :param ds: Dataset name.
     :param d: Flavor -> record map for this dataset.
@@ -95,7 +98,11 @@ def render_verdict(ds: str, d: dict[str, dict[str, Any]], lower: bool) -> str:
     from benchmarks._common.results import bootstrap_delta
 
     alt = d.get("alternate-plain")
-    raw_others = [d.get("split-plain"), d.get("mixed-plain")]
+    raw_others = [
+        d.get("split-plain"),
+        d.get("mixed-plain"),
+        d.get("mixed-fixed-plain"),
+    ]
     others: list[dict[str, Any]] = [o for o in raw_others if o]
     if alt is None or not others:
         return f"| {ds} | — | — | *pending* |"
