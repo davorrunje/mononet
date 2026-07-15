@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from applications.pinn.core.problems import (
     conservation,  # noqa: F401  (registers)
+    sedimentation,  # noqa: F401  (registers)
     traffic_real,  # noqa: F401  (registers)
 )
 from applications.pinn.core.problems.base import (

@@ -94,6 +94,39 @@ def greenshields_flux_prime(rho: Array, v_max: float, rho_max: float) -> Array:
     return v_max * (1.0 - 2.0 * rho / rho_max)
 
 
+def hindered_settling_flux(c: Array, v0: float, c_max: float, n: float = 2.0) -> Array:
+    """Kynch batch-settling flux ``f_bk(c) = v0 * c * (1 - c/c_max)**n``.
+
+    The hindered-settling (Michaels-Bolger / Richardson-Zaki) flux density for
+    batch sedimentation: a scalar conservation law ``c_t + f_bk(c)_z = 0`` whose
+    entropy solution is a monotone concentration profile with a descending
+    settling interface. Backend-polymorphic (only ``*``, ``-``, ``/``, ``**``).
+
+    :param c: Solids concentration (assumed in ``[0, c_max]``).
+    :param v0: Reference (zero-concentration) settling velocity.
+    :param c_max: Maximum (jam) concentration.
+    :param n: Hindrance exponent (``2`` keeps the flux polynomial and smooth).
+    :returns: The batch flux density ``f_bk(c)``.
+    """
+    return v0 * c * (1.0 - c / c_max) ** n
+
+
+def hindered_settling_flux_prime(
+    c: Array, v0: float, c_max: float, n: float = 2.0
+) -> Array:
+    """Characteristic speed ``f_bk'(c) = v0 (1 - c/c_max)**(n-1) (1 - (n+1) c/c_max)``.
+
+    Analytic derivative of :func:`hindered_settling_flux`; backend-polymorphic.
+
+    :param c: Solids concentration (assumed in ``[0, c_max]``).
+    :param v0: Reference settling velocity.
+    :param c_max: Maximum (jam) concentration.
+    :param n: Hindrance exponent.
+    :returns: The characteristic speed ``f_bk'(c)``.
+    """
+    return v0 * (1.0 - c / c_max) ** (n - 1.0) * (1.0 - (n + 1.0) * c / c_max)
+
+
 def lwr_riemann(
     x: Array,
     t: Array | float,

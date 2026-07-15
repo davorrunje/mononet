@@ -95,3 +95,18 @@ def test_characteristic_satisfies_implicit_relation() -> None:
     x = np.linspace(-4.0, 4.0, 200)
     u = exact.burgers_characteristic(x, t, u0)
     assert np.max(np.abs(u - u0(x - u * t))) < 1e-10
+
+
+def test_hindered_settling_flux_shape_and_derivative() -> None:
+    """Kynch batch flux vanishes at c=0 and c=c_max; prime matches finite diff."""
+    v0, c_max = 1.0e-3, 10.0
+    c = np.linspace(0.0, c_max, 200)
+    f = exact.hindered_settling_flux(c, v0, c_max)
+    assert abs(float(f[0])) < 1e-12  # f(0) = 0
+    assert abs(float(f[-1])) < 1e-12  # f(c_max) = 0
+    assert float(f.max()) > 0.0  # positive settling flux in between
+    # analytic derivative agrees with a central finite difference
+    fp = exact.hindered_settling_flux_prime(c, v0, c_max)
+    fd = np.gradient(f, c)
+    inner = slice(2, -2)
+    assert np.max(np.abs(fp[inner] - fd[inner])) < 1e-4
