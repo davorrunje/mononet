@@ -19,59 +19,12 @@ Run on both GPUs (5090 + 3090), datasets distributed across the pool::
 from __future__ import annotations
 
 import argparse
-import os
-import subprocess
 import sys
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from queue import Queue
+
+from benchmarks._common.gpu_pool import fan_out
 
 _DEFAULT_OUT_DIR = Path(__file__).resolve().parent / "results" / "phase2"
-
-
-def _run_dataset(
-    name: str,
-    device: str,
-    out_dir: Path,
-    storage_dir: Path | None,
-    extra: list[str],
-) -> str:
-    """Run one dataset's flavor search as a subprocess pinned to ``device``.
-
-    Always passes ``--n-jobs 1`` to the subprocess: multi-dataset concurrency
-    comes from the device pool (multiple processes), not from threaded Optuna
-    inside a single process, which deadlocks (see module docstring).
-
-    :param name: Dataset name, forwarded as ``--datasets``.
-    :param device: Torch device string set as ``$MONONET_TORCH_DEVICE`` in
-        the subprocess environment.
-    :param out_dir: Forwarded as ``--out-dir``; where per-flavor result JSONs
-        land.
-    :param storage_dir: Forwarded as ``--storage-dir`` if given; where the
-        resumable Optuna study databases land.
-    :param extra: Additional CLI args forwarded verbatim to the subprocess
-        (e.g. ``--flavors``, ``--search-activation``, ``--max-depth``,
-        ``--embed-layers``).
-    :returns: `name`, for the caller to track completion.
-    """
-    env = {**os.environ, "MONONET_TORCH_DEVICE": device}
-    cmd = [
-        sys.executable,
-        "-m",
-        "benchmarks.search",
-        "--datasets",
-        name,
-        "--n-jobs",
-        "1",
-        "--out-dir",
-        str(out_dir),
-    ]
-    if storage_dir is not None:
-        cmd += ["--storage-dir", str(storage_dir)]
-    cmd += extra
-    subprocess.run(cmd, env=env, check=True)
-    return name
 
 
 def run_parallel(
@@ -84,11 +37,12 @@ def run_parallel(
 ) -> list[str]:
     """Run the Stage-A search for all `datasets`, one subprocess per dataset.
 
-    `devices` encodes per-GPU concurrency: repeat a device to run more
-    datasets on it at once (e.g. ``["cuda:0", "cuda:1", "cuda:0", "cuda:1"]``
-    = 2 per GPU). Datasets are dispatched to whichever device frees up next
-    (a work-stealing queue), so the mapping is round-robin only when every
-    subprocess takes roughly the same time.
+    Fans out over the device pool via
+    :func:`benchmarks._common.gpu_pool.fan_out`. `devices` encodes per-GPU
+    concurrency: repeat a device to run more datasets on it at once (e.g.
+    ``["cuda:0", "cuda:1", "cuda:0", "cuda:1"]`` = 2 per GPU). Each subprocess
+    is single-threaded (``--n-jobs 1``, hardcoded below): threaded Optuna
+    (``n_jobs > 1``) deadlocks under this launcher's process/thread nesting.
 
     :param datasets: Dataset names to run, one subprocess each.
     :param devices: Device pool; one slot per concurrent subprocess.
@@ -102,26 +56,24 @@ def run_parallel(
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     extra = extra or []
-    dev_q: Queue[str] = Queue()
-    for d in devices:
-        dev_q.put(d)
 
-    def _task(name: str) -> str:
-        device = dev_q.get()
-        t0 = time.monotonic()
-        print(f"[start] dataset={name} -> {device}", flush=True)  # noqa: T201
-        try:
-            return _run_dataset(name, device, out_dir, storage_dir, extra)
-        finally:
-            dev_q.put(device)
-            print(  # noqa: T201
-                f"[done ] dataset={name} ({device}) {time.monotonic() - t0:.0f}s",
-                flush=True,
-            )
+    def _cmd(name: str, device: str) -> list[str]:
+        cmd = [
+            sys.executable,
+            "-m",
+            "benchmarks.search",
+            "--datasets",
+            name,
+            "--n-jobs",
+            "1",
+            "--out-dir",
+            str(out_dir),
+        ]
+        if storage_dir is not None:
+            cmd += ["--storage-dir", str(storage_dir)]
+        return cmd + extra
 
-    with ThreadPoolExecutor(max_workers=len(devices)) as ex:
-        futs = [ex.submit(_task, name) for name in datasets]
-        done = [f.result() for f in as_completed(futs)]
+    done = fan_out(datasets, devices, _cmd, label=lambda n: f"dataset={n}")
     print(f"finished {len(done)} datasets -> {out_dir}", flush=True)  # noqa: T201
     return done
 
