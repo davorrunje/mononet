@@ -163,8 +163,12 @@ Three hashes, distinct roles:
 
 - **config-hash** = hash of a resolved `BenchmarkConfig`. Names one result file within a
   grid.
-- **provenance-hash** = hash of `(config, declared-source, dataset-content, mononet
-  version)`. The **staleness key**, stored in the result's `.provenance.json` sidecar.
+- **provenance-hash** = hash of `(config, declared-source, dataset-content)`. The
+  **staleness key**, stored in the result's `.provenance.json` sidecar. The installed
+  `mononet` version and git SHA are recorded in the sidecar for *audit* but are
+  deliberately **not** part of the key — the declared-source hash is the real change
+  signal, and keying on a version string would either false-positive (version bumped, no
+  relevant code change) or false-negative (dev install, code changed, version static).
 - **run-hash** = hash of the set of provenance-hashes in one `run`/`reconcile` invocation
   plus the git SHA. Keys the frozen per-run record.
 
@@ -174,7 +178,10 @@ provenance of experiments that declared it — the flavor bake-off (which declar
 `MonoLinear` only) is correctly skipped. The closure is **explicit**: if `MonoResidual`
 delegates to a kernel the experiment cares about, the group must also declare that kernel.
 This maintenance cost is accepted deliberately; it is the price of symbol-level precision
-that file-level tools (Snakemake, Make) cannot offer. (A future lint that warns when a
+that file-level tools (Snakemake, Make) cannot offer. Closures are **per-backend**: an
+experiment that runs more than one backend declares each backend's symbols (e.g. both
+`mononet.torch.layers.MonoResidual` and `mononet.jax.layers.MonoResidual`), so a JAX-only
+edit re-runs only the JAX arm. (A future lint that warns when a
 declared module imports undeclared symbols is out of scope — see Follow-ups.)
 
 **Dataset content hash** is resolved through the existing `benchmarks.datasets` registry
@@ -201,17 +208,34 @@ work-stealing queue balances the heterogeneous GPUs automatically. Every command
 builds is single-threaded (threaded Optuna deadlocks under process/thread nesting — an
 existing hard constraint documented in `gpu_pool.py` / `stage2_launch.py`).
 
+**Batch failure policy.** Today's `fan_out` runs items `check=True`, so the first failure
+aborts the whole fan-out — wrong for an overnight `reconcile`. The executor instead
+**continues past a failed item**, records the failure (with traceback) in the run record,
+and exits non-zero if any item failed. One diverged or crashed experiment must not sink
+the other 19.
+
+**Dataset preflight.** Before running, the executor resolves every referenced dataset
+through `benchmarks.datasets.registry` and verifies it is present (triggering
+`datasets.download` if not), so an overnight batch fails fast at launch on a missing
+dataset rather than hours in.
+
 Resumability has two granularities:
 
 | Item type | Checkpoint artifact | Resume granularity |
 |---|---|---|
 | Grid item — one `BenchmarkConfig` (× seeds) | committed result JSON + `.provenance.json` | item: skip if provenance-hash matches |
-| Optuna study — one dataset×flavor search | Optuna SQLite `.db` (LFS-committed) | trial: study continues mid-sequence |
+| Optuna study — one dataset×flavor search | Optuna SQLite `.db` (LFS-committed) | trial: completed trials skipped; study fills remaining `n_trials` |
 
-Item-level resume: before running a grid item, `provenance.py` checks whether a result
-with a matching provenance-hash already exists and skips it — a killed reconcile resumes
-at item granularity. Trial-level resume is Optuna's SQLite storage, already in use; the
-new layer only makes the study path deterministic from the spec.
+**Item-level** — before running a grid item, `provenance.py` checks whether a result with
+a matching provenance-hash exists and skips it, so a killed reconcile resumes at item
+granularity.
+
+**Trial-level** — Optuna's SQLite storage, already in use; the new layer only makes the
+study path deterministic from the spec. A killed study resumes by re-invoking the same
+study name against the same `.db`; completed trials are persisted and skipped, and the
+study fills the remaining `n_trials`. Intra-trial (epoch) checkpointing is deliberately
+**out of scope**: these trials are short and a dropped trial simply re-runs from the start
+of that trial, which is cheaper than the checkpoint bookkeeping would cost.
 
 ## Progress, ETA, and storage
 
@@ -285,13 +309,36 @@ than ~2×; the refinement machinery is unchanged either way.
   own trial timestamps (no extra instrumentation, absorbs pruning). Grid studies —
   running mean of completed item durations.
 
-### Live progress
+### Live progress and resolution
 
-Each subprocess emits structured progress events (JSON lines) — trial-complete for
-Optuna, item-complete for grids. The parent aggregates into the live `.runstate.json` and
-renders a **`rich`** live table (companion to Typer, `bench` group): per-device rows with
-current item, done/total, elapsed, and ETA, plus a suite-level total ETA. On reconnect
-after a crash, the table rebuilds from `.runstate.json` + the ledger.
+Today's `fan_out` uses blocking `subprocess.run(check=True)` and captures no output, so
+its progress resolution is **one event per subprocess** — a whole study or grid item.
+That is too coarse (minutes of blindness during a 50-trial study). The high-resolution
+signal already exists in the run; we surface it by **streaming** rather than fire-and-wait.
+
+Mechanism: `gpu_pool` grows a streaming variant using `Popen` + a per-subprocess reader
+thread. Children emit sentinel-prefixed JSONL progress events on stdout (`@@PROG@@ {...}`);
+the reader routes event lines to the parent aggregator and passes all other lines through
+to a per-item log. The **parent is the sole writer** of `.runstate.json`, the ledger, and
+the `rich` table — no multi-writer file races. Children flush per event
+(`PYTHONUNBUFFERED`).
+
+Resolution ladder, all achievable:
+
+- **Trial-level (backbone, ~free).** Optuna persists every completed trial to the `.db`
+  with start/complete timestamps; a `callbacks=[emit]` argument to `study.optimize` emits
+  one event per finished trial (`trial k/n`, value, elapsed). This is the search atom and
+  drives the tightening ETA.
+- **Item-level (grid).** One event per `(config, seed)` completion.
+- **Epoch-level (optional, opt-in).** A *read-only* per-epoch callback in the runner loop
+  — no checkpoint, no RNG state, decoupled from the trial-level resume decision. Off by
+  default; enabled per experiment only for long large-dataset trials.
+
+The parent renders a **`rich`** live table (companion to Typer, `bench` group): per-device
+rows with current item, done/total, elapsed, and ETA, plus a suite-level total ETA.
+**Stall detection** falls out of streaming — an item that emits no event for T seconds is
+flagged rather than appearing hung. On reconnect after a crash, the table rebuilds from
+`.runstate.json` + the ledger.
 
 ## CLI surface (Typer)
 
@@ -299,10 +346,68 @@ after a crash, the table rebuilds from `.runstate.json` + the ledger.
 mononet-bench run       <group|group/experiment> [--all]      # focused, now
 mononet-bench reconcile [--group G | --all] [--devices ...]   # batch stale set
 mononet-bench status    [--group G | --all]                   # dry-run: what is stale, prior ETA
+mononet-bench render    [--group G | --all] [--check]         # regenerate every quoting surface from results
 ```
 
 `status` is the pre-flight: it prints the stale set and the prior ETA without running
-anything — the check before kicking off an overnight `reconcile`.
+anything — the check before kicking off an overnight `reconcile`. `render` closes the
+loop back into docs (see next section); `--check` fails without writing when any surface
+is stale, for use in pre-commit/CI.
+
+## Closing the loop: results back into docs and README
+
+Committed result JSON is the **single source of truth for every quoted number**. No
+figure is hand-typed into prose; each is generated, and a hook fails the commit if a
+generated surface drifts from the results. This is the write-back half of reproducibility:
+change code → `reconcile` → results change → `render` → docs/README update, with the hook
+guaranteeing the last step was not skipped.
+
+Two surface kinds, one source:
+
+- **Docs notebooks** (`docs/benchmarks/*.ipynb`). Already the right pattern: each reads
+  committed result JSON and renders its table/figure at build time; the Sphinx config
+  keeps `execution_mode="off"` and outputs are pre-executed via the existing
+  `tools/execute-benchmarks.sh`. `render` re-executes exactly the notebooks whose backing
+  results changed.
+- **Prose surfaces** (`README.md`, `benchmarks/README.md`, docs prose pages, and any
+  other place that quotes a number). Each quoted table lives inside a **managed block**
+  delimited by markers:
+
+  ```markdown
+  <!-- BEGIN GENERATED: flavor/bake-off -->
+  ... table rewritten from results, do not edit by hand ...
+  <!-- END GENERATED: flavor/bake-off -->
+  ```
+
+  `render` rewrites every managed block from the fragment its group's `report` hook
+  produces (the hook already owns table rendering; it now also emits a markdown fragment
+  keyed by an id such as `flavor/bake-off`). The marker id maps a fragment to every file
+  that embeds it, so one result can feed README *and* a docs page without duplication.
+
+**Staleness guard.** A pre-commit hook runs `mononet-bench render --check`: it re-derives
+every managed block and notebook-backing table from current result JSON and fails if any
+committed surface differs. So a changed result cannot land without its quotes being
+re-rendered — the same guarantee the equivalence-hash hook already gives the reference
+implementation.
+
+**Not auto-managed:** historical design specs under `docs/superpowers/specs/` quote
+point-in-time numbers as narrative and are deliberately left untouched — they record what
+was true when written, consistent with the repo's memory/provenance posture.
+
+## Documentation
+
+Two deliverables, distinct audiences:
+
+- **`CLAUDE.md` (contributor/agent instructions).** A concise section — the enforcement
+  point for the reuse goal — stating: benchmarks are defined as TOML specs under
+  `benchmarks/experiments/`; **add or edit a spec, never write a bespoke `*_run.py` /
+  `*_launch.py`**; drive everything through `mononet-bench run|reconcile|status|render`;
+  results are the single source of truth and quotes are regenerated, never hand-edited.
+  Kept terse (CLAUDE.md is a rules index), pointing to the docs page for the full how-to.
+- **Sphinx docs page** (`docs/benchmarks/orchestration.md`, linked from
+  `docs/benchmarks/index`). The full user-facing guide: authoring a spec (group + grid or
+  builder), declaring the dependency closure, the focused-run vs overnight-reconcile
+  workflow, reading progress/ETA, and how `render` flows results back into the docs.
 
 ## Dependencies
 
@@ -316,6 +421,11 @@ are dev-tool dependencies for the repo-only benchmark harness.
   `RUNBOOK-*.md` triplet is removed.
 - `_common` math/training/report modules stay; specs point their `report` hook at the
   existing `*_report.py` renderers.
+- Existing committed results predate provenance sidecars, so their staleness cannot be
+  reconstructed. The **first `reconcile` after a group is ported re-runs it once** to
+  establish baseline `.provenance.json` sidecars; thereafter selective re-execution
+  applies. Where a result is known-current, its sidecar may instead be written from the
+  spec without recompute — a per-group migration judgment, not an automatic guarantee.
 - **Reconcile `benchmarks/README.md`** with the new storage layout in this same PR:
   correct the stale "do not commit `*.db`" line (studies are LFS-committed), and document
   `.runs/` and the timing ledger.
@@ -328,10 +438,14 @@ are dev-tool dependencies for the repo-only benchmark harness.
 - `executor.py`: a small end-to-end grid on CPU slots verifying fan-out, item-level
   resume (kill + restart skips completed items), and ledger append.
 - ETA: unit tests on the throughput calibration and the online-refinement update.
+- `render`: idempotence (rendering twice is a no-op) and the `--check` staleness guard
+  (mutating a result JSON makes `--check` fail; re-rendering makes it pass).
 
 ## Out of scope / YAGNI
 
 - Multi-node / cluster execution (single host by decision).
+- Intra-trial (epoch-level) Optuna checkpointing — trials are short; a dropped trial
+  re-runs from its start (by decision).
 - Log-linear ETA fit (start scalar; grow only if needed).
 - A dependency lint that flags undeclared imported symbols (Follow-ups).
 - Any change to the `mononet` wheel or its dependency surface.
