@@ -165,7 +165,7 @@ def incumbent_test_curve(
                 seeds=seeds,
                 embed_layers=embed_layers,
             )
-            metric_val = float(agg.metric)
+            metric_val = float(agg.iqm)
             n_eval += 1
         values_at_cp.append((idx, metric_val))
     curve: list[float] = []

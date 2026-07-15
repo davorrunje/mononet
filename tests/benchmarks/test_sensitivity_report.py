@@ -93,7 +93,7 @@ def test_incumbent_test_curve_reevaluates_once_per_incumbent(monkeypatch) -> Non
 
     def fake_final_eval(bundle: Any, params: dict[str, Any], **kw: Any) -> Any:
         calls["n"] += 1
-        return SimpleNamespace(metric=float(params["depth"])), []
+        return SimpleNamespace(iqm=float(params["depth"])), []
 
     monkeypatch.setattr(sr, "final_eval", fake_final_eval)
     curve, n_eval = sr.incumbent_test_curve(

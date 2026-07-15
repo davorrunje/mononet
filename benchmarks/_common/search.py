@@ -123,6 +123,7 @@ def search(
     max_depth: int = 4,
     embed_layers: int = 1,
     search_convex_fraction: bool = True,
+    log_test_trajectory: bool = False,
 ) -> StudyResult:
     """Tune (dataset, flavor) HPs by a **stability-aware** k-fold CV objective.
 
@@ -145,6 +146,11 @@ def search(
         "mixed-fixed" flavor); the study name and returned
         `StudyResult.flavor` get the ``"mixed-fixed"`` label
         (see `_run_flavor_label`). No effect on other modes.
+    :param log_test_trajectory: When ``True``, record each trial's held-out
+        test metric as the trial user-attr ``"test_metric"`` (a single-seed
+        `final_eval`). Purely a diagnostic for the HP-search sensitivity study —
+        it is **never** fed back into the objective value or trial selection. It
+        roughly doubles per-trial cost, so it is off by default.
     """
     metric = metric or _primary_metric(bundle)
     lower = _lower_is_better(metric)
@@ -180,7 +186,20 @@ def search(
         arr = np.asarray(scores, dtype=np.float64)
         # Risk-adjusted objective: penalise seed variance so unstable HP regions
         # (good mean, occasional collapse) are not selected.
-        return float(arr.mean() + arr.std()) if lower else float(arr.mean() - arr.std())
+        obj = float(arr.mean() + arr.std()) if lower else float(arr.mean() - arr.std())
+        if log_test_trajectory:
+            # Diagnostic only — never fed back into `obj` or trial selection.
+            agg, _ = final_eval(
+                bundle,
+                dict(trial.params),
+                mode=mode,
+                residual=residual,
+                backend=backend,
+                seeds=range(1),
+                embed_layers=embed_layers,
+            )
+            trial.set_user_attr("test_metric", float(agg.iqm))
+        return obj
 
     study = optuna.create_study(
         study_name=f"{bundle.name}-{run_flavor}",
