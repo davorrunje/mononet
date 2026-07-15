@@ -200,19 +200,54 @@ def render_plot(
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    # The bad first-trial value blows out the y-axis (auto's best-so-far falls
+    # ~570 -> ~10 MSE); clip each panel above the 90th percentile so the
+    # converged detail (and any meta-overfitting turn in Curve B) is visible.
+    # The early descent then simply enters from the top of the frame.
+    def _zoom(ax: Any, vals: list[float]) -> None:
+        if not vals:
+            return
+        s = sorted(vals)
+        lo = s[0]
+        hi = s[int(0.90 * (len(s) - 1))]
+        if hi <= lo:
+            hi = s[-1]
+        span = (hi - lo) or abs(hi) or 1.0
+        ax.set_ylim(lo - 0.05 * span, hi + 0.15 * span)
+
     datasets = list(series)
     ncol = max(1, len(datasets))
     fig, axes = plt.subplots(2, ncol, figsize=(3.2 * ncol, 5.0), squeeze=False)
     for c, ds in enumerate(datasets):
         top, bot = axes[0][c], axes[1][c]
+        has_test = False
+        top_vals: list[float] = []
+        bot_vals: list[float] = []
         for fl, (obj, test) in series[ds].items():
             top.plot(range(1, len(obj) + 1), obj, lw=1.5, label=fl)
+            top_vals += obj
             if test is not None:
                 bot.plot(range(1, len(test) + 1), test, lw=1.5, label=fl)
+                bot_vals += test
+                has_test = True
+        _zoom(top, top_vals)
+        _zoom(bot, bot_vals)
         top.set_title(ds, fontsize=11)
         top.set_ylabel("best CV objective", fontsize=10)
-        bot.set_ylabel("test of incumbent", fontsize=10)
-        bot.set_xlabel(r"Optuna trial $t$", fontsize=10)
+        if has_test:
+            bot.set_ylabel("test of incumbent", fontsize=10)
+            bot.set_xlabel(r"Optuna trial $t$", fontsize=10)
+        else:
+            bot.axis("off")
+            bot.text(
+                0.5,
+                0.5,
+                "Curve B omitted",
+                ha="center",
+                va="center",
+                fontsize=9,
+                color="0.5",
+            )
         if c == 0:
             top.legend(fontsize=7, loc="best")
     fig.tight_layout()
