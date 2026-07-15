@@ -3,17 +3,18 @@
 Draft email to request the numeric `C(z,t)` field behind Figs 5.8/5.10 of the
 De Clercq (2006) PhD thesis. Recipients (verified addresses):
 
-- **Ingmar Nopens** — `Ingmar.Nopens@UGent.be` (BIOMATH, Ghent University) — co-author + still active; best primary contact.
-- **Peter A. Vanrolleghem** — `peter.vanrolleghem@gci.ulaval.ca` (modelEAU, Université Laval) — co-author + still active.
-- **Jeriffa De Clercq** — first author (address not confirmed; reach via the two above, or FER/UGent alumni channels).
+- **Jeriffa De Clercq** — `Jeriffa.DeClercq@UGent.be` — **first author**; ran the
+  experiments and produced the profiles, so the primary contact.
+- **Ingmar Nopens** — `Ingmar.Nopens@UGent.be` (BIOMATH, Ghent) — co-author, active.
+- **Peter A. Vanrolleghem** — `peter.vanrolleghem@gci.ulaval.ca` (modelEAU, Laval) — co-author, active.
 
-Send to Nopens (To), cc Vanrolleghem. Both were co-authors on the 2005 paper and hold/curate the data.
+Send **To:** De Clercq, **Cc:** Nopens + Vanrolleghem.
 
 ---
 
 **Subject:** Request: numeric batch-settling solids-concentration profiles (De Clercq 2005 / 2006 thesis, Figs 5.8 & 5.10)
 
-Dear Prof. Nopens and Prof. Vanrolleghem, (cc Dr. De Clercq),
+Dear Dr. De Clercq, (cc Prof. Nopens and Prof. Vanrolleghem),
 
 I am working on structure-preserving neural networks for scalar conservation laws —
 specifically networks that are *monotone by construction*, so that a reconstructed
@@ -23,10 +24,10 @@ real-world test case: the solids concentration profile is monotone in height by
 physics, governed by a scalar conservation law.
 
 Your radiotracer measurements — the dense `C(z,t)` fields in **Figures 5.8 and 5.10
-of J. De Clercq's 2006 PhD thesis** (*Batch and continuous settling of activated
-sludge: in-depth monitoring and 1D compression modelling*), also in De Clercq et
-al., *Water Research* 39(10), 2005 — are exactly what I need. The thesis presents
-them as 3-D surface plots, so I cannot recover the numbers from the document.
+of your 2006 PhD thesis** (*Batch and continuous settling of activated sludge:
+in-depth monitoring and 1D compression modelling*), also in De Clercq et al.,
+*Water Research* 39(10), 2005 — are exactly what I need. The thesis presents them
+as 3-D surface plots, so I cannot recover the numbers from the document.
 
 Would you be willing to share the **numeric solids-concentration profiles** for one
 or more of the six batch experiments (Destelbergen Co = 2.40 / 3.23 / 4.30 g/L;
