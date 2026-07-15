@@ -152,6 +152,11 @@ cannot express (Optuna HP search, conditional params), the spec instead sets
 existing, tested Python config-builder. Either way, **adding an ablation = a new TOML,
 never a new `*_run.py`.**
 
+**Baselines / other-method comparison** are modeled as their **own experiment** in a
+`comparison/` group (its builder wraps `benchmarks/baselines/`, e.g. XGBoost), producing
+result JSON like any other experiment. Comparison tables reference that experiment's
+results at render time — baselines are *not* embedded as a column in every study's spec.
+
 **Why TOML, not Python specs:** matches the existing `configs/*.toml` and
 `datasets/manifest.toml` conventions, keeps specs un-runnable data (fill a slot, don't
 write code), and the loader validates into a frozen dataclass so most strict-mypy safety
@@ -199,6 +204,15 @@ declared module imports undeclared symbols is out of scope — see Follow-ups.)
 Scope for either mode is addressable by group name (`--group residual`), specific
 experiment, or `--all`. Within any scope, the provenance diff decides what is actually
 stale — groups address, declared deps decide.
+
+**`downstream` is reconcile *ordering* only, for now.** Experiments train independently;
+cross-experiment comparison happens at render time (a combined table reads several
+experiments' current result JSON), so a changed upstream result propagates to synthesis
+surfaces through `render`, not through re-training. **Deferred:** if a future experiment
+genuinely consumes another's computed output (warm-start from a trained model, or reads
+its result JSON as training input), the graph gains a second edge type — result-hash
+propagation, where a changed upstream result marks a downstream experiment stale even
+when its own code closure is unchanged. Not built now (see Follow-ups).
 
 ## Executor and resumability
 
@@ -452,6 +466,9 @@ are dev-tool dependencies for the repo-only benchmark harness.
 
 ## Follow-ups (to become GitHub issues)
 
+- Result-hash propagation (second edge type): re-run a downstream experiment when an
+  upstream experiment's *results* change, once an experiment genuinely consumes another's
+  computed output. Deferred until that need arises.
 - Optional closure lint: warn when a declared module imports symbols absent from the
   experiment's declared closure, to catch silent under-declaration.
 - Revisit the throughput model (scalar → log-linear) if launch-time ETA is consistently
