@@ -26,7 +26,7 @@ def test_run_parallel_distributes_datasets_across_the_device_pool(
         assert check is True
         calls.append((cmd, env))
 
-    monkeypatch.setattr("benchmarks.stage2_launch.subprocess.run", _fake_run)
+    monkeypatch.setattr("benchmarks._common.gpu_pool.subprocess.run", _fake_run)
 
     datasets = ("auto", "heart", "compas", "loan")
     devices = ["cuda:0", "cuda:1"]
@@ -62,7 +62,7 @@ def test_run_parallel_passes_n_jobs_one_and_pinned_device(
     def _fake_run(cmd: list[str], env: dict[str, str], check: bool) -> None:
         calls.append((cmd, env))
 
-    monkeypatch.setattr("benchmarks.stage2_launch.subprocess.run", _fake_run)
+    monkeypatch.setattr("benchmarks._common.gpu_pool.subprocess.run", _fake_run)
 
     devices = ["cuda:0", "cuda:1"]
     storage_dir = tmp_path / "studies"
@@ -93,7 +93,7 @@ def test_run_parallel_omits_storage_dir_when_not_given(
     def _fake_run(cmd: list[str], env: dict[str, Any], check: bool) -> None:
         calls.append(cmd)
 
-    monkeypatch.setattr("benchmarks.stage2_launch.subprocess.run", _fake_run)
+    monkeypatch.setattr("benchmarks._common.gpu_pool.subprocess.run", _fake_run)
 
     run_parallel(datasets=("auto",), devices=["cuda:0"], out_dir=tmp_path)
 
