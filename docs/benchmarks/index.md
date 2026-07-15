@@ -29,6 +29,8 @@ time via `--no-deps` (see `tools/execute-benchmarks.sh`).
   standard benchmark by the Δ criterion.
 - [Deep-network init](deep-init.ipynb) — the static `mixed` init that fixes moderate-depth
   trainability, and the deep-depth limitation it does not solve.
+- [Alternate base result](alternate-base-result.md) — tuned shallow (≤4 layers)
+  `alternate` flavor vs. the best of `split`/`mixed`, on the five paper datasets.
 
 ```{toctree}
 :hidden:
@@ -42,4 +44,5 @@ deep-residual-accuracy
 loan-size-ladder
 large-dataset-screen
 deep-init
+alternate-base-result
 ```

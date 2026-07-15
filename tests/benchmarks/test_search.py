@@ -58,12 +58,59 @@ def test_flavor_name() -> None:
     assert flavor_name("mixed", True, deep=True) == "mixed-deep"
 
 
+def test_run_flavor_label_mixed_fixed() -> None:
+    from benchmarks._common.search import _run_flavor_label
+
+    assert (
+        _run_flavor_label("mixed", False, False, fixed_convex=True)
+        == "mixed-fixed-plain"
+    )
+    assert _run_flavor_label("mixed", False, False, fixed_convex=False) == "mixed-plain"
+    assert (
+        _run_flavor_label("mixed", True, False, fixed_convex=True)
+        == "mixed-fixed-residual"
+    )
+    # split/alternate are unaffected by fixed_convex — convex_fraction is
+    # already fixed at 0.5 for them regardless.
+    assert _run_flavor_label("split", False, False, fixed_convex=True) == "split-plain"
+    assert (
+        _run_flavor_label("alternate", False, False, fixed_convex=True)
+        == "alternate-plain"
+    )
+
+
+def test_search_with_fixed_convex_fraction_labels_flavor() -> None:
+    res = search(
+        _bundle(),
+        mode="mixed",
+        residual=False,
+        backend="torch",
+        n_trials=2,
+        seed=0,
+        epochs=1,
+        n_splits=2,
+        search_convex_fraction=False,
+    )
+    assert res.flavor == "mixed-fixed-plain"
+    assert "convex_fraction" not in res.best_params
+
+
 def test_all_flavors_has_six_entries_including_deep() -> None:
     from benchmarks._common.search import _ALL_FLAVORS, flavor_name
 
     assert len(_ALL_FLAVORS) == 6
     names = {flavor_name(m, r, d) for m, r, d in _ALL_FLAVORS}
     assert {"split-deep", "mixed-deep"} <= names
+
+
+def test_budget_for_matches_paper_trial_counts() -> None:
+    from benchmarks._common.search import _budget_for
+
+    assert _budget_for("auto") == (200, range(20), 5)
+    assert _budget_for("heart") == (200, range(20), 5)
+    assert _budget_for("compas") == (50, range(10), 1)
+    assert _budget_for("blog") == (50, range(10), 1)
+    assert _budget_for("loan") == (50, range(10), 1)
 
 
 def test_search_deep_flavor_names_study_and_uses_high_depth() -> None:
@@ -211,3 +258,116 @@ def test_run_dataset_persists_secondary_accuracy_for_classification(
     sec = rec["secondary"]["accuracy"]
     assert np.isfinite(sec["iqm"])
     assert len(sec["values"]) == 3
+
+
+def test_run_dataset_persists_n_diverged(tmp_path: Path) -> None:
+    """run_dataset must record n_diverged alongside n_collapse in the JSON.
+
+    Uses the generator-backed `synth_additive_clow` dataset (no data files
+    needed) end-to-end through search + final_eval + JSON persistence.
+    """
+    from benchmarks._common.search import run_dataset
+
+    paths = run_dataset(
+        "synth_additive_clow",
+        backend="torch",
+        flavors=(("mixed", False, False),),
+        n_trials=1,
+        epochs=2,
+        final_seeds=range(2),
+        n_splits=2,
+        search_seeds=1,
+        out_dir=tmp_path,
+    )
+    rec = json.loads(paths[0].read_text())
+    assert (tmp_path / "synth_additive_clow-mixed-plain.json") in paths
+    assert "n_diverged" in rec
+    assert isinstance(rec["n_diverged"], int)
+    assert 0 <= rec["n_diverged"] <= rec["n_seeds"]
+
+
+def test_run_dataset_fixed_convex_fraction_writes_mixed_fixed_file(
+    tmp_path: Path,
+) -> None:
+    from benchmarks._common.search import run_dataset
+
+    paths = run_dataset(
+        "synth_additive_clow",
+        backend="torch",
+        flavors=(("mixed", False, False),),
+        n_trials=1,
+        epochs=2,
+        final_seeds=range(2),
+        n_splits=2,
+        search_seeds=1,
+        out_dir=tmp_path,
+        search_convex_fraction=False,
+    )
+    assert (tmp_path / "synth_additive_clow-mixed-fixed-plain.json") in paths
+    rec = json.loads(paths[0].read_text())
+    assert rec["flavor"] == "mixed-fixed-plain"
+    assert "convex_fraction" not in rec["best_params"]
+
+
+def _tiny_reg_bundle() -> DatasetBundle:
+    rng = np.random.default_rng(0)
+    x = rng.uniform(-1, 1, (80, 3)).astype("float32")
+    y = x.sum(1).astype("float32")
+    return DatasetBundle(
+        name="t",
+        task="regression",
+        X_train=x,
+        y_train=y,
+        X_test=x,
+        y_test=y,
+        mono_increasing=(0, 1, 2),
+        mono_decreasing=(),
+        feature_names=("a", "b", "c"),
+        metadata={},
+    )
+
+
+def test_final_eval_honors_activation_and_alt_init() -> None:
+    b = _tiny_reg_bundle()
+    params = {
+        "width": 8,
+        "depth": 2,
+        "dropout": 0.0,
+        "lr": 1e-2,
+        "weight_decay": 0.0,
+        "lr_decay": 1.0,
+        "batch_size": 32,
+        "activation": "relu",
+    }
+    _agg, rows = final_eval(
+        b,
+        params,
+        mode="alternate",
+        residual=False,
+        backend="torch",
+        seeds=range(2),
+        epochs=2,
+        embed_layers=2,
+    )
+    assert len(rows) == 2
+    assert all("mse" in r.scores for r in rows)
+
+
+def test_search_alternate_shallow_runs() -> None:
+    b = _tiny_reg_bundle()
+    res = search(
+        b,
+        mode="alternate",
+        residual=False,
+        backend="torch",
+        n_trials=2,
+        epochs=2,
+        n_splits=2,
+        search_seeds=1,
+        search_activation=True,
+        max_depth=3,
+        embed_layers=2,
+    )
+    assert res.flavor == "alternate-plain"
+    assert 1 <= res.best_params["depth"] <= 3
+    assert res.best_params["activation"] in ("relu", "elu", "softplus", "selu")

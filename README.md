@@ -97,47 +97,56 @@ For per-feature monotonicity directions, pass a
 
 ## Benchmark results
 
-Held-out accuracy on the paper's five tabular datasets, comparing the `split`
-and `mixed` monotone constructions at shallow (`plain`) and deep (`residual`)
-depth. Cells report **IQM** (interquartile mean; robust) and **mean ± std** over
-seeds, with the effective monotone-layer count `L` and a collapse flag `⚠` (shown
-only when some seeds degenerated). Metric per dataset: MSE (`auto`), RMSE
+Tuned shallow bake-off on the paper's five tabular datasets, comparing four
+monotone constructions at ≤ 4 effective layers (`plain`, `depth ∈ [1,3]`): the
+`split` activation-switch, `mixed` (the `|W|` constraint, tuning the
+`convex_fraction` split), `mixed-fixed` (same, with `convex_fraction` held at
+0.5), and `alternate` (per-layer σ/σ′ alternation). Each flavor is tuned
+per-dataset with its own Optuna search (activation included) at the paper's
+per-dataset trial counts, under a stability-aware CV objective. Cells report
+**IQM** (interquartile mean; robust) and **mean ± std** over seeds, with the
+effective monotone-layer count `L`. Metric per dataset: MSE (`auto`), RMSE
 (`blog`), accuracy (`heart`/`compas`/`loan`); **↓** lower / **↑** higher is
-better. **Bold** = best per dataset. Full methodology and the per-flavor
-robustness table are in the
-[benchmark docs](https://davorrunje.github.io/mononet/benchmarks/deep-residual-accuracy.html).
+better. **Bold** 🥇 = best per dataset. Full per-HP table, the ablation, and
+bootstrap verdicts are in the
+[benchmark docs](https://davorrunje.github.io/mononet/benchmarks/alternate-base-result.html).
 
-| dataset | mode | variant | layers | IQM | mean ± std | ⚠ |
-|---|---|---|--:|--:|--:|:-:|
-| auto (MSE ↓) | split | plain | 2 | **9.78** | 9.76 ± 0.18 | · |
-|  | split | residual | 4 | 9.89 | 10.11 ± 0.62 | 2/20 |
-|  | mixed | plain | 2 | 10.91 | 10.90 ± 0.21 | · |
-|  | mixed | residual | 4 | 9.92 | 9.94 ± 0.33 | · |
-| heart (acc ↑) | split | plain | 4 | 0.836 | 0.711 ± 0.249 | 4/20 |
-|  | split | residual | 14 | 0.831 | 0.829 ± 0.012 | 2/20 |
-|  | mixed | plain | 3 | **0.836** | 0.839 ± 0.012 | · |
-|  | mixed | residual | 4 | 0.821 | 0.825 ± 0.008 | · |
-| compas (acc ↑) | split | plain | 2 | 0.679 | 0.679 ± 0.002 | · |
-|  | split | residual | 14 | 0.641 | 0.632 ± 0.033 | 4/20 |
-|  | mixed | plain | 4 | 0.683 | 0.683 ± 0.002 | · |
-|  | mixed | residual | 10 | **0.684** | 0.684 ± 0.002 | · |
-| loan (acc ↑) | split | plain | 3 | 0.647 | 0.647 ± 0.001 | · |
-|  | split | residual | 6 | 0.647 | 0.646 ± 0.001 | · |
-|  | mixed | plain | 3 | 0.648 | 0.648 ± 0.000 | · |
-|  | mixed | residual | 14 | **0.649** | 0.650 ± 0.001 | · |
-| blog (RMSE ↓) | split | plain | 2 | 0.185 | 0.185 ± 0.002 | · |
-|  | split | residual | 4 | 0.182 | 0.182 ± 0.000 | 1/10 |
-|  | mixed | plain | 2 | 0.189 | 0.189 ± 0.000 | · |
-|  | mixed | residual | 4 | **0.173** | 0.173 ± 0.001 | · |
+| dataset | flavor | IQM | mean ± std | L |
+|---|---|--:|--:|--:|
+| heart (acc ↑) | split | 0.909 | 0.909 ± 0.004 | 3 |
+|  | mixed 🥇 | **0.910** | 0.909 ± 0.006 | 2 |
+|  | mixed-fixed | 0.906 | 0.906 ± 0.003 | 3 |
+|  | alternate | 0.906 | 0.906 ± 0.001 | 3 |
+| auto (MSE ↓) | split | 10.90 | 10.88 ± 0.49 | 2 |
+|  | mixed | 10.46 | 10.44 ± 0.28 | 3 |
+|  | mixed-fixed 🥇 | **10.13** | 10.18 ± 0.28 | 3 |
+|  | alternate | 10.14 | 10.13 ± 0.19 | 2 |
+| compas (acc ↑) | split | 0.730 | 0.729 ± 0.003 | 3 |
+|  | mixed | 0.704 | 0.704 ± 0.002 | 2 |
+|  | mixed-fixed | 0.721 | 0.721 ± 0.002 | 4 |
+|  | alternate 🥇 | **0.730** | 0.730 ± 0.002 | 3 |
+| blog (RMSE ↓) | split 🥇 | **0.177** | 0.177 ± 0.002 | 2 |
+|  | mixed | 0.178 | 0.178 ± 0.001 | 2 |
+|  | mixed-fixed | 0.182 | 0.182 ± 0.001 | 2 |
+|  | alternate | 0.186 | 0.186 ± 0.001 | 2 |
+| loan (acc ↑) | split | 0.704 | 0.704 ± 0.001 | 3 |
+|  | mixed | 0.704 | 0.704 ± 0.000 | 2 |
+|  | mixed-fixed 🥇 | **0.708** | 0.708 ± 0.001 | 3 |
+|  | alternate | 0.703 | 0.703 ± 0.000 | 2 |
 
-`residual` collapses the better of the residual/deep depth bands (by CV);
-`L = 2·blocks + 2` effective monotone layers. Deep `mixed residual` is
-nominally best on `loan` (the largest dataset) above, but a controlled
+**Two findings.** (1) **Fixing `convex_fraction = 0.5` beats searching it** —
+`mixed-fixed` wins 3 of 5 datasets, substantially on `compas` (+0.017 acc) and
+`auto` (−0.33 MSE); searching the split (the `mixed` rows) mostly hurt on the
+mid/large datasets. (2) At ≤ 4 tuned layers, **`alternate` does not decisively
+beat the best non-alternate flavor**: it co-leads `compas` (tied with `split`)
+and sits within noise on `auto`/`heart`, but loses on `blog`/`loan` — so it
+reaches parity where `mixed` was dominating without overtaking it.
+
+Depth was studied separately: a controlled
 [size-ladder study](https://davorrunje.github.io/mononet/benchmarks/loan-size-ladder.html)
-— deep vs shallow *residual*, tuned independently at each training-set size —
-finds that edge is within noise and does not grow with scale, so **depth is
-neutral even on `loan`**; elsewhere ≤ 4 layers is best. `mixed` wins 4 of 5
-datasets; the `⚠` instabilities are all shallow `split`.
+finds deep/`residual` stacks are within noise of shallow ones and the edge does
+not grow with scale, so **≤ 4 layers is the right regime** — which is why this
+bake-off is shallow-only.
 
 ## License
 

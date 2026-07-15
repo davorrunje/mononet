@@ -34,6 +34,21 @@ def test_help_lists_flags() -> None:
         assert flag in output
 
 
+def test_help_lists_fix_convex_fraction_flag() -> None:
+    res = runner.invoke(app, ["--help"])
+    assert res.exit_code == 0
+    output = _ANSI.sub("", res.output)
+    assert "--fix-convex-fraction" in output
+
+
+def test_dry_run_with_fix_convex_fraction_labels_mixed_fixed() -> None:
+    res = runner.invoke(
+        app, ["--flavors", "mixed-plain", "--fix-convex-fraction", "--dry-run"]
+    )
+    assert res.exit_code == 0
+    assert "mixed-fixed-plain" in res.output
+
+
 def test_smoke_preset_values() -> None:
     assert _SMOKE["datasets"] == ["auto", "heart"]
     assert _SMOKE["n_trials"] == 5
@@ -116,3 +131,18 @@ def test_dry_run_default_datasets_includes_all_22() -> None:
     ]
     for name in synth:
         assert name in output, f"missing synth dataset: {name}"
+
+
+def test_parse_flavors_accepts_alternate_plain() -> None:
+    from benchmarks.search import _parse_flavors
+
+    assert _parse_flavors("alternate-plain") == (("alternate", False, False),)
+
+
+def test_parse_flavors_rejects_alternate_residual() -> None:
+    import typer
+
+    from benchmarks.search import _parse_flavors
+
+    with pytest.raises(typer.BadParameter):
+        _parse_flavors("alternate-residual")

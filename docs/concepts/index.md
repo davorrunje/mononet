@@ -8,5 +8,6 @@ Background reading on monotonic neural networks.
 monotonicity
 layers
 monotonic-residual
+non-monotone-embedding
 proofs
 ```
