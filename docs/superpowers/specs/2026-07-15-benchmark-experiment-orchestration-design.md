@@ -74,7 +74,7 @@ benchmarks/_common/experiments/
 ├── registry.py     # discover/load TOML specs; filter by group / stale
 ├── provenance.py   # closure hashing + sidecar read/write + staleness diff
 ├── executor.py     # mixed CPU/GPU work-stealing pool (wraps gpu_pool.fan_out)
-└── cli.py          # Typer app: run / reconcile / status
+└── cli.py          # Typer app: run / reconcile / status / render
 ```
 
 - `spec.py`, `registry.py`, `provenance.py` are pure and hardware-free — unit-testable
