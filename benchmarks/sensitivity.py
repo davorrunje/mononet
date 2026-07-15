@@ -77,6 +77,16 @@ def main() -> None:
     ap.add_argument("--flavors", nargs="*", default=None)
     ap.add_argument("--out", required=True)
     ap.add_argument("--no-test-curve", action="store_true")
+    ap.add_argument(
+        "--test-seeds",
+        type=int,
+        default=None,
+        help=(
+            "Seeds per incumbent re-eval for Curve B (trend line). Defaults to "
+            "the base run's per-dataset counts; use a smaller value (e.g. 5) for "
+            "a cheaper trend estimate."
+        ),
+    )
     args = ap.parse_args()
 
     store = Path(args.storage_dir)
@@ -101,6 +111,7 @@ def main() -> None:
             n_reeval = 0
             if not args.no_test_curve:
                 mode, residual = _mode_residual(flavor)
+                n_seeds = args.test_seeds or _FINAL_SEEDS.get(ds, 10)
                 test_curve, n_reeval = incumbent_test_curve(
                     study,
                     bundle,
@@ -109,7 +120,7 @@ def main() -> None:
                     backend="torch",
                     lower=lower,
                     n_trials=len(vals),
-                    seeds=range(_FINAL_SEEDS.get(ds, 10)),
+                    seeds=range(n_seeds),
                 )
             series[ds][flavor] = (obj, test_curve)
             table_rows.append(
@@ -118,7 +129,7 @@ def main() -> None:
                     "flavor": flavor,
                     "trials": len(vals),
                     "t_star": t_star,
-                    "saturated": t_star < len(vals),
+                    "saturated": t_star <= 0.8 * len(vals),
                     "n_reeval": n_reeval,
                 }
             )
