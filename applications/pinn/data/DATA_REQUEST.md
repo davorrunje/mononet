@@ -3,8 +3,10 @@
 Draft email to request the numeric `C(z,t)` field behind Figs 5.8/5.10 of the
 De Clercq (2006) PhD thesis. Recipients (verified addresses):
 
-- **Jeriffa De Clercq** — `Jeriffa.DeClercq@UGent.be` — **first author**; ran the
-  experiments and produced the profiles, so the primary contact.
+- **Prof. Jeriffa De Clercq** — `Jeriffa.DeClercq@UGent.be` — **first author**; ran
+  the experiments and produced the profiles, so the primary contact. Now Associate
+  Professor, Faculty of Engineering & Architecture, Dept. of Materials, Textiles
+  and Chemical Engineering (EA11), Ghent University.
 - **Ingmar Nopens** — `Ingmar.Nopens@UGent.be` (BIOMATH, Ghent) — co-author, active.
 - **Peter A. Vanrolleghem** — `peter.vanrolleghem@gci.ulaval.ca` (modelEAU, Laval) — co-author, active.
 
@@ -14,7 +16,7 @@ Send **To:** De Clercq, **Cc:** Nopens + Vanrolleghem.
 
 **Subject:** Request: numeric batch-settling solids-concentration profiles (De Clercq 2005 / 2006 thesis, Figs 5.8 & 5.10)
 
-Dear Dr. De Clercq, (cc Prof. Nopens and Prof. Vanrolleghem),
+Dear Prof. De Clercq, (cc Prof. Nopens and Prof. Vanrolleghem),
 
 I am working on structure-preserving neural networks for scalar conservation laws —
 specifically networks that are *monotone by construction*, so that a reconstructed
