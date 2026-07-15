@@ -31,6 +31,22 @@ It **reads** the whole hypothesis corpus and the orchestration results; it **pro
 the paper outline that `hypothesis-exploration` reads, closing the research flywheel. It is
 grounded in [paper-synthesis-references.md](../../research/paper-synthesis-references.md).
 
+## Multi-paper scoping
+
+These skills operate on a **research project** — a paper with a uniform internal layout —
+selected by a `paper-id` resolved through the registry `docs/research/papers.md`
+(`paper-id → root · kind (main|application) · status`). Every folder path in this spec
+(`hypotheses/`, `backlog.md`, `paper/`) is **relative to the resolved paper root**; the
+examples show the main paper for concreteness.
+
+- **Main paper** root: `docs/research/main/` (its experiments live in `benchmarks/`).
+- **Application papers** root: `applications/<slug>/` — co-located with their code,
+  results, and `paper/`, extending the PR #116 `applications/` convention. These sit
+  outside the `docs/` tree, so they are not part of the Sphinx build at all.
+- `paper-id` defaults from context — the `applications/<slug>/` you are working in, else
+  the registry's designated main paper — and is otherwise prompted.
+- **Application papers read the main paper read-only**: an application paper's claims may cite main-paper results/hypotheses by `label`; `render` pulls the project's *own* results (`applications/<slug>/results/`, or `benchmarks/` for the main paper).
+
 ## Design principles
 
 1. **Ledger-first, prose optional.** The durable core is a claim→evidence ledger; drafting
@@ -52,7 +68,7 @@ grounded in [paper-synthesis-references.md](../../research/paper-synthesis-refer
 ├── SKILL.md          # frontmatter + "When to use" + verbs (outline/map/gaps/draft/check)
 └── LEDGER.md         # claim→evidence entry format (as create-issue has STYLE.md)
 
-docs/research/paper/
+docs/research/main/paper/
 ├── outline.md        # thesis → sections → claims (the narrative skeleton)
 ├── ledger.md         # claim→evidence bindings (the reproducibility spine)
 └── sections/<slug>.md  # optional on-demand prose drafts

@@ -34,6 +34,22 @@ In Peirce's terms this skill is **abduction** (propose explanations); `testing-h
 is deduction + induction (predict + test). It is grounded in the verified sources in
 [hypothesis-generation-references.md](../../research/hypothesis-generation-references.md).
 
+## Multi-paper scoping
+
+These skills operate on a **research project** — a paper with a uniform internal layout —
+selected by a `paper-id` resolved through the registry `docs/research/papers.md`
+(`paper-id → root · kind (main|application) · status`). Every folder path in this spec
+(`hypotheses/`, `backlog.md`, `paper/`) is **relative to the resolved paper root**; the
+examples show the main paper for concreteness.
+
+- **Main paper** root: `docs/research/main/` (its experiments live in `benchmarks/`).
+- **Application papers** root: `applications/<slug>/` — co-located with their code,
+  results, and `paper/`, extending the PR #116 `applications/` convention. These sit
+  outside the `docs/` tree, so they are not part of the Sphinx build at all.
+- `paper-id` defaults from context — the `applications/<slug>/` you are working in, else
+  the registry's designated main paper — and is otherwise prompted.
+- **Application papers read the main paper read-only**: generation, dedup, and thesis-relevance for an application paper draw on the main paper's corpus as well as the application's own.
+
 ## Design principles
 
 1. **Exploration proposes, testing disposes.** Everything this skill emits is
@@ -55,7 +71,7 @@ is deduction + induction (predict + test). It is grounded in the verified source
 ├── SKILL.md          # frontmatter + "When to use" + the verbs (park/generate/rank/promote/drop)
 └── BACKLOG.md        # backlog entry format (as create-issue has STYLE.md)
 
-docs/research/backlog.md   # the living idea queue (git-tracked)
+docs/research/main/backlog.md   # the living idea queue (git-tracked)
 ```
 
 A **backlog entry** is lightweight — *not* a hypothesis, just enough to not lose an idea

@@ -26,6 +26,22 @@ results, run records). This spec makes the *hypotheses those experiments test* a
 record, and leans on the orchestration provenance chain to be reproducible end-to-end. The
 two are independent deliverables designed to interlock.
 
+## Multi-paper scoping
+
+These skills operate on a **research project** — a paper with a uniform internal layout —
+selected by a `paper-id` resolved through the registry `docs/research/papers.md`
+(`paper-id → root · kind (main|application) · status`). Every folder path in this spec
+(`hypotheses/`, `backlog.md`, `paper/`) is **relative to the resolved paper root**; the
+examples show the main paper for concreteness.
+
+- **Main paper** root: `docs/research/main/` (its experiments live in `benchmarks/`).
+- **Application papers** root: `applications/<slug>/` — co-located with their code,
+  results, and `paper/`, extending the PR #116 `applications/` convention. These sit
+  outside the `docs/` tree, so they are not part of the Sphinx build at all.
+- `paper-id` defaults from context — the `applications/<slug>/` you are working in, else
+  the registry's designated main paper — and is otherwise prompted.
+- **Application papers read the main paper read-only**: a hypothesis in an application paper may cite a main-paper result or hypothesis `label` as background, but never writes into the main paper.
+
 ## Design principles
 
 Three principles shaped the design:
@@ -65,7 +81,7 @@ tracks, deliberately. (This skill is itself infra, so *its* spec lives in the fl
 this file.)
 
 ```
-docs/research/hypotheses/2026-07-15-depth-null/
+docs/research/main/hypotheses/2026-07-15-depth-null/
 ├── hypothesis.md   # free-form claim + tiny frontmatter anchor      — created at CAPTURE
 ├── strategy.md     # scientific proof/refutation strategy           — created at STRATEGIZE
 ├── design.md       # engineering: how to build/run the experiments  — created at DESIGN (brainstorming)
@@ -83,7 +99,7 @@ are working records, not published documentation pages.
 
 ### Index
 
-`docs/research/hypotheses/README.md` — a registry table (`status · label · slug ·
+`docs/research/main/hypotheses/README.md` — a registry table (`status · label · slug ·
 one-line claim · link`), the research analogue of `MEMORY.md`. The skill appends a row on
 create and rewrites it on verdict. Optionally regenerable by scanning all `hypothesis.md`
 frontmatter, so it cannot silently drift; a maintained table is acceptable for v1.
@@ -219,7 +235,7 @@ or takes an explicit stage.
 **capture** *(new)*
 1. Interview for the claim only — statement, intuition, rationale, tags. *Deliberately
    does not ask how it will be tested.*
-2. Create `docs/research/hypotheses/<date>-<slug>/hypothesis.md` from the template; set
+2. Create `docs/research/main/hypotheses/<date>-<slug>/hypothesis.md` from the template; set
    `status: open`; append the index row.
 
 **strategize** *(existing `open` hypothesis, no `strategy.md` yet)*
@@ -271,7 +287,7 @@ effect and against re-running dead ends) and stay in the index alongside the res
 
 The depth-null thesis currently in agent memory
 (`depth-null-in-constrained-monotone-nets`) is the natural first record: migrate it to
-`docs/research/hypotheses/2026-07-1x-depth-null/`. Its empirical claim and rationale seed
+`docs/research/main/hypotheses/2026-07-1x-depth-null/`. Its empirical claim and rationale seed
 `hypothesis.md`; its candidate explanations (expressivity vs. optimization vs. data
 structure vs. metric ceiling) and the AUC-recheck note are exactly the confounds and
 required-evidence content of `strategy.md`. Reduce the memory entry to a pointer at the
@@ -301,7 +317,7 @@ Skills are process documents, so validation is dogfooding + structural checks:
 ## Follow-ups (to become GitHub issues)
 
 - Optional `render`-integrated index regeneration from `hypothesis.md` frontmatter, so
-  `docs/research/hypotheses/README.md` cannot drift from the records.
+  `docs/research/main/hypotheses/README.md` cannot drift from the records.
 - Auto-evaluate `strategy.md`'s decision rule against committed results to *propose* a
   verdict for human confirmation, once several hypotheses exist.
 - Paper-outline document format that cites hypotheses by `label`, when write-up begins.
