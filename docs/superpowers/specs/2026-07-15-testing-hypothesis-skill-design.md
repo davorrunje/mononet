@@ -115,7 +115,9 @@ design — the goal is to capture the idea, not to structure it prematurely.
 ### `strategy.md` — the science (how to prove/refute)
 
 The skill's distinctive artifact, authored through a guided scientific-reasoning dialogue
-*before* any engineering. Its required sections encode the rigor practices (see
+*before* any engineering. Because it is committed to git before any run, its commit *is*
+the timestamped preregistration — the a-priori record that a later `findings.md` cannot
+retrofit. Its required sections encode the rigor practices (see
 [Scientific rigor](#scientific-rigor-enforced-by-the-templates)):
 
 - **Sharpened hypothesis** — the claim stated precisely enough to test.
@@ -126,12 +128,16 @@ The skill's distinctive artifact, authored through a guided scientific-reasoning
   (for depth-null: expressivity vs. optimization vs. data-structure vs. metric-ceiling)
   and design tests that tell them *apart*, not just confirm one (strong inference).
 - **Predictions** — what we expect to observe if true vs. if false, pre-specified.
-- **Decision rule (pre-specified analysis)** — metric, threshold, **number of seeds**, and
-  the estimator/CI procedure (`rliable`-style IQM + stratified bootstrap CIs), specified
+- **Decision rule (pre-specified analysis)** — metric, threshold, **number of seeds**, the
+  estimator/CI procedure (`rliable`-style IQM + stratified bootstrap CIs + performance
+  profiles), *and the exact preprocessing and shallow-vs-deep comparison* — fixed here so
+  the analysis path is not chosen after seeing data (garden of forking paths). Specified
   precisely enough to constitute a *severe* test (one the claim would probably fail if
   false).
 - **Power / minimum detectable effect** — how many seeds/datasets are needed to detect an
   effect of size ε, so a null result rests on a test that *could* have found an effect.
+- **Dataset datasheets** — a short datasheet-style note per benchmark dataset (composition,
+  preprocessing, split) so dataset choice cannot silently confound the comparison.
 - **Experiments needed (in principle)** — datasets, arms, metrics — *what* must be run,
   not yet *how* (that is `design.md`).
 
@@ -144,11 +150,17 @@ experiment specs (TOML under `benchmarks/experiments/`), configs, and groups.
 ### `findings.md` — the results (after runs)
 
 - **Confirmatory result** — evaluated strictly against `strategy.md`'s pre-specified
-  decision rule (plus the equivalence test for null claims). Reported first.
+  decision rule; for null claims, the **TOST equivalence result and the realized power**
+  (not just a non-significant difference). Reported first.
 - **Exploratory observations** — anything *not* pre-specified, explicitly labeled as
   exploratory so it is never mistaken for a confirmatory finding (anti-HARKing).
+- **Disclosure checklist** — all conditions run, all metrics collected, the stopping rule,
+  and any exclusions, so selective reporting is visible (researcher-degrees-of-freedom).
 - Result tables inside `render` **managed blocks** (auto-updating from committed result
   JSON) with links to run-hashes.
+- **Rival-hypothesis adjudication** — for each competing explanation enumerated in
+  `strategy.md`, state whether the evidence rules it out or leaves it standing (this is
+  where the discriminating experiments pay off).
 - **Threats to validity (adversarial pass)** — a section that argues *against* the
   verdict: what would make it wrong, which confound remains. Optionally produced by a
   red-team subagent before the verdict is locked.
