@@ -13,7 +13,10 @@ from typing import TYPE_CHECKING, Any
 
 import optuna
 
+from benchmarks._common.search import final_eval
+
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from pathlib import Path
 
 
@@ -106,3 +109,71 @@ def incumbent_changepoints(study: Any, lower: bool) -> list[tuple[int, dict[str,
             best = v
             out.append((idx, dict(t.params)))
     return out
+
+
+def incumbent_test_curve(
+    study: Any,
+    bundle: Any,
+    *,
+    mode: str,
+    residual: bool,
+    backend: str,
+    lower: bool,
+    n_trials: int,
+    seeds: Iterable[int],
+    embed_layers: int = 2,
+) -> tuple[list[float], int]:
+    """Test metric of the running incumbent per trial (step-held), plus re-eval count.
+
+    For each best-so-far changepoint, uses the stored ``test_metric`` user-attr
+    when present (future ``log_test_trajectory`` runs), otherwise re-evaluates
+    that incumbent's params once via :func:`final_eval` (bounded re-eval — one
+    call per distinct incumbent, never per trial). The returned curve holds each
+    incumbent's value until the next changepoint.
+
+    :param study: Loaded study (or duck-typed stand-in with ``.trials``).
+    :param bundle: The dataset bundle to re-evaluate on.
+    :param mode: Flavor mode (``split``/``mixed``/``alternate``).
+    :param residual: Whether the flavor is residual.
+    :param backend: Backend name passed to :func:`final_eval`.
+    :param lower: Whether lower objective is better.
+    :param n_trials: Total completed-trial count (curve length).
+    :param seeds: Final-eval seeds (match the base run's per-dataset count).
+    :param embed_layers: Non-monotone embedding depth (base run used 2).
+    :returns: ``(curve, n_incumbents_reevaluated)``.
+    """
+    seeds = list(seeds)
+    cps = incumbent_changepoints(study, lower=lower)
+    completed = [
+        t
+        for t in study.trials
+        if t.state == optuna.trial.TrialState.COMPLETE and t.value is not None
+    ]
+    n_eval = 0
+    values_at_cp: list[tuple[int, float]] = []
+    for idx, params in cps:
+        stored = completed[idx - 1].user_attrs.get("test_metric")
+        if stored is not None:
+            metric_val = float(stored)
+        else:
+            agg, _ = final_eval(
+                bundle,
+                params,
+                mode=mode,
+                residual=residual,
+                backend=backend,
+                seeds=seeds,
+                embed_layers=embed_layers,
+            )
+            metric_val = float(agg.metric)
+            n_eval += 1
+        values_at_cp.append((idx, metric_val))
+    curve: list[float] = []
+    cur = values_at_cp[0][1] if values_at_cp else float("nan")
+    j = 0
+    for t_idx in range(1, n_trials + 1):
+        while j < len(values_at_cp) and values_at_cp[j][0] == t_idx:
+            cur = values_at_cp[j][1]
+            j += 1
+        curve.append(cur)
+    return curve, n_eval

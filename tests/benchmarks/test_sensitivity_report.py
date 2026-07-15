@@ -74,3 +74,39 @@ def test_incumbent_changepoints_are_the_improving_trials() -> None:
     cps = incumbent_changepoints(s, lower=True)
     assert [i for i, _ in cps] == [1, 2, 4]
     assert cps[-1][1] == {"depth": 4}
+
+
+import benchmarks._common.sensitivity_report as sr  # noqa: E402
+
+
+def test_incumbent_test_curve_reevaluates_once_per_incumbent(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from types import SimpleNamespace
+
+    study = _FakeStudy(
+        [
+            _FakeTrial(5.0, {"depth": 1}),
+            _FakeTrial(3.0, {"depth": 2}),
+            _FakeTrial(4.0, {"depth": 3}),
+        ]
+    )
+    calls = {"n": 0}
+
+    def fake_final_eval(bundle: Any, params: dict[str, Any], **kw: Any) -> Any:
+        calls["n"] += 1
+        return SimpleNamespace(metric=float(params["depth"])), []
+
+    monkeypatch.setattr(sr, "final_eval", fake_final_eval)
+    curve, n_eval = sr.incumbent_test_curve(
+        study,
+        bundle=object(),
+        mode="split",
+        residual=False,
+        backend="torch",
+        lower=True,
+        n_trials=3,
+        seeds=range(1),
+    )
+    # incumbents at trials 1 (depth1) and 2 (depth2); trial 3 holds depth2.
+    assert curve == [1.0, 2.0, 2.0]
+    assert n_eval == 2
+    assert calls["n"] == 2
