@@ -44,6 +44,10 @@ Each sub-project spec sits below the parent meta-spec [2026-05-21-mononet-packag
 
 > Stale reference in the parent meta-spec: it mentions **MkDocs**, but the project migrated to **Sphinx + myst-nb** ([2026-05-22-sphinx-migration-design.md](docs/superpowers/specs/2026-05-22-sphinx-migration-design.md)). The Sphinx-based docs are the current source of truth — do not propose MkDocs changes.
 
+### Follow-ups become GitHub issues
+
+Whenever you defer work, note a follow-up, or find a problem you won't fix now, **create a GitHub issue for it** — don't leave it only in a spec's "Follow-ups" list, a PR comment, a code `TODO`, or conversational memory. Each issue must be **self-contained**: a future session has only the repository content and the issue text (not this conversation or PR thread), so include the context, the exact repo locations, and acceptance criteria needed to complete it cold. Use the **create-issue** skill for the standard format: [.claude/skills/create-issue/SKILL.md](.claude/skills/create-issue/SKILL.md) (template in [STYLE.md](.claude/skills/create-issue/STYLE.md)).
+
 ## Architecture
 
 ### Multi-backend pattern
