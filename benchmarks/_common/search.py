@@ -38,6 +38,32 @@ def flavor_name(mode: str, residual: bool, deep: bool = False) -> str:
     return f"{mode}-{'residual' if residual else 'plain'}"
 
 
+def _run_flavor_label(
+    mode: str, residual: bool, deep: bool, *, fixed_convex: bool
+) -> str:
+    """Flavor label for a search run, accounting for a fixed ``convex_fraction``.
+
+    Identical to `flavor_name` except when ``fixed_convex`` is `True` and
+    ``mode == "mixed"``: the ``"mixed"`` segment is replaced with
+    ``"mixed-fixed"`` (e.g. ``"mixed-plain"`` -> ``"mixed-fixed-plain"``), so
+    the "mixed with convex_fraction pinned at 0.5" ablation gets its own
+    label distinct from the searched-``convex_fraction`` ``"mixed"`` flavor.
+    Has no effect on ``"split"``/``"alternate"``, whose ``convex_fraction`` is
+    already fixed regardless of this flag.
+
+    :param mode: Monotonicity mode (``"split"``, ``"mixed"``, or ``"alternate"``).
+    :param residual: Whether the stack uses residual blocks.
+    :param deep: Whether this is the deep-depth-band flavor.
+    :param fixed_convex: Whether ``convex_fraction`` was held fixed at ``0.5``
+        rather than searched (only meaningful for ``mode == "mixed"``).
+    :returns: The flavor label string.
+    """
+    name = flavor_name(mode, residual, deep)
+    if fixed_convex and mode == "mixed":
+        return name.replace("mixed", "mixed-fixed", 1)
+    return name
+
+
 def _primary_metric(bundle: DatasetBundle) -> str:
     return "roc_auc" if bundle.task == "binary_classification" else "mse"
 
@@ -93,6 +119,10 @@ def search(
     search_seeds: int = 3,
     metric: str | None = None,
     storage: str | None = None,
+    search_activation: bool = False,
+    max_depth: int = 4,
+    embed_layers: int = 1,
+    search_convex_fraction: bool = True,
 ) -> StudyResult:
     """Tune (dataset, flavor) HPs by a **stability-aware** k-fold CV objective.
 
@@ -103,11 +133,26 @@ def search(
     collapses (which a single-seed CV misses), and the variance penalty steers
     the search away from fragile HP regions that train well on average but
     collapse on some seeds. See [[stage2-collapse-investigation]].
+
+    :param search_activation: When ``True``, sample ``activation`` from
+        ``{"relu", "elu", "softplus", "selu"}``; otherwise fix it to ``"elu"``.
+    :param max_depth: Upper bound of the shallow ``depth`` range (``[1,
+        max_depth]``) used when ``deep`` is `False`.
+    :param embed_layers: Number of non-monotone `Dense` layers in
+        ``cfg.embed_hidden``, each sized ``width``.
+    :param search_convex_fraction: When ``False`` and ``mode == "mixed"``,
+        fix ``convex_fraction`` at ``0.5`` instead of searching it (the
+        "mixed-fixed" flavor); the study name and returned
+        `StudyResult.flavor` get the ``"mixed-fixed"`` label
+        (see `_run_flavor_label`). No effect on other modes.
     """
     metric = metric or _primary_metric(bundle)
     lower = _lower_is_better(metric)
     direction = "minimize" if lower else "maximize"
     folds = _fold_bundles(bundle, n_splits=n_splits, seed=seed)
+    run_flavor = _run_flavor_label(
+        mode, residual, deep, fixed_convex=not search_convex_fraction
+    )
 
     def objective(trial: optuna.Trial) -> float:
         cfg: BenchmarkConfig = suggest_config(
@@ -120,6 +165,10 @@ def search(
             metric=metric,  # type: ignore[arg-type]
             n_train=int(bundle.X_train.shape[0]),
             deep=deep,
+            search_activation=search_activation,
+            max_depth=max_depth,
+            embed_layers=embed_layers,
+            search_convex_fraction=search_convex_fraction,
         )
         cfg = dataclasses.replace(cfg, seeds=tuple(range(search_seeds)))
         scores: list[float] = []
@@ -134,7 +183,7 @@ def search(
         return float(arr.mean() + arr.std()) if lower else float(arr.mean() - arr.std())
 
     study = optuna.create_study(
-        study_name=f"{bundle.name}-{flavor_name(mode, residual, deep)}",
+        study_name=f"{bundle.name}-{run_flavor}",
         direction=direction,
         sampler=optuna.samplers.TPESampler(seed=seed),
         storage=storage,
@@ -143,7 +192,7 @@ def search(
     study.optimize(objective, n_trials=n_trials, n_jobs=n_jobs)
     return StudyResult(
         dataset=bundle.name,
-        flavor=flavor_name(mode, residual, deep),
+        flavor=run_flavor,
         best_params=dict(study.best_params),
         best_value=float(study.best_value),
         n_trials=len(study.trials),
@@ -160,9 +209,12 @@ def final_eval(
     metric: str | None = None,
     seeds: Iterable[int] = range(10),
     epochs: int = 50,
+    embed_layers: int = 1,
 ) -> tuple[Aggregate, list[ResultRow]]:
     """Refit best HPs on the full train split; report TEST mean±std over all seeds.
 
+    :param embed_layers: Number of non-monotone `Dense` layers in
+        ``cfg.embed_hidden``, each sized ``width``.
     :returns: ``(agg, rows)`` — the primary-metric :class:`Aggregate` and the
         raw per-seed :class:`ResultRow` list backing it. Each row's ``scores``
         holds every metric computed for that seed (e.g. ``roc_auc`` *and*
@@ -182,9 +234,9 @@ def final_eval(
         residual=residual,  # type: ignore[arg-type]
         depth=int(best_params["depth"]),
         width=width,
-        activation="elu",
+        activation=str(best_params.get("activation", "elu")),  # type: ignore[arg-type]
         convex_fraction=float(best_params.get("convex_fraction", 0.5)),
-        embed_hidden=(width,),
+        embed_hidden=tuple(width for _ in range(embed_layers)),
         dropout=float(best_params["dropout"]),
         optimizer=OptimizerSpec(
             "adam", float(best_params["lr"]), float(best_params["weight_decay"])
@@ -195,6 +247,7 @@ def final_eval(
         early_stopping=None,
         seeds=tuple(seeds),
         metrics=metrics,  # type: ignore[arg-type]
+        alt_init="composition" if mode == "alternate" else None,
     )
     rows = run(cfg, bundle)
     agg = aggregate(
@@ -253,17 +306,21 @@ _ALL_FLAVORS: tuple[tuple[str, bool, bool], ...] = (
 )
 # (n_trials, final_seeds, n_splits) per dataset.
 # n_splits: 5-fold CV for small/medium datasets; 1 (single holdout) for the large
-# ones (loan/blog), where a single split is already low-variance and 5x cheaper.
-# final_seeds bumped to 20 for the small/medium datasets so the robust
-# estimators (median, IQM) and the collapse count are stable; loan/blog keep a
-# smaller count (their single-holdout final_eval is already near-deterministic,
-# std ~1e-4).
+# ones (compas/loan/blog), where a single split is already low-variance and 5x
+# cheaper. final_seeds bumped to 20 for the small/medium datasets so the robust
+# estimators (median, IQM) and the collapse count are stable; compas/loan/blog
+# keep a smaller count (their single-holdout final_eval is already
+# near-deterministic, std ~1e-4).
+# n_trials for auto/heart/compas/blog/loan match the paper's (airtai/
+# monotonic-nn) per-dataset Optuna trial counts: AutoMPG/heart=200;
+# compas/blog/loan=50. compas also switches to a single holdout split (1),
+# like the other larger datasets.
 _BUDGET: dict[str, tuple[int, range, int]] = {
-    "auto": (50, range(20), 5),
-    "heart": (50, range(20), 5),
-    "compas": (50, range(20), 5),
-    "loan": (25, range(10), 1),
-    "blog": (25, range(10), 1),
+    "auto": (200, range(20), 5),
+    "heart": (200, range(20), 5),
+    "compas": (50, range(10), 1),
+    "loan": (50, range(10), 1),
+    "blog": (50, range(10), 1),
     "adult": (25, range(10), 5),
     "taiwan": (25, range(10), 5),
     "polish": (25, range(10), 5),
@@ -336,12 +393,28 @@ def run_dataset(
     data_dir: Path | None = None,
     out_dir: Path | None = None,
     storage_dir: Path | None = None,
+    search_activation: bool = False,
+    max_depth: int = 4,
+    embed_layers: int = 1,
+    search_convex_fraction: bool = True,
 ) -> list[Path]:
     """Search + final_eval each flavor of one dataset; write per-flavor JSON.
 
     Budget falls back to `_budget_for(dataset)` when not overridden — the
     per-dataset `_BUDGET` defaults, or the `_SYNTH_BUDGET` preset for `synth_*`.
     Returns the written JSON paths.
+
+    :param search_activation: When ``True``, sample ``activation`` from
+        ``{"relu", "elu", "softplus", "selu"}``; otherwise fix it to ``"elu"``.
+    :param max_depth: Upper bound of the shallow ``depth`` range (``[1,
+        max_depth]``) used when ``deep`` is `False`.
+    :param embed_layers: Number of non-monotone `Dense` layers in
+        ``cfg.embed_hidden``, each sized ``width``.
+    :param search_convex_fraction: When ``False``, every ``mode == "mixed"``
+        flavor in ``flavors`` is run with ``convex_fraction`` fixed at ``0.5``
+        (the "mixed-fixed" flavor) instead of searched; propagated into
+        `search`, and reflected in the output filename and ``rec["flavor"]``
+        via `_run_flavor_label`.
     """
     from benchmarks.datasets.download import default_dest
     from benchmarks.datasets.registry import load
@@ -357,7 +430,9 @@ def run_dataset(
     bundle = load(dataset, data_dir=data_dir)
     written: list[Path] = []
     for mode, residual, deep in flavors:
-        fname = flavor_name(mode, residual, deep)
+        fname = _run_flavor_label(
+            mode, residual, deep, fixed_convex=not search_convex_fraction
+        )
         storage = (
             f"sqlite:///{storage_dir}/{dataset}-{fname}.db" if storage_dir else None
         )
@@ -373,6 +448,10 @@ def run_dataset(
             n_splits=n_splits,
             search_seeds=search_seeds,
             storage=storage,
+            search_activation=search_activation,
+            max_depth=max_depth,
+            embed_layers=embed_layers,
+            search_convex_fraction=search_convex_fraction,
         )
         agg, eval_rows = final_eval(
             bundle,
@@ -382,6 +461,7 @@ def run_dataset(
             backend=backend,
             seeds=final_seeds,
             epochs=epochs,
+            embed_layers=embed_layers,
         )
         base_rate = max(
             float(np.mean(bundle.y_test)), 1.0 - float(np.mean(bundle.y_test))
@@ -410,7 +490,9 @@ def run_dataset(
                 lower_is_better=_lower_is_better(agg.metric),
                 metric=agg.metric,
             ),
+            "n_diverged": sum(1 for r in eval_rows if r.diverged),
             "n_seeds": agg.n_seeds,
+            "n_train": int(bundle.X_train.shape[0]),
         }
         path = out_dir / f"{dataset}-{fname}.json"
         path.write_text(json.dumps(rec, indent=2) + "\n")
