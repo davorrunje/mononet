@@ -104,6 +104,7 @@ def extract_dataset(
                 lower=lower,
                 n_trials=len(vals),
                 seeds=range(n_seeds),
+                progress_label=f"{dataset}/{flavor}",
             )
         flavors[flavor] = {"obj": obj, "test": test_curve}
         rows.append(

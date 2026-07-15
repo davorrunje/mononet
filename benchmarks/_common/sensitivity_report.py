@@ -9,6 +9,7 @@ never a re-run of the search. See
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Any
 
 import optuna
@@ -122,6 +123,7 @@ def incumbent_test_curve(
     n_trials: int,
     seeds: Iterable[int],
     embed_layers: int = 2,
+    progress_label: str | None = None,
 ) -> tuple[list[float], int]:
     """Test metric of the running incumbent per trial (step-held), plus re-eval count.
 
@@ -140,6 +142,8 @@ def incumbent_test_curve(
     :param n_trials: Total completed-trial count (curve length).
     :param seeds: Final-eval seeds (match the base run's per-dataset count).
     :param embed_layers: Non-monotone embedding depth (base run used 2).
+    :param progress_label: When set, print a ``[reeval]`` progress line to stderr
+        per incumbent re-eval (these re-evals are the slow part of a run).
     :returns: ``(curve, n_incumbents_reevaluated)``.
     """
     seeds = list(seeds)
@@ -149,6 +153,9 @@ def incumbent_test_curve(
         for t in study.trials
         if t.state == optuna.trial.TrialState.COMPLETE and t.value is not None
     ]
+    n_reeval_total = sum(
+        1 for idx, _ in cps if completed[idx - 1].user_attrs.get("test_metric") is None
+    )
     n_eval = 0
     values_at_cp: list[tuple[int, float]] = []
     for idx, params in cps:
@@ -156,6 +163,13 @@ def incumbent_test_curve(
         if stored is not None:
             metric_val = float(stored)
         else:
+            if progress_label is not None:
+                print(  # noqa: T201
+                    f"[reeval] {progress_label}: incumbent {n_eval + 1}/"
+                    f"{n_reeval_total} (trial {idx}, {len(seeds)} seeds)",
+                    file=sys.stderr,
+                    flush=True,
+                )
             agg, _ = final_eval(
                 bundle,
                 params,
