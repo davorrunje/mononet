@@ -14,11 +14,13 @@ except the soft baseline's penalty, which lives in the trainer):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
-if TYPE_CHECKING:
-    from mononet.core.config import Mode
-
+#: ``mononet`` construction mode. Mirrors ``mononet.core.config.Mode`` locally
+#: rather than importing it: under some full-backend install layouts the
+#: cross-package import resolved to a stale/duplicate ``mononet`` on the path,
+#: so defining it in-file (as ``config.py`` does) keeps type-checking robust.
+Mode = Literal["switch", "absolute"]
 Method = Literal["vanilla", "soft", "weight_clip", "hard_monotone"]
 Backend = Literal["torch", "jax"]
 
