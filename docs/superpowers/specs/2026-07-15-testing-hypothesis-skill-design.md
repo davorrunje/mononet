@@ -111,16 +111,23 @@ design — the goal is to capture the idea, not to structure it prematurely.
 ### `strategy.md` — the science (how to prove/refute)
 
 The skill's distinctive artifact, authored through a guided scientific-reasoning dialogue
-*before* any engineering:
+*before* any engineering. Its required sections encode the rigor practices (see
+[Scientific rigor](#scientific-rigor-enforced-by-the-templates)):
 
 - **Sharpened hypothesis** — the claim stated precisely enough to test.
-- **Null / "no effect" baseline** — what the world looks like if the hypothesis is false.
-- **Predictions** — what we expect to observe if true vs. if false.
-- **Confounds & alternative explanations** — what must be ruled out (e.g. metric ceiling,
-  optimization failure vs. genuine expressivity limit).
-- **Required evidence** — the observations that would support vs. refute.
-- **Decision rule** — metrics + thresholds that decide the verdict (e.g.
-  `IQM(deep) − IQM(shallow) > 0.005 on ≥3 datasets ⇒ supported`).
+- **Null / equivalence baseline** — what "no effect" means; for a *null* hypothesis, the
+  equivalence bounds ±ε within which depth's benefit is deemed negligible (tested *for*
+  equivalence via TOST, not merely "failed to reject a difference").
+- **Rival hypotheses & discriminating experiments** — enumerate the competing explanations
+  (for depth-null: expressivity vs. optimization vs. data-structure vs. metric-ceiling)
+  and design tests that tell them *apart*, not just confirm one (strong inference).
+- **Predictions** — what we expect to observe if true vs. if false, pre-specified.
+- **Decision rule (pre-specified analysis)** — metric, threshold, **number of seeds**, and
+  the estimator/CI procedure (`rliable`-style IQM + stratified bootstrap CIs), specified
+  precisely enough to constitute a *severe* test (one the claim would probably fail if
+  false).
+- **Power / minimum detectable effect** — how many seeds/datasets are needed to detect an
+  effect of size ε, so a null result rests on a test that *could* have found an effect.
 - **Experiments needed (in principle)** — datasets, arms, metrics — *what* must be run,
   not yet *how* (that is `design.md`).
 
@@ -132,10 +139,18 @@ experiment specs (TOML under `benchmarks/experiments/`), configs, and groups.
 
 ### `findings.md` — the results (after runs)
 
-- Per-experiment result summary; tables inside `render` **managed blocks** (auto-updating
-  from committed result JSON) with links to run-hashes.
-- Evaluation against `strategy.md`'s decision rule.
-- **Verdict** — supported / refuted / inconclusive, with reasoning.
+- **Confirmatory result** — evaluated strictly against `strategy.md`'s pre-specified
+  decision rule (plus the equivalence test for null claims). Reported first.
+- **Exploratory observations** — anything *not* pre-specified, explicitly labeled as
+  exploratory so it is never mistaken for a confirmatory finding (anti-HARKing).
+- Result tables inside `render` **managed blocks** (auto-updating from committed result
+  JSON) with links to run-hashes.
+- **Threats to validity (adversarial pass)** — a section that argues *against* the
+  verdict: what would make it wrong, which confound remains. Optionally produced by a
+  red-team subagent before the verdict is locked.
+- **Environment & provenance** — git SHA, `uv.lock` hash, package/CUDA/hardware, seeds
+  (drawn from the orchestration run record), so every number is reproducible.
+- **Verdict** — supported / refuted / inconclusive, backed by the above.
 - **Deviations** from strategy/plan.
 
 ### Document ↔ stage lifecycle
@@ -150,6 +165,33 @@ experiment specs (TOML under `benchmarks/experiments/`), configs, and groups.
 The hypothesis is the durable **question**; the strategy is **how we decide the answer**;
 the design is **how we run it**; the findings are **what we found** — recorded in that
 order, never presuming a later stage.
+
+## Scientific rigor (enforced by the templates)
+
+The document structure is only as good as the thinking it captures, so the `strategy.md`
+and `findings.md` templates **bake in established best practice** rather than relying on
+in-the-moment discipline — every hypothesis inherits it. Citable references are collected
+in [methodology-references.md](../../research/methodology-references.md) (the methodology
+basis for the paper).
+
+- **Anti-HARKing** — confirmatory results (pre-specified in `strategy.md`) are reported
+  separately from labeled exploratory ones in `findings.md`.
+- **Strong inference** — `strategy.md` enumerates rival explanations and designs
+  experiments that discriminate between them, not merely confirm one.
+- **Severe, pre-specified tests** — the decision rule fixes metric, threshold, seed count,
+  and the estimator/CI procedure (`rliable`-style IQM + stratified bootstrap) *before*
+  running.
+- **Null-claim rigor** — for null hypotheses (the depth-null flagship), power / minimum-
+  detectable-effect planning and equivalence bounds (TOST), so "no effect found" rests on
+  a test that could have found one.
+- **Adversarial review** — a threats-to-validity pass argues against the verdict before it
+  is locked.
+- **Complete provenance** — environment + lockfile + run-hashes make every number
+  reproducible.
+- **No file drawer** — refuted/inconclusive hypotheses are retained in the index.
+
+These are standards the templates enforce; the depth-null dogfood (below) is where they
+get exercised first — it is a null claim, so equivalence + power apply directly.
 
 ## Skill process (staged, resumable)
 
@@ -205,7 +247,9 @@ orchestration system.
 
 `open → {supported | refuted | inconclusive}`, plus `superseded` when a later hypothesis
 replaces it. The verdict and its `run_hashes` are recorded together, so a status change is
-always backed by provenance.
+always backed by provenance. Refuted and inconclusive hypotheses are **kept, never
+deleted** — negative results are part of the record (guarding against the file-drawer
+effect and against re-running dead ends) and stay in the index alongside the rest.
 
 ## Dogfood / migration
 
