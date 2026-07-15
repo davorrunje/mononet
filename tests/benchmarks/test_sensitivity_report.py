@@ -110,3 +110,17 @@ def test_incumbent_test_curve_reevaluates_once_per_incumbent(monkeypatch) -> Non
     assert curve == [1.0, 2.0, 2.0]
     assert n_eval == 2
     assert calls["n"] == 2
+
+
+def test_render_plot_writes_png_and_pdf(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    pytest.importorskip("matplotlib")
+    series = {
+        "heart": {
+            "split-plain": ([0.9, 0.91, 0.91], [0.88, 0.89, 0.89]),
+            "alternate-plain": ([0.89, 0.90, 0.906], None),
+        }
+    }
+    out = tmp_path / "sensitivity"
+    sr.render_plot(series, out)
+    assert out.with_suffix(".png").stat().st_size > 0
+    assert out.with_suffix(".pdf").stat().st_size > 0

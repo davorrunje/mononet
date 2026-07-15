@@ -177,3 +177,45 @@ def incumbent_test_curve(
             j += 1
         curve.append(cur)
     return curve, n_eval
+
+
+def render_plot(
+    series: dict[str, dict[str, tuple[list[float], list[float] | None]]],
+    out_path: Path,
+) -> None:
+    r"""Render the sensitivity figure next to ``out_path`` as PNG and PDF.
+
+    One column per dataset; top row = Curve A (best-so-far objective vs trial),
+    bottom row = Curve B (test metric of running incumbent vs trial). One line
+    per flavor. Agg backend, mathtext labels, no title — supply the docs heading
+    / LaTeX caption instead. Mirrors
+    :func:`benchmarks._common.size_ladder_report.render_plot`.
+
+    :param series: ``series[dataset][flavor] = (objective_bestsofar, test_curve)``;
+        ``test_curve`` may be ``None`` when Curve B was not reconstructed.
+    :param out_path: Base output path; the suffix is replaced with png/pdf.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    datasets = list(series)
+    ncol = max(1, len(datasets))
+    fig, axes = plt.subplots(2, ncol, figsize=(3.2 * ncol, 5.0), squeeze=False)
+    for c, ds in enumerate(datasets):
+        top, bot = axes[0][c], axes[1][c]
+        for fl, (obj, test) in series[ds].items():
+            top.plot(range(1, len(obj) + 1), obj, lw=1.5, label=fl)
+            if test is not None:
+                bot.plot(range(1, len(test) + 1), test, lw=1.5, label=fl)
+        top.set_title(ds, fontsize=11)
+        top.set_ylabel("best CV objective", fontsize=10)
+        bot.set_ylabel("test of incumbent", fontsize=10)
+        bot.set_xlabel(r"Optuna trial $t$", fontsize=10)
+        if c == 0:
+            top.legend(fontsize=7, loc="best")
+    fig.tight_layout()
+    for suffix in (".png", ".pdf"):
+        fig.savefig(out_path.with_suffix(suffix), dpi=150, bbox_inches="tight")
+    plt.close(fig)
