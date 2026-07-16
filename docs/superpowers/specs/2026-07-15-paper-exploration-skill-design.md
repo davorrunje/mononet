@@ -1,4 +1,4 @@
-# Follow-up-paper skill
+# Paper-exploration skill
 
 **Status:** design
 **Date:** 2026-07-15
@@ -19,20 +19,17 @@ main paper and proposes, prioritizes, and scaffolds the next follow-up papers.
 
 ## Relationship to the other skills
 
-It is `hypothesis-exploration` **lifted one level**: the same origin→dedup→prioritize→gate
-→emit pipeline, but the unit is a *paper*, not a hypothesis.
+One of the four composable skills in the **research-workflow family** — the full matrix,
+the two nested flywheels, and the exploration/testing/synthesis firewall live in
+[docs/research/README.md](../../research/README.md):
 
-| Level | Skill | Proposes | Backlog |
-|---|---|---|---|
-| Portfolio | **`follow-up-paper`** (this spec) | application papers | `docs/research/portfolio-backlog.md` |
-| Paper | `hypothesis-exploration` | hypotheses | `<paper-root>/backlog.md` |
-| Hypothesis | `testing-hypothesis` | — (tests one) | — |
-| Paper | `paper-synthesis` | — (assembles one) | — |
+- `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
+- `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
 
-On acceptance it **scaffolds a new application project** and hands it to
-`superpowers:brainstorming`; from there the per-paper family (`testing-hypothesis`,
-`hypothesis-exploration`, `paper-synthesis`) takes over within that project. Grounded in
-[follow-up-paper-references.md](../../research/follow-up-paper-references.md).
+**This skill, `paper-exploration`,** is portfolio-level — `hypothesis-exploration` lifted one level: it proposes whole application papers and scaffolds a new project on acceptance. It builds on the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
+for reproducible results, and is grounded in
+[paper-exploration-references.md](../../research/paper-exploration-references.md).
 
 ## The papers registry
 
@@ -66,7 +63,7 @@ is `kind: main`. Application papers point at their `applications/<slug>/` root.
 ## Layout & artifacts
 
 ```
-.claude/skills/follow-up-paper/
+.claude/skills/paper-exploration/
 ├── SKILL.md          # frontmatter + "When to use" + verbs (park/generate/rank/promote/drop)
 └── BACKLOG.md        # portfolio-backlog entry format (as create-issue has STYLE.md)
 
@@ -104,7 +101,7 @@ Verbs (mirroring `hypothesis-exploration`):
 
 ## Generation lenses
 
-Grounded in `follow-up-paper-references.md`:
+Grounded in `paper-exploration-references.md`:
 
 - **mechanism-transfer** (primary) — broker the main paper's core mechanism into a domain
   where it is novel but proven in the source (Hargadon & Sutton 1997), by structural
@@ -152,7 +149,7 @@ On `promote`, the skill frames the chosen paper as answers to the **Heilmeier Ca
 
 The skill closes the *outer* loop, above the per-paper flywheel:
 
-**main paper matures → `follow-up-paper` proposes applications → scaffold → the per-paper
+**main paper matures → `paper-exploration` proposes applications → scaffold → the per-paper
 family runs inside each application → application results feed back as evidence the main
 paper can cite → new applications become reachable.**
 
@@ -170,7 +167,7 @@ by `label`); the main paper does not depend on the applications.
 
 ## Grounding & dogfood
 
-- Every lens and prioritization axis cites `follow-up-paper-references.md`.
+- Every lens and prioritization axis cites `paper-exploration-references.md`.
 - **Dogfood**: retro-fit the registry with `main` + `pinn`, then run `generate` against the
   main paper. The PINN paper should be *reconstructible* as a mechanism-transfer candidate
   (hard monotonicity → admissible PDE solutions), validating that the lenses and rubric

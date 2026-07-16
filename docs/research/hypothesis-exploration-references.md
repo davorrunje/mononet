@@ -1,10 +1,10 @@
-# Hypothesis-generation references
+# Hypothesis-exploration references
 
 This document collects verified primary sources on the *methodology of
 generating and prioritizing new scientific hypotheses* — the logic by which a
 researcher moves from a corpus of already-tested claims and their findings to
 the next set of candidate hypotheses worth testing. It is the companion to
-[methodology-references.md](methodology-references.md), which covers the
+[hypothesis-testing-references.md](hypothesis-testing-references.md), which covers the
 *confirmatory* half of the loop (pre-registration, strong inference, severity,
 `rliable` reporting, equivalence testing, reproducibility); this file
 deliberately does **not** repeat those and instead grounds a
@@ -277,4 +277,4 @@ The references above imply a concrete four-step procedure.
    separate, pre-registered testing skill to confirm (Wagenmakers et al. 2012;
    King et al. 2009). This skill never marks its own outputs confirmed; the
    generate→test→interpret loop is closed only by the confirmatory tooling in
-   [methodology-references.md](methodology-references.md).
+   [hypothesis-testing-references.md](hypothesis-testing-references.md).

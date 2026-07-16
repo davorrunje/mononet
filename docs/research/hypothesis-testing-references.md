@@ -1,4 +1,4 @@
-# Methodology references
+# Hypothesis-testing references
 
 This document collects verified primary sources for the experimental-methodology
 practices used in this project. Its purpose is twofold: to supply citable

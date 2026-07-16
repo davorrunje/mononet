@@ -8,10 +8,10 @@ contradicted) and a narrative role (headline / null-result / limitation). The
 skill emits a **gap list** of under-supported claims and keeps every
 quantitative claim in sync with committed results (result tables injected from a
 build step). It is the third of a trio: the confirmatory half lives in
-[methodology-references.md](methodology-references.md) (pre-registration, strong
+[hypothesis-testing-references.md](hypothesis-testing-references.md) (pre-registration, strong
 inference, severity, `rliable`, equivalence, reproducibility checklists) and the
 generative half in
-[hypothesis-generation-references.md](hypothesis-generation-references.md)
+[hypothesis-exploration-references.md](hypothesis-exploration-references.md)
 (abduction, EDA, Bayesian optimal experimental design, automated discovery).
 This file does **not** repeat those; it cross-links them where the argument
 touches confirmation or generation. Because the output feeds a methodology
@@ -71,7 +71,7 @@ first-class, machine-addressable objects rather than free text.
 The consistency check (§7) depends on a claim being tied to the *computation*
 that produced its number; this literature is the foundation for that binding.
 See also the ML-specific reproducibility standards (Pineau et al. 2021; Gebru et
-al. 2021) in [methodology-references.md](methodology-references.md) §6.
+al. 2021) in [hypothesis-testing-references.md](hypothesis-testing-references.md) §6.
 
 - **Knuth, D. E. (1984).** *Literate Programming.* The Computer Journal 27(2):
   97–111. DOI: [10.1093/comjnl/27.2.97](https://doi.org/10.1093/comjnl/27.2.97).
@@ -166,13 +166,13 @@ al. 2021) in [methodology-references.md](methodology-references.md) §6.
   (a claim lacking backing, to be reported honestly) from mere rhetorical
   gap-spotting, and flag whether an emitted gap is a support deficiency or an
   assumption worth problematizing. Complements the generative gap-finding in
-  [hypothesis-generation-references.md](hypothesis-generation-references.md).
+  [hypothesis-exploration-references.md](hypothesis-exploration-references.md).
 
 ## 7. Reporting and valuing null/negative results
 
 Kept brief; the statistical machinery for *warranting* a null (equivalence
 testing / TOST, power, minimum detectable effect, severity) lives in
-[methodology-references.md](methodology-references.md) §§3, 5 (Mayo 2018;
+[hypothesis-testing-references.md](hypothesis-testing-references.md) §§3, 5 (Mayo 2018;
 Lakens 2017/2018; Altman & Bland 1995) and is not repeated here.
 
 - **Rosenthal, R. (1979).** *The "File Drawer Problem" and Tolerance for Null
@@ -200,7 +200,7 @@ pointer to the exact run/table that backs it.
 rhetorical gap-spotting, so the emitted gap list distinguishes "claim lacks
 backing" from "assumption worth problematizing." The generative counterpart —
 turning a gap into the next hypothesis to test — is deferred to
-[hypothesis-generation-references.md](hypothesis-generation-references.md).
+[hypothesis-exploration-references.md](hypothesis-exploration-references.md).
 
 **Consistency / staleness check.** The claim is bound to the computation that
 produced its number (Knuth 1984; Gentleman & Temple Lang 2007; Peng 2011;

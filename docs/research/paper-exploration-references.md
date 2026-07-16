@@ -1,7 +1,7 @@
-# Follow-up-paper references
+# Paper-exploration references
 
 This document collects verified primary sources for a *portfolio-level*
-follow-up-paper research skill: one that reads a completed or ongoing **main**
+paper-exploration research skill: one that reads a completed or ongoing **main**
 paper — its thesis, results, verdicts, limitations, and open questions — and
 proposes the next **application** papers to write. An application paper takes the
 main paper's core mechanism and applies it in a new domain (e.g., the main paper
@@ -10,10 +10,10 @@ applies it to physics-informed neural networks so a PDE solution is admissible b
 construction). The skill proposes candidate papers, prioritizes them by
 impact/feasibility/fit/venue, and on acceptance scaffolds a new
 application-paper project. It is the fourth of a set: the confirmatory half lives
-in [methodology-references.md](methodology-references.md) (pre-registration,
+in [hypothesis-testing-references.md](hypothesis-testing-references.md) (pre-registration,
 strong inference, severity, `rliable`, equivalence, reproducibility); generating
 hypotheses *within* a paper — including analogical transfer (Gentner 1983) — lives
-in [hypothesis-generation-references.md](hypothesis-generation-references.md); and
+in [hypothesis-exploration-references.md](hypothesis-exploration-references.md); and
 assembling a paper's claim→evidence ledger lives in
 [paper-synthesis-references.md](paper-synthesis-references.md). This file does
 **not** repeat those; it cross-links them and instead grounds the choice and
@@ -106,7 +106,7 @@ UNVERIFIED.
 
 The analogical-transfer mechanism itself (structure-mapping) is covered by
 **Gentner, D. (1983)** in
-[hypothesis-generation-references.md](hypothesis-generation-references.md) §5 and
+[hypothesis-exploration-references.md](hypothesis-exploration-references.md) §5 and
 is not repeated here; the sources below add the innovation/translational side —
 how transferring a working mechanism into a new domain is itself a recognized,
 high-value engine of new work.
@@ -199,7 +199,7 @@ paper as answers to the **Heilmeier Catechism** (DARPA) — Q1–Q4 fix the
 contribution, Q5–Q7 the feasibility/cost/timeline, Q8 the success "exams" — and
 scaffolds a new project whose pre-experiment strategy doc is seeded from those
 answers. That strategy doc then hands off to the confirmatory tooling in
-[methodology-references.md](methodology-references.md), while any within-paper
-hypotheses use [hypothesis-generation-references.md](hypothesis-generation-references.md)
+[hypothesis-testing-references.md](hypothesis-testing-references.md), while any within-paper
+hypotheses use [hypothesis-exploration-references.md](hypothesis-exploration-references.md)
 and the paper's claim ledger uses
 [paper-synthesis-references.md](paper-synthesis-references.md).

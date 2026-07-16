@@ -8,7 +8,7 @@ artifact. Repo tooling/process — no impact on the `mononet` wheel.
 
 ## Problem
 
-The [testing-hypothesis skill](2026-07-15-testing-hypothesis-skill-design.md) handles the
+The [hypothesis-testing skill](2026-07-15-hypothesis-testing-skill-design.md) handles the
 *confirmatory* loop — take one hypothesis from claim to verdict. Nothing systematically
 does the *generative* half: turn the accumulated corpus of tested hypotheses (and their
 surviving rival explanations, anomalies, and exploratory observations) into the next
@@ -23,16 +23,17 @@ and confirmation.
 
 ## Relationship to the other skills
 
-Third of a research-workflow family sharing the `docs/research/` corpus:
+One of the four composable skills in the **research-workflow family** — the full matrix,
+the two nested flywheels, and the exploration/testing/synthesis firewall live in
+[docs/research/README.md](../../research/README.md):
 
-- `testing-hypothesis` (exists) — confirmatory: one hypothesis, claim → verdict.
-- **`hypothesis-exploration`** (this spec) — generative: corpus → prioritized candidates.
-- `paper-synthesis` (deferred, later spec) — assembles the paper from verdicts and emits
-  the outline this skill reads.
+- `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
+- `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
 
-In Peirce's terms this skill is **abduction** (propose explanations); `testing-hypothesis`
-is deduction + induction (predict + test). It is grounded in the verified sources in
-[hypothesis-generation-references.md](../../research/hypothesis-generation-references.md).
+**This skill, `hypothesis-exploration`,** is the generative half — abduction (Peirce): it reads the corpus and proposes prioritized candidate hypotheses, which only `hypothesis-testing` may confirm. It builds on the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
+for reproducible results, and is grounded in
+[hypothesis-exploration-references.md](../../research/hypothesis-exploration-references.md).
 
 ## Multi-paper scoping
 
@@ -53,7 +54,7 @@ examples show the main paper for concreteness.
 ## Design principles
 
 1. **Exploration proposes, testing disposes.** Everything this skill emits is
-   *exploratory* until it passes a fresh, pre-registered test in `testing-hypothesis`
+   *exploratory* until it passes a fresh, pre-registered test in `hypothesis-testing`
    (Wagenmakers et al. 2012). The skill never confirms its own output — that firewall is
    the whole reason it is a separate skill.
 2. **Origin-agnostic pipeline.** A candidate you propose and a machine-generated one flow
@@ -112,7 +113,7 @@ The skill's verbs:
   Generated candidates land in the backlog.
 - **rank** — score backlog entries with the rubric (Section 3).
 - **promote** — accept one *or several* entries; each becomes a hypothesis folder via
-  `testing-hypothesis` **capture**; the entry is marked `promoted` with a link.
+  `hypothesis-testing` **capture**; the entry is marked `promoted` with a link.
 - **drop** — reject an entry, keeping the reason (file-drawer discipline).
 
 A hypothesis you already believe in skips `generate`/backlog and goes straight to
@@ -120,7 +121,7 @@ A hypothesis you already believe in skips `generate`/backlog and goes straight t
 
 ## Section 3 — Generation moves & prioritization rubric
 
-**Generation moves** (each grounded in `hypothesis-generation-references.md`), applied by
+**Generation moves** (each grounded in `hypothesis-exploration-references.md`), applied by
 the checklist or the fan-out lenses:
 
 - **anomaly** — explain a finding that violated expectation (Kuhn 1962); the depth-null is
@@ -163,7 +164,7 @@ Dedup guards against re-proposing anything already open, tested, parked, or drop
 
 ## Section 5 — Relationships & the flywheel
 
-`promote` hands off to `testing-hypothesis` capture; the paper outline this skill reads is
+`promote` hands off to `hypothesis-testing` capture; the paper outline this skill reads is
 produced by the future `paper-synthesis` skill. Together the three close the research
 flywheel:
 
@@ -180,7 +181,7 @@ confirmation.
 2. **generate** — pick the mechanism; ingest the corpus (Section 4); apply the moves;
    dedup; score with the rubric; write the ranked candidates to the backlog.
 3. **rank** — (re)score existing backlog entries, e.g. after new findings land.
-4. **promote** — for each accepted entry, invoke `testing-hypothesis` capture to create the
+4. **promote** — for each accepted entry, invoke `hypothesis-testing` capture to create the
    hypothesis folder, then mark the entry `promoted` with the link.
 5. **drop** — mark an entry `dropped` with a reason.
 
@@ -188,7 +189,7 @@ Each verb is a complete act; the skill is re-entered as the research proceeds.
 
 ## Grounding & dogfood
 
-- Every move and rubric line cites `hypothesis-generation-references.md`.
+- Every move and rubric line cites `hypothesis-exploration-references.md`.
 - **Dogfood**: run `generate` against the depth-null corpus. Its four rival explanations
   (expressivity / optimization / data-structure / metric-ceiling) and the AUC-recheck note
   should yield a *boundary* candidate ("where does the null break — width, dimensionality,

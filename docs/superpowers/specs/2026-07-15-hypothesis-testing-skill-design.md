@@ -1,4 +1,4 @@
-# Testing-hypothesis skill
+# Hypothesis-testing skill
 
 **Status:** design
 **Date:** 2026-07-15
@@ -18,13 +18,19 @@ and as a reproducible history of the research itself.
 We want a **systematic, skill-driven way to record hypotheses and their tests**, with a
 standardized document set and format, sufficient for reproducibility.
 
-## Relationship to the orchestration spec
+## Relationship to the other skills
 
-Sibling of [2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md).
-That spec makes *experiments* reproducible (declarative specs, provenance, committed
-results, run records). This spec makes the *hypotheses those experiments test* a durable
-record, and leans on the orchestration provenance chain to be reproducible end-to-end. The
-two are independent deliverables designed to interlock.
+One of the four composable skills in the **research-workflow family** — the full matrix,
+the two nested flywheels, and the exploration/testing/synthesis firewall live in
+[docs/research/README.md](../../research/README.md):
+
+- `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
+- `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
+
+**This skill, `hypothesis-testing`,** is the confirmatory core: it carries one hypothesis from claim to verdict through staged documents (hypothesis → strategy → design/plan → findings). It builds on the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
+for reproducible results, and is grounded in
+[hypothesis-testing-references.md](../../research/hypothesis-testing-references.md).
 
 ## Multi-paper scoping
 
@@ -68,7 +74,7 @@ Three principles shaped the design:
 Mirrors the existing `create-issue` skill shape:
 
 ```
-.claude/skills/testing-hypothesis/
+.claude/skills/hypothesis-testing/
 ├── SKILL.md        # frontmatter + "When to use" + numbered, staged "Process"
 └── TEMPLATE.md     # the standardized document templates (as create-issue has STYLE.md)
 ```
@@ -203,7 +209,7 @@ order, never presuming a later stage.
 The document structure is only as good as the thinking it captures, so the `strategy.md`
 and `findings.md` templates **bake in established best practice** rather than relying on
 in-the-moment discipline — every hypothesis inherits it. Citable references are collected
-in [methodology-references.md](../../research/methodology-references.md) (the methodology
+in [hypothesis-testing-references.md](../../research/hypothesis-testing-references.md) (the methodology
 basis for the paper).
 
 - **Anti-HARKing** — confirmatory results (pre-specified in `strategy.md`) are reported
@@ -255,7 +261,7 @@ or takes an explicit stage.
 6. Write `findings.md` (tables via `render` managed blocks), evaluate against the decision
    rule, set `verdict` + `run_hashes` and `status` in `hypothesis.md`, update the index.
 
-This makes `testing-hypothesis` a **process/orchestrator skill** that owns the scientific
+This makes `hypothesis-testing` a **process/orchestrator skill** that owns the scientific
 stages and composes `superpowers:brainstorming` (→ `writing-plans`) for the engineering.
 The resumable-stage re-entry and the science-before-engineering ordering are its crux.
 

@@ -9,7 +9,7 @@ wheel.
 
 ## Problem
 
-The [testing-hypothesis](2026-07-15-testing-hypothesis-skill-design.md) and
+The [hypothesis-testing](2026-07-15-hypothesis-testing-skill-design.md) and
 [hypothesis-exploration](2026-07-15-hypothesis-exploration-skill-design.md) skills produce
 a growing corpus of hypotheses with verdicts and evidence. Turning that corpus into a
 paper — deciding the thesis, which verdicts are headline claims vs. null results vs.
@@ -21,15 +21,17 @@ with the evidence.
 
 ## Relationship to the other skills
 
-Third and final skill of the research-workflow family, sharing the `docs/research/` corpus:
+One of the four composable skills in the **research-workflow family** — the full matrix,
+the two nested flywheels, and the exploration/testing/synthesis firewall live in
+[docs/research/README.md](../../research/README.md):
 
-- `testing-hypothesis` — confirmatory (claim → verdict).
-- `hypothesis-exploration` — generative (corpus → candidates).
-- **`paper-synthesis`** (this spec) — synthesis (verdicts → paper spine → gap list).
+- `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
+- `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
 
-It **reads** the whole hypothesis corpus and the orchestration results; it **produces**
-the paper outline that `hypothesis-exploration` reads, closing the research flywheel. It is
-grounded in [paper-synthesis-references.md](../../research/paper-synthesis-references.md).
+**This skill, `paper-synthesis`,** is the synthesis step: it turns verdicts into a claim→evidence paper spine and a gap list that feeds `paper-exploration` and `hypothesis-exploration`. It builds on the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
+for reproducible results, and is grounded in
+[paper-synthesis-references.md](../../research/paper-synthesis-references.md).
 
 ## Multi-paper scoping
 
@@ -125,7 +127,7 @@ Result tables enter via `render` managed blocks (the orchestration spec's mechan
 every quantitative claim traces to committed results and run-hashes; `check` mirrors
 orchestration's `render --check`. The loop closes:
 
-**paper `gaps` → `hypothesis-exploration` → `testing-hypothesis` → verdicts →
+**paper `gaps` → `hypothesis-exploration` → `hypothesis-testing` → verdicts →
 `paper-synthesis` `map`/`outline` → new `gaps`.**
 
 Three skills, one shared `docs/research/` corpus, one firewall (exploration proposes,
