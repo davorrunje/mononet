@@ -7,14 +7,16 @@ committed result tables; each binding carries a status (supported / thin / gap /
 contradicted) and a narrative role (headline / null-result / limitation). The
 skill emits a **gap list** of under-supported claims and keeps every
 quantitative claim in sync with committed results (result tables injected from a
-build step). It is the third of a trio: the confirmatory half lives in
+build step). It is one of four companion docs: confirmatory testing in
 [hypothesis-testing-references.md](hypothesis-testing-references.md) (pre-registration, strong
-inference, severity, `rliable`, equivalence, reproducibility checklists) and the
-generative half in
+inference, severity, `rliable`, equivalence, reproducibility checklists), hypothesis
+generation in
 [hypothesis-exploration-references.md](hypothesis-exploration-references.md)
-(abduction, EDA, Bayesian optimal experimental design, automated discovery).
-This file does **not** repeat those; it cross-links them where the argument
-touches confirmation or generation. Because the output feeds a methodology
+(abduction, EDA, Bayesian optimal experimental design, automated discovery), and
+follow-up-paper choice in
+[paper-exploration-references.md](paper-exploration-references.md) (research programmes,
+use-inspired research, portfolio balance). This file does **not** repeat those; it
+cross-links them where the argument touches confirmation, generation, or the portfolio. Because the output feeds a methodology
 section, citations must be real and verified — every entry below was checked
 against its publisher of record, arXiv, or a stable archive; none is marked
 UNVERIFIED.
