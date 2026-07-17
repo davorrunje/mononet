@@ -12,21 +12,27 @@
 > onboarding skill, distribution, and how the existing in-repo work migrates.
 > The detailed designs live in four sub-specs (§8). **Read this first.**
 
-> ## ⚑ Guiding principle (overrides everything below)
->
-> **The `scholar` skills are assistants, not researchers.** They keep the
-> accounts of a research program, advise as a mentor, and discuss as a colleague
-> — but they do **not** perform independent research and do **not** make material
-> scientific decisions. Accountability for research is *non-delegable and
-> attaches only to named humans* (ICMJE, COPE, Nature, Science; the Singapore
-> Statement and ALLEA 2023; CRediT), which is also what EU AI Act Art. 14 and
-> "meaningful human control" require and what the automation-bias literature
-> (Parasuraman & Riley 1997; Skitka et al. 1999) demands. Therefore **every
-> material decision is the researcher's, recorded with a named human sign-off**;
-> the skills draft, keep the accounts, and advise; the researcher authors and
-> decides. You cannot "run" the workflow to produce a paper or thesis — you drive
-> it. Detailed in §2.1; fully grounded in
-> [`scholar/references/agency-principle.md`](../scholar/references/agency-principle.md).
+## ⚑ Guiding principle — assistants, not researchers
+
+**This principle overrides everything else in this document.**
+
+The `scholar` skills are **assistants, not researchers.** They keep the accounts
+of a research program, advise as a mentor, and discuss as a colleague — but they
+do **not** perform independent research and do **not** make material scientific
+decisions. Accountability for research is *non-delegable and attaches only to
+named humans* (ICMJE, COPE, Nature, Science; the Singapore Statement and ALLEA
+2023; CRediT), which is also what EU AI Act Art. 14 and "meaningful human
+control" require, and what the automation-bias literature (Parasuraman & Riley
+1997; Skitka et al. 1999) demands. Therefore **every material decision is the
+researcher's, recorded with a named human sign-off** — is a hypothesis confirmed
+or refuted, is a result real, is a paper worth publishing, what the thesis
+claims, is it defensible. The skills draft, keep the accounts, and advise; the
+researcher authors and decides. You cannot "run" the workflow to produce a paper
+or thesis — you drive it.
+
+Elaborated in §2.1; fully grounded, with verified sources and enforceable
+guardrails, in
+[`scholar/references/agency-principle.md`](../scholar/references/agency-principle.md).
 
 ## 1. Goals & non-goals
 
