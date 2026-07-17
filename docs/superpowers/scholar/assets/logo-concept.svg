@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="scholar logo concept">
+  <title>scholar — citation &amp; through-line mark</title>
+  <rect width="96" height="96" rx="18" fill="#FAF7F0"/>
+  <!-- left citation bracket -->
+  <path d="M34 22 H24 V74 H34" fill="none" stroke="#4338CA" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- right citation bracket -->
+  <path d="M62 22 H72 V74 H62" fill="none" stroke="#4338CA" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- through-line / rising argument -->
+  <path d="M35 64 L48 42 L61 64" fill="none" stroke="#F59E0B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- the claim / insight -->
+  <circle cx="48" cy="31" r="4.5" fill="#F59E0B"/>
+</svg>

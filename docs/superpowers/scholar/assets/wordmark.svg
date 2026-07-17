@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="96" viewBox="0 0 380 96" role="img" aria-label="scholar wordmark">
+  <title>scholar wordmark</title>
+  <rect width="380" height="96" fill="none"/>
+  <!-- left bracket -->
+  <path d="M26 28 H18 V68 H26" fill="none" stroke="#4338CA" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- wordmark -->
+  <text x="44" y="63" font-family="'Source Serif 4', Charter, Georgia, serif" font-size="52" letter-spacing="1" fill="#16181D">scholar</text>
+  <!-- right bracket -->
+  <path d="M354 28 H362 V68 H354" fill="none" stroke="#4338CA" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- amber insight dot over the 'i'-like terminal -->
+  <circle cx="333" cy="24" r="4" fill="#F59E0B"/>
+</svg>
