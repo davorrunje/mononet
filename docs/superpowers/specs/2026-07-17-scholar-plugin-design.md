@@ -12,6 +12,22 @@
 > onboarding skill, distribution, and how the existing in-repo work migrates.
 > The detailed designs live in four sub-specs (§8). **Read this first.**
 
+> ## ⚑ Guiding principle (overrides everything below)
+>
+> **The `scholar` skills are assistants, not researchers.** They keep the
+> accounts of a research program, advise as a mentor, and discuss as a colleague
+> — but they do **not** perform independent research and do **not** make material
+> scientific decisions. Accountability for research is *non-delegable and
+> attaches only to named humans* (ICMJE, COPE, Nature, Science; the Singapore
+> Statement and ALLEA 2023; CRediT), which is also what EU AI Act Art. 14 and
+> "meaningful human control" require and what the automation-bias literature
+> (Parasuraman & Riley 1997; Skitka et al. 1999) demands. Therefore **every
+> material decision is the researcher's, recorded with a named human sign-off**;
+> the skills draft, keep the accounts, and advise; the researcher authors and
+> decides. You cannot "run" the workflow to produce a paper or thesis — you drive
+> it. Detailed in §2.1; fully grounded in
+> [`scholar/references/agency-principle.md`](../scholar/references/agency-principle.md).
+
 ## 1. Goals & non-goals
 
 ### Goals
@@ -95,9 +111,20 @@ principle in the design; every other rule sits under it.
   stance (§3.6): the system never adjudicates, scores, or decides on the
   researcher's behalf.
 
-Aligns with research-integrity / authorship norms (ICMJE authorship criteria;
-COPE, ICML, and NeurIPS positions that AI tools cannot be authors and a human
-remains accountable for the work).
+**Grounding.** This is not a preference; it is what the field's norms require.
+Accountability for research is non-delegable and attaches only to named humans —
+authorship/integrity norms (ICMJE; COPE 2023; Nature; Thorp, *Science* 2023;
+the Singapore Statement 2010 and ALLEA 2023; the CRediT taxonomy) and ML-venue
+policies (ICML 2023, NeurIPS, ACL 2023) all say a tool cannot be an author or
+bear responsibility. The "recorded human sign-off" requirement is the *tracing*
+condition of meaningful human control (Santoni de Sio & van den Hoven 2018) and
+the human-oversight requirement of EU AI Act Art. 14; the "halt and ask at
+judgement points" rule is demanded by the automation-bias literature
+(Parasuraman & Riley 1997; Skitka et al. 1999), whose research-specific form is
+LLM citation fabrication. The positive framing is the augmentation tradition
+(Engelbart 1962; Bush 1945): amplify judgement, do not replace it. Full digest
+with verified sources and the enforceable guardrails:
+[`scholar/references/agency-principle.md`](../scholar/references/agency-principle.md).
 
 ### 2.2 The firewall
 
@@ -280,11 +307,12 @@ scholar/                                  # plugin repo root
 
 `resources/references/` carries the verified-source digests produced during
 brainstorming: the four existing research-workflow reference docs (on PR #128)
-plus the five generated this session — **citation scouting**, **related-works
+plus the six generated this session — **citation scouting**, **related-works
 synthesis**, **dataset-management standards**, **dataset tooling / mirror
-architecture**, and **thesis-by-publication & progress tracking**. These are the
-evidentiary base for the sub-specs and must be persisted, not left in
-conversation.
+architecture**, **thesis-by-publication & progress tracking**, and the
+**agency principle** (already persisted at
+`scholar/references/agency-principle.md`). These are the evidentiary base for the
+sub-specs and must be persisted, not left in conversation.
 
 ## 5. Plugin↔consumer boundary
 
@@ -394,8 +422,9 @@ The scientific-workflow work currently lives inside `mononet`. It relocates:
 - **PR #127** (benchmark experiment orchestration) → **stays in `mononet`** as
   its implementation of the experiment-backend contract; it is re-described as
   "mononet's experiment backend" rather than a general facility.
-- The methodology digests (this session's five + #128's four) → become
-  `resources/references/` in the plugin.
+- The methodology digests (this session's six + #128's four) → become
+  `resources/references/` in the plugin. The agency-principle digest is already
+  staged at `docs/superpowers/scholar/references/agency-principle.md`.
 - `mononet` becomes the reference **consumer**: it runs `research-init adopt`
   against itself once the plugin exists.
 
