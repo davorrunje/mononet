@@ -95,4 +95,4 @@ their rationale — ideally written *using* `scholar` itself.
 
 ## License
 
-To be chosen before release (Apache-2.0 or MIT).
+Apache-2.0 (matching `mononet`).

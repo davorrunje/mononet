@@ -28,8 +28,7 @@ Option 1. Public, `scholar`.
 
 - The plugin must be genuinely domain-neutral and self-documenting for strangers
   (drives the detailed root `README.md`).
-- A **license must be chosen** for the plugin (new open item; suggest Apache-2.0
-  to match `mononet`, or MIT).
+- The plugin is licensed **Apache-2.0** (ADR-0022).
 - No mononet/PhD-specific assumptions may leak into the plugin.
 
 ## Rejected alternatives

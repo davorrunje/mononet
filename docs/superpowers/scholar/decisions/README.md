@@ -33,5 +33,6 @@ Migrates to the plugin's `decisions/` alongside `resources/references/`.
 | [0019](0019-public-plugin-visibility.md) | Public plugin, named `scholar` | accepted |
 | [0020](0020-bib-format-csl-json.md) | CSL-JSON source of truth; BibTeX exported on demand | accepted |
 | [0021](0021-thesis-gate-per-gap-confirmation.md) | Thesis gate — per-gap acknowledged confirmation | accepted |
+| [0022](0022-license-apache-2.0.md) | License the plugin under Apache-2.0 | accepted |
 
 Format: MADR (Markdown Any Decision Records). Deciders: Davor Runje (with Claude).

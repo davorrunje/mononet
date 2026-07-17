@@ -468,8 +468,7 @@ PhD peers, and the broader research community. The plugin must therefore be
 genuinely domain-neutral and self-documenting from day one — most "users" are not
 the author. A root `README.md` (staged at `docs/superpowers/scholar/README.md`)
 explains purpose + reasoning and links to the decision log and reference digests.
-A license must be chosen before release (suggest Apache-2.0 to match `mononet`, or
-MIT — see §10).
+Licensed **Apache-2.0** (ADR-0022), matching `mononet`.
 
 ## 8. Sub-spec decomposition
 
@@ -524,8 +523,7 @@ implementation plans, then the plugin repo is created and `mononet` adopts it.
   (ADR-0019).
 - **Bibliography format** — *resolved:* CSL-JSON as source of truth, BibTeX
   exported on demand (ADR-0020).
-- **Plugin license** — *new open item* (public release, ADR-0019): pick a license
-  before first release; suggest Apache-2.0 (matches `mononet`) or MIT.
+- **Plugin license** — *resolved:* Apache-2.0 (ADR-0022).
 - **`literature` one-skill-with-modes** — carried as decided (`scout`/`position`
   in one skill); reconfirm at sub-spec time.
 - **Mirror hash algorithm** — MD5 (lowest common denominator across Google
