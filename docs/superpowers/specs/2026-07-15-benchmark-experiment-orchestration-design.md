@@ -30,6 +30,19 @@ the spine; how each node executes (resume / fan-out / logging) is operational ro
 what the nodes point at (declarative experiment definitions) is reuse. Solving (1)
 correctly forces the abstractions that deliver (2) and (3).
 
+## Role as the default experiment backend
+
+This spec is the **default, reference implementation** of the *experiment-backend contract*
+consumed by the research-workflow skills (defined in
+[docs/research/README.md](../../research/README.md)). It provides the contract's four
+capabilities: **run** (execute a hypothesis's designed experiments — `run` / `reconcile`),
+**evidence** (a committed result carrying a *run-ref* in `.runs/<run-hash>.json` and a
+`.provenance.json` *provenance stamp*), **tables** (`render` managed blocks), and
+**is-current** (`render --check` / provenance diff). Those skills depend on the *contract*,
+not on this spec's internals — so an application paper with its own harness (e.g.
+`applications/pinn/`) can bind a different backend without changing them. Everything below
+is this backend's binding of those capabilities.
+
 ## Compute environment
 
 Single host: 32-core Threadripper, 256 GB RAM, **heterogeneous** NVIDIA 5090 (`cuda:0`)
