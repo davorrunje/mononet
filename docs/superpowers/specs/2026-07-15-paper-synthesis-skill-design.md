@@ -28,9 +28,10 @@ the two nested flywheels, and the exploration/testing/synthesis firewall live in
 - `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
 - `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
 
-**This skill, `paper-synthesis`,** is the synthesis step: it turns verdicts into a claim→evidence paper spine and a gap list that feeds `paper-exploration` and `hypothesis-exploration`. It builds on the benchmark orchestration spec
-([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
-for reproducible results, and is grounded in
+**This skill, `paper-synthesis`,** is the synthesis step: it turns verdicts into a claim→evidence paper spine and a gap list that feeds `paper-exploration` and `hypothesis-exploration`. It depends on a pluggable **experiment backend** for executing experiments and producing
+reproducible evidence — by default the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md)),
+bound per project in the registry. It is grounded in
 [paper-synthesis-references.md](../../research/paper-synthesis-references.md).
 
 ## Multi-paper scoping
@@ -47,14 +48,14 @@ examples show the main paper for concreteness.
   outside the `docs/` tree, so they are not part of the Sphinx build at all.
 - `paper-id` defaults from context — the `applications/<slug>/` you are working in, else
   the registry's designated main paper — and is otherwise prompted.
-- **Application papers read the main paper read-only**: an application paper's claims may cite main-paper results/hypotheses by `label`; `render` pulls the project's *own* results (`applications/<slug>/results/`, or `benchmarks/` for the main paper).
+- **Application papers read the main paper read-only**: an application paper's claims may cite main-paper results/hypotheses by `label`; the backend's **tables** capability pulls the project's *own* results (`applications/<slug>/results/`, or `benchmarks/` for the main paper's default backend).
 
 ## Design principles
 
 1. **Ledger-first, prose optional.** The durable core is a claim→evidence ledger; drafting
    section prose is a secondary, on-demand stage — never autonomous whole-paper generation.
-2. **Every number is derived, never transcribed.** Result tables enter via `render`
-   managed blocks; a claim is "supported" only when its number is recomputable from
+2. **Every number is derived, never transcribed.** Result tables enter via the backend's **tables**
+   capability (default: `render` managed blocks); a claim is "supported" only when its number is recomputable from
    committed code + data (Peng 2011; Gentleman & Temple Lang 2007). This makes a staleness
    check well-defined (Manubot; Himmelstein et al. 2019).
 3. **Reverse mapping.** The paper references hypotheses (by `label`), not the reverse —
@@ -89,7 +90,7 @@ as prior-art "micropublication" in miniature (Clark et al. 2014; Groth et al. 20
 - id: <slug>                         # stable identifier (nanopublication-style addressability)
   claim: <the assertion the paper makes>          # C — claim
   section: <outline section>
-  grounds: [<render table id / run-hash / findings link>, ...]   # D — the evidence
+  grounds: [<backend table id / run-ref / findings link>, ...]    # D — the evidence
   warrant: <the analysis that turns grounds into the claim>      # W — e.g. "IQM Δ + TOST equivalence"
   backing: [<methodology-reference key>, ...]      # B — why the warrant holds
   hypotheses: [<label>, ...]                       # the hypotheses that back it
@@ -118,14 +119,15 @@ establish X does *not* hold" contribution; inconclusive → limitation/future wo
   rows, applying Gopen & Swan (1990) (claim in subject position, evidence in the stress
   position) and Schimel's (2012) narrative roles. Never the whole paper autonomously.
 - **check** — staleness guard: flag any claim whose backing hypothesis verdict changed
-  since it was written, and run `render --check` on the paper's result tables. A claim
+  since it was written, and run the backend's **is-current** check (default: `render
+  --check`) on the paper's result tables. A claim
   cannot silently outlive its evidence (Himmelstein et al. 2019).
 
 ## Section 4 — Consistency & the flywheel
 
-Result tables enter via `render` managed blocks (the orchestration spec's mechanism), so
-every quantitative claim traces to committed results and run-hashes; `check` mirrors
-orchestration's `render --check`. The loop closes:
+Result tables enter via the backend's **tables** capability (default: `render` managed
+blocks), so every quantitative claim traces to committed results and *run-refs*; `check`
+uses the backend's **is-current** capability (default: `render --check`). The loop closes:
 
 **paper `gaps` → `hypothesis-exploration` → `hypothesis-testing` → verdicts →
 `paper-synthesis` `map`/`outline` → new `gaps`.**
@@ -141,7 +143,7 @@ testing disposes, synthesis reports).
 2. **map** — bind claims to hypotheses + evidence; recompute statuses in `ledger.md`.
 3. **gaps** — emit the evidential-gap list for `hypothesis-exploration`.
 4. **draft `<section>`** — optional prose for one section.
-5. **check** — staleness + `render --check`; report claims whose evidence moved.
+5. **check** — the backend's **is-current** capability (default: `render --check`); report claims whose evidence moved.
 
 Each verb is a complete act; the skill is re-entered as verdicts accumulate.
 
@@ -160,7 +162,7 @@ Each verb is a complete act; the skill is re-entered as verdicts accumulate.
   `draft` renders one section's prose; `check` flags a claim after its backing verdict is
   changed.
 - **Consistency**: mutating a backing hypothesis's verdict makes `check` flag the claim;
-  re-mapping clears it. Result tables are `render`-managed, never hand-typed.
+  re-mapping clears it. Result tables come from the backend's **tables** capability, never hand-typed.
 - **Reverse-mapping invariant**: the ledger references hypotheses by `label`; no
   `hypothesis.md` gains a paper-structure field.
 
@@ -175,7 +177,7 @@ Each verb is a complete act; the skill is re-entered as verdicts accumulate.
 ## Follow-ups (to become GitHub issues)
 
 - LaTeX/Overleaf export of the Markdown spine, when the manuscript toolchain is chosen.
-- A `render`-integrated paper `check` in CI (fail the build when a paper claim's backing
-  verdict has moved), mirroring the orchestration `render --check` pre-commit hook.
+- A backend-integrated paper `check` in CI (fail the build when a paper claim's backing
+  verdict has moved), mirroring the default backend's `render --check` pre-commit hook.
 - Automated claim→hypothesis binding suggestions (propose `hypotheses:` for a new claim by
   matching statement text against the corpus), once the corpus is large.

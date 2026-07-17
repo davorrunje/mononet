@@ -37,9 +37,27 @@ Exploration **proposes**, testing **disposes**, synthesis **reports**. A generat
 hypothesis or paper is *exploratory* until confirmed by a fresh, pre-registered test; no
 skill confirms its own output. This is why generation and confirmation are separate skills.
 
-## Reproducibility
+## Experiment backend (pluggable)
 
-Every quantitative claim in a paper enters via the benchmark orchestration spec's `render`
-managed blocks and is traced through provenance- and run-hashes to committed results — see
-[2026-07-15-benchmark-experiment-orchestration-design.md](../superpowers/specs/2026-07-15-benchmark-experiment-orchestration-design.md).
-The four skills are grounded in 56 verified primary sources across the four reference docs.
+The four skills never talk to a specific benchmark harness directly — they depend on an
+abstract **experiment backend** with four capabilities:
+
+| capability | what a skill asks of it |
+|---|---|
+| **run** | execute the experiments a hypothesis's design specifies |
+| **evidence** | a durable result carrying a *run-ref* (stable id) + a *provenance stamp* (code + data version) sufficient to reproduce |
+| **tables** | inject / regenerate result tables in a document |
+| **is-current** | report whether a cited result is still valid for the current code + data |
+
+The backend is bound **per project** by the `backend:` field in [`papers.md`](papers.md).
+The **default** is the benchmark orchestration skill
+([2026-07-15-benchmark-experiment-orchestration-design.md](../superpowers/specs/2026-07-15-benchmark-experiment-orchestration-design.md)),
+which binds run→`mononet-bench run/reconcile`, evidence→run-hash + `.provenance.json`,
+tables→`render` managed blocks, is-current→`render --check`. Depending on the *contract*
+rather than the tool keeps the testing machinery **hot-swappable** — a future paper with
+different execution needs sets a different `backend:` without touching any skill. (The PINN
+application paper is currently a standalone draft; it adopts this default backend once the
+infra lands.)
+
+Every quantitative claim thus traces through the backend to committed results. The four
+skills are grounded in 56 verified primary sources across the four reference docs.

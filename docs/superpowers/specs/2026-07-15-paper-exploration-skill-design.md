@@ -26,9 +26,10 @@ the two nested flywheels, and the exploration/testing/synthesis firewall live in
 - `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
 - `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
 
-**This skill, `paper-exploration`,** is portfolio-level — `hypothesis-exploration` lifted one level: it proposes whole application papers and scaffolds a new project on acceptance. It builds on the benchmark orchestration spec
-([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
-for reproducible results, and is grounded in
+**This skill, `paper-exploration`,** is portfolio-level — `hypothesis-exploration` lifted one level: it proposes whole application papers and scaffolds a new project on acceptance. It depends on a pluggable **experiment backend** for executing experiments and producing
+reproducible evidence — by default the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md)),
+bound per project in the registry. It is grounded in
 [paper-exploration-references.md](../../research/paper-exploration-references.md).
 
 ## The papers registry
@@ -37,14 +38,16 @@ This skill owns `docs/research/papers.md` — the registry every research-workfl
 resolves a `paper-id` against:
 
 ```
-| paper-id | root                    | kind        | status                                   | title |
-|----------|-------------------------|-------------|------------------------------------------|-------|
-| main     | docs/research/main/     | main        | active                                   | Constrained Monotonic NNs (extension) |
-| pinn     | applications/pinn/      | application | draft                                    | Structure-Preserving PINNs |
+| paper-id | root                | kind        | backend       | status | title |
+|----------|---------------------|-------------|---------------|--------|-------|
+| main     | docs/research/main/ | main        | mononet-bench | active | Constrained Monotonic NNs (extension) |
+| pinn     | applications/pinn/  | application | mononet-bench | draft  | Structure-Preserving PINNs (migrating to the default backend) |
 ```
 
 `status` ∈ `planned | active | draft | submitted | published | shelved`. Exactly one paper
-is `kind: main`. Application papers point at their `applications/<slug>/` root.
+is `kind: main`. Application papers point at their `applications/<slug>/` root. `backend`
+names the experiment backend that runs the paper's experiments (default `mononet-bench`,
+the orchestration skill; the contract is in [the family overview](../../research/README.md)).
 
 ## Design principles
 
@@ -139,7 +142,8 @@ On `promote`, the skill frames the chosen paper as answers to the **Heilmeier Ca
 1. Create the project root `applications/<slug>/` with the standard research-workflow
    layout (`hypotheses/`, `backlog.md`, `paper/{outline.md, ledger.md, sections/}`) — the
    compendium layout PR #116 established, plus the record layer.
-2. Register it in `docs/research/papers.md` (`kind: application`, `status: planned`).
+2. Register it in `docs/research/papers.md` (`kind: application`, `status: planned`,
+   `backend:` the default `mononet-bench` unless the paper needs a different harness).
 3. Seed the project's first `strategy.md` (or the paper's `outline.md`) from the Heilmeier
    answers, and mark the backlog entry `scaffolded` with the link.
 4. Hand off to `superpowers:brainstorming` to design the application paper (its code lives

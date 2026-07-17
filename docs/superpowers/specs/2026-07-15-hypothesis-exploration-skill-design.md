@@ -30,9 +30,10 @@ the two nested flywheels, and the exploration/testing/synthesis firewall live in
 - `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
 - `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
 
-**This skill, `hypothesis-exploration`,** is the generative half — abduction (Peirce): it reads the corpus and proposes prioritized candidate hypotheses, which only `hypothesis-testing` may confirm. It builds on the benchmark orchestration spec
-([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
-for reproducible results, and is grounded in
+**This skill, `hypothesis-exploration`,** is the generative half — abduction (Peirce): it reads the corpus and proposes prioritized candidate hypotheses, which only `hypothesis-testing` may confirm. It depends on a pluggable **experiment backend** for executing experiments and producing
+reproducible evidence — by default the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md)),
+bound per project in the registry. It is grounded in
 [hypothesis-exploration-references.md](../../research/hypothesis-exploration-references.md).
 
 ## Multi-paper scoping
@@ -144,7 +145,7 @@ anchor, not a computed integral — Lindley 1956; Chaloner & Verdinelli 1995):
 
 - **Information gain** — how much would the candidate's result *discriminate the standing
   rival explanations* or resolve an open question? (the strong-inference criterion).
-- **Testability & cost** — can it be run cheaply in the orchestration system?
+- **Testability & cost** — can it be run cheaply in the project's experiment backend?
 - **Paper relevance** — does it support/close a gap in the current paper thesis?
 
 The rubric ranks the slate; the human decides which (one or several) to promote.

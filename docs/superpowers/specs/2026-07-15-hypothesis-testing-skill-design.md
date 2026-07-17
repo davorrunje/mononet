@@ -27,9 +27,10 @@ the two nested flywheels, and the exploration/testing/synthesis firewall live in
 - `hypothesis-exploration` — generate candidate hypotheses · `hypothesis-testing` — test one to a verdict
 - `paper-exploration` — propose application papers · `paper-synthesis` — assemble a paper spine
 
-**This skill, `hypothesis-testing`,** is the confirmatory core: it carries one hypothesis from claim to verdict through staged documents (hypothesis → strategy → design/plan → findings). It builds on the benchmark orchestration spec
-([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md))
-for reproducible results, and is grounded in
+**This skill, `hypothesis-testing`,** is the confirmatory core: it carries one hypothesis from claim to verdict through staged documents (hypothesis → strategy → design/plan → findings). It depends on a pluggable **experiment backend** for executing experiments and producing
+reproducible evidence — by default the benchmark orchestration spec
+([2026-07-15-benchmark-experiment-orchestration-design.md](2026-07-15-benchmark-experiment-orchestration-design.md)),
+bound per project in the registry. It is grounded in
 [hypothesis-testing-references.md](../../research/hypothesis-testing-references.md).
 
 ## Multi-paper scoping
@@ -127,7 +128,7 @@ status: open          # open | supported | refuted | inconclusive | superseded
 authors: [Davor Runje]
 tags: [depth, expressivity, monotonic]
 related: [monoresidual-gate-instability]
-verdict: null         # {outcome, date, run_hashes:[...]} — set at RECORD
+verdict: null         # {outcome, date, run_refs:[...]} — set at RECORD
 ---
 ```
 
@@ -166,7 +167,8 @@ retrofit. Its required sections encode the rigor practices (see
 ### `design.md` + `plan.md` — the engineering (delegated)
 
 Produced by `superpowers:brainstorming` (→ `writing-plans`) *in service of* `strategy.md`:
-how to realize the required experiments in the orchestration system — which benchmark
+how to realize the required experiments in the project's experiment backend (default:
+the orchestration spec) — for that backend, which benchmark
 experiment specs (TOML under `benchmarks/experiments/`), configs, and groups.
 
 ### `findings.md` — the results (after runs)
@@ -178,8 +180,8 @@ experiment specs (TOML under `benchmarks/experiments/`), configs, and groups.
   exploratory so it is never mistaken for a confirmatory finding (anti-HARKing).
 - **Disclosure checklist** — all conditions run, all metrics collected, the stopping rule,
   and any exclusions, so selective reporting is visible (researcher-degrees-of-freedom).
-- Result tables inside `render` **managed blocks** (auto-updating from committed result
-  JSON) with links to run-hashes.
+- Result tables via the backend's **tables** capability (default: `render` managed
+  blocks, auto-updating from committed result JSON), with links to *run-refs*.
 - **Rival-hypothesis adjudication** — for each competing explanation enumerated in
   `strategy.md`, state whether the evidence rules it out or leaves it standing (this is
   where the discriminating experiments pay off).
@@ -187,7 +189,7 @@ experiment specs (TOML under `benchmarks/experiments/`), configs, and groups.
   verdict: what would make it wrong, which confound remains. Optionally produced by a
   red-team subagent before the verdict is locked.
 - **Environment & provenance** — git SHA, `uv.lock` hash, package/CUDA/hardware, seeds
-  (drawn from the orchestration run record), so every number is reproducible.
+  (drawn from the backend's evidence/run record), so every number is reproducible.
 - **Verdict** — supported / refuted / inconclusive, backed by the above.
 - **Deviations** from strategy/plan.
 
@@ -224,7 +226,7 @@ basis for the paper).
   a test that could have found one.
 - **Adversarial review** — a threats-to-validity pass argues against the verdict before it
   is locked.
-- **Complete provenance** — environment + lockfile + run-hashes make every number
+- **Complete provenance** — environment + lockfile + run-refs make every number
   reproducible.
 - **No file drawer** — refuted/inconclusive hypotheses are retained in the index.
 
@@ -256,10 +258,11 @@ or takes an explicit stage.
    spec-location override makes this a clean handoff, not a fork of that skill.
 
 **record** *(experiments have run)*
-5. Execute via the orchestration system (`mononet-bench run|reconcile` on the experiments
+5. Execute via the project's experiment backend — the **run** capability (default
+   `mononet-bench run|reconcile`) on the experiments
    the design defined) — outside this skill, referenced by it.
-6. Write `findings.md` (tables via `render` managed blocks), evaluate against the decision
-   rule, set `verdict` + `run_hashes` and `status` in `hypothesis.md`, update the index.
+6. Write `findings.md` (tables via the backend's **tables** capability), evaluate against
+   the decision rule, set `verdict` + `run_refs` and `status` in `hypothesis.md`, update the index.
 
 This makes `hypothesis-testing` a **process/orchestrator skill** that owns the scientific
 stages and composes `superpowers:brainstorming` (→ `writing-plans`) for the engineering.
@@ -267,24 +270,24 @@ The resumable-stage re-entry and the science-before-engineering ordering are its
 
 ## Reproducibility linkage
 
-The record is "sufficient for reproducibility" by chaining into the orchestration spec's
-provenance — no number stranded:
+The record is "sufficient for reproducibility" by chaining through the **experiment
+backend** (see the family overview) — no number stranded:
 
-- `strategy.md` experiments → the benchmark experiment specs (TOML under
-  `benchmarks/experiments/`) realized in `design.md`.
-- `findings.md` tables → `render` managed blocks bound to those experiments' committed
-  result JSON.
-- `verdict.run_hashes` → the frozen `benchmarks/results/.runs/<run-hash>.json` records
-  (git SHA, per-spec provenance-hashes, device map, durations).
+- `strategy.md` experiments → the experiments the backend runs (for the default backend,
+  TOML specs under `benchmarks/experiments/`, realized in `design.md`).
+- `findings.md` tables → the backend's **tables** capability, bound to committed results.
+- `verdict.run_refs` → the backend's **evidence** records — each a *run-ref* plus a
+  *provenance stamp* (code + data version). The default backend materializes these as
+  `.runs/<run-hash>.json` (git SHA, provenance-hashes, device map, durations).
 
-A reader walks hypothesis → strategy → experiment spec → provenance-hash → exact code +
-data version → re-run. That end-to-end chain is why this skill is built on the
-orchestration system.
+A reader walks hypothesis → strategy → experiment → run-ref → exact code + data version →
+re-run. Because the skill depends on the backend *contract*, a paper on a different harness
+reproduces the same way.
 
 ## Status lifecycle
 
 `open → {supported | refuted | inconclusive}`, plus `superseded` when a later hypothesis
-replaces it. The verdict and its `run_hashes` are recorded together, so a status change is
+replaces it. The verdict and its `run_refs` are recorded together, so a status change is
 always backed by provenance. Refuted and inconclusive hypotheses are **kept, never
 deleted** — negative results are part of the record (guarding against the file-drawer
 effect and against re-running dead ends) and stay in the index alongside the rest.
@@ -322,8 +325,8 @@ Skills are process documents, so validation is dogfooding + structural checks:
 
 ## Follow-ups (to become GitHub issues)
 
-- Optional `render`-integrated index regeneration from `hypothesis.md` frontmatter, so
-  `docs/research/main/hypotheses/README.md` cannot drift from the records.
+- Optional automated index regeneration from `hypothesis.md` frontmatter, so
+  `<paper-root>/hypotheses/README.md` cannot drift from the records.
 - Auto-evaluate `strategy.md`'s decision rule against committed results to *propose* a
   verdict for human confirmation, once several hypotheses exist.
 - Paper-outline document format that cites hypotheses by `label`, when write-up begins.
