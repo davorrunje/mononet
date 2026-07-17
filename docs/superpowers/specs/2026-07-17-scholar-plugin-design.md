@@ -21,9 +21,9 @@
   installable Claude Code plugin**, so that the author, company colleagues, and
   PhD peers all work the *same* way and re-derive neither the workflow nor its
   rigor per project. Reducing shared cognitive load is the primary motivation.
-- Make the workflow **symmetric across two nested levels**: hypotheses within a
-  paper, and papers within a portfolio (see §3). The same object×action shape
-  applies at both levels.
+- Make the workflow **symmetric across nested levels**: hypotheses within a
+  paper, papers within a portfolio, and (optionally) papers within a thesis
+  (see §3). The same object×action shape applies at every level.
 - Provide **three shared capabilities** the workflow draws on — a literature
   engine, a dataset-management engine, and a pluggable experiment backend —
   behind stable contracts so they are hot-swappable.
@@ -50,6 +50,13 @@
 - **No experiment *runner*.** `scholar` defines the experiment-backend
   *contract*; each consuming repo supplies the implementation (for `mononet`,
   the benchmark orchestration of PR #127).
+- **No cross-repo aggregation.** Work-research and a PhD thesis live in
+  separate repos with separate lives; linking a thesis across repos (e.g.
+  rolling a company paper into the thesis) is explicitly out of scope for now.
+  Each repo's top level is self-contained. (Recorded as a future item.)
+- **No progress *scores*.** Progress tracking surfaces state and gaps, never a
+  productivity number (see §3.6). This is a hard design principle, not a
+  deferral.
 
 ## 2. Identity & scope
 
@@ -68,17 +75,18 @@ No skill both proposes and adjudicates the same claim.
 
 ## 3. Architecture overview
 
-### 3.1 The two-level mirror
+### 3.1 The three-level mirror
 
-The workflow is one shape applied at two nested levels. This symmetry is the
-core design principle — it is why there are not two different sets of skills.
+The workflow is one shape applied at three nested levels. This symmetry is the
+core design principle — it is why there are not three different sets of skills.
 
-| Level | **generate** skill | **resolve** skill | staged docs (the pipeline) | backlog |
+| Level | **generate** skill | **resolve** skill | staged docs (the pipeline) | children |
 |---|---|---|---|---|
 | **hypothesis** (within a paper) | `hypothesis-exploration` | `hypothesis-testing` | hypothesis → **strategy** *(science)* → design/plan *(eng, delegated)* → **findings** *(verdict)* | `backlog.md` |
 | **paper** (portfolio) | `paper-exploration` | `paper-synthesis` | pitch → **positioning** *(related works)* → outline/plan *(eng, delegated)* → **decision** *(publish verdict)* | `portfolio-backlog.md` |
+| **thesis** (top, *optional*) | `thesis` — *framing (occasional)* | `thesis` — *synthesis* | prospectus → **aims/narrative** *(the through-line)* → chapter↔paper map → **kappa** + *defensibility* | the portfolio |
 
-The two "missing" lifecycle stages the user originally named resolve into this
+The two "missing" paper-level stages the user originally named resolve into this
 mirror rather than into new skills:
 
 - **"Research related works"** is the paper-level analog of a hypothesis's
@@ -88,15 +96,39 @@ mirror rather than into new skills:
   **findings verdict** → it is `decision`, a staged doc gated on accumulated
   hypothesis evidence + positioning.
 
-Two nested flywheels result: a per-paper loop (hypotheses accumulate into a
-paper) inside a portfolio loop (papers accumulate into a research program).
+The **thesis level is a partial mirror**, and honestly so:
 
-### 3.2 Pipeline skills (4)
+- The cumulative / thesis-by-publication model *is* this nesting (papers bound
+  by a synthesizing framing chapter — the Nordic **"kappa"**). A **monograph**
+  thesis is the degenerate case: one "paper" spanning the whole thesis.
+- Its `resolve` action is `synthesis` — assemble the kappa (aims/narrative,
+  related work, per-paper contribution statement, unifying discussion, future
+  work; *no new findings*) plus the appended papers, and clear the
+  **defensibility** gate.
+- Its `generate` action **degenerates to occasional `framing`** — define the
+  aims and which papers compose the thesis. There is one thesis, framed once and
+  refined, not a high-throughput flywheel. So `framing`+`synthesis` are one
+  `thesis` skill, not a generate/resolve pair.
+- The thesis→papers roll-up target is **narrative coverage of the aims** (does
+  every aim have supporting papers; does the kappa state the through-line) — the
+  exact thing examiners judge — **not** a paper count (there is no universal N;
+  the binding norm is scope). Program **milestones** (proposal → candidacy →
+  annual review → submission → defense) are a small configurable, time-based
+  list at this level.
+
+Three nested loops result: a per-paper loop (hypotheses accumulate into a paper)
+inside a portfolio loop (papers accumulate) inside a thesis loop (papers cover
+the aims). A repo that is not a thesis simply omits the top level; its top is the
+portfolio.
+
+### 3.2 Pipeline skills (5)
 
 `hypothesis-exploration`, `hypothesis-testing`, `paper-exploration`,
-`paper-synthesis`. These are the current `2026-07-15-*` designs, refactored to
-depend only on the capability contracts (not on `mononet` internals) and to
-carry the mirrored staged-doc discipline at both levels.
+`paper-synthesis` — the current `2026-07-15-*` designs, refactored to depend
+only on the capability contracts (not on `mononet` internals) and to carry the
+mirrored staged-doc discipline at every level — plus **`thesis`** (the
+third-level skill: `framing` + `synthesis`, per §3.1). The `thesis` skill is
+optional and only used by thesis repos.
 
 ### 3.3 Shared capabilities (3)
 
@@ -142,6 +174,41 @@ severity / power / MDE + TOST for null claims, the disclosure checklist,
 per-dataset datasheets (Gebru et al. — closing the loop with the `dataset`
 capability), the red-team pass, and file-drawer discipline.
 
+### 3.6 Progress tracking (cross-cutting)
+
+Progress is followed at **every** level, but it is not a fourth level and not a
+claim-manipulating skill — it is a pure **reporting** function that respects the
+firewall (it adjudicates nothing; it reads existing state).
+
+- **Status lives in the artifact.** Every hypothesis / paper / thesis artifact
+  carries a small **status block in its markdown frontmatter** (verdict /
+  readiness / coverage + `last-updated`). Status is versioned with the thing it
+  describes — the git-native "living document" pattern — so there is no separate
+  progress file to drift out of sync.
+- **One cross-cutting `progress` skill**, verbs `status` and `dashboard`.
+  `status <level> [id]` reads and rolls up; `dashboard` regenerates a
+  `dashboard.md` that is a **pure projection** of the frontmatter (never
+  hand-edited).
+- **Roll-up is semantic, not arithmetic.** Parent status is a function of
+  children's states + the level's gate criteria, surfaced as **coverage and
+  blockers**, never a percentage. Hypothesis→paper: "all hypotheses resolved AND
+  the claim is written." Paper→thesis: "all aims covered by ≥1 paper AND the
+  kappa states the through-line." A single refuted load-bearing hypothesis can
+  block a paper; averaging would hide that.
+- **Definition of done per level** (the Stage-Gate framing our resolve gates
+  already embody): hypothesis = **resolved** (has a verdict backed by recorded
+  evidence); paper = **done** (constituent hypotheses resolved *and*
+  submission-ready); thesis = **defensible** (aims covered *and* kappa
+  through-line stated).
+- **Anti-Goodhart is a hard principle, not a nicety.** The tool surfaces state,
+  gaps, and staleness — never a productivity score. **A refuted hypothesis reads
+  as done/green, not failed/red** (verdict and readiness are distinct axes). It
+  does *not* count words, papers, commits, %-complete on unresolved work, or a
+  hypothesis "success rate." Rationale: Goodhart's / Campbell's law, and the
+  DORA / Leiden Manifesto principle that metrics support — never replace —
+  qualitative judgment. This is documented so it cannot be quietly "improved"
+  into a score later.
+
 ## 4. Plugin repo layout
 
 Standalone repo, distributed as a Claude Code plugin. Working name `scholar`;
@@ -157,8 +224,10 @@ scholar/                                  # plugin repo root
 │   ├── hypothesis-testing/SKILL.md
 │   ├── paper-exploration/SKILL.md
 │   ├── paper-synthesis/SKILL.md
+│   ├── thesis/SKILL.md                   # framing | synthesis (optional, top level)
 │   ├── literature/SKILL.md               # scout | position
-│   └── dataset/SKILL.md                  # init/register/fetch/verify/mirror/audit
+│   ├── dataset/SKILL.md                  # init/register/fetch/verify/mirror/audit
+│   └── progress/SKILL.md                 # status | dashboard (cross-cutting, read-only)
 ├── resources/                            # cross-skill shared material
 │   ├── contracts/
 │   │   └── experiment-backend.md         # the 4-capability contract
@@ -173,10 +242,11 @@ scholar/                                  # plugin repo root
 
 `resources/references/` carries the verified-source digests produced during
 brainstorming: the four existing research-workflow reference docs (on PR #128)
-plus the four generated this session — **citation scouting**, **related-works
-synthesis**, **dataset-management standards**, and **dataset tooling / mirror
-architecture**. These are the evidentiary base for the sub-specs and must be
-persisted, not left in conversation.
+plus the five generated this session — **citation scouting**, **related-works
+synthesis**, **dataset-management standards**, **dataset tooling / mirror
+architecture**, and **thesis-by-publication & progress tracking**. These are the
+evidentiary base for the sub-specs and must be persisted, not left in
+conversation.
 
 ## 5. Plugin↔consumer boundary
 
@@ -193,6 +263,11 @@ the experiment-backend implementation. After `init`/`adopt`, a consumer repo
 │   │   ├── backlog.md
 │   │   └── paper/{positioning,outline,ledger,decision, sections/}
 │   ├── portfolio-backlog.md
+│   ├── thesis/                           # OPTIONAL — only in a thesis repo
+│   │   ├── kappa/                         # framing chapter (aims, narrative, per-paper contribution)
+│   │   ├── aims.md                        # the through-line + chapter↔paper map
+│   │   └── milestones.yml                 # configurable program gates (candidacy, submission, defense)
+│   ├── dashboard.md                      # GENERATED projection of status frontmatter (never hand-edited)
 │   └── literature/
 │       ├── references.bib                # or CSL-JSON — bibliographic facts
 │       └── triage.yml                    # decision sidecar (keyed by citekey/DOI)
@@ -250,10 +325,13 @@ therefore be genuinely domain-neutral and self-documenting from day one — its
 This meta-spec defers detail to four sub-specs (each date-prefixed under
 `docs/superpowers/specs/`, migrating to the plugin repo per §9):
 
-1. **Lifecycle & pipeline skills + rigor kit** — the two-level mirror, the four
-   pipeline skills, staged-doc templates, firewall, flywheels, and the rigor
-   kit. *(Largely the current `2026-07-15-hypothesis-*` / `paper-*` specs,
-   refactored to the contracts.)*
+1. **Lifecycle & pipeline skills + rigor kit + progress** — the three-level
+   mirror (incl. the `thesis` level and the kappa/defensibility gate), the five
+   pipeline skills, staged-doc templates, firewall, flywheels, the cross-cutting
+   `progress` skill (status frontmatter + generated dashboard + anti-Goodhart
+   principle), and the rigor kit. *(Largely the current
+   `2026-07-15-hypothesis-*` / `paper-*` specs, refactored to the contracts,
+   plus thesis + progress.)*
 2. **Literature capability** — `scout`/`position`, the citation-graph toolchain
    (OpenAlex + Semantic Scholar; snowballing; SciCite intent; concept matrix;
    PRISMA log), the bib + triage registry, and backlog linkage. *(Grounded by
@@ -278,7 +356,7 @@ The scientific-workflow work currently lives inside `mononet`. It relocates:
 - **PR #127** (benchmark experiment orchestration) → **stays in `mononet`** as
   its implementation of the experiment-backend contract; it is re-described as
   "mononet's experiment backend" rather than a general facility.
-- The methodology digests (this session's four + #128's four) → become
+- The methodology digests (this session's five + #128's four) → become
   `resources/references/` in the plugin.
 - `mononet` becomes the reference **consumer**: it runs `research-init adopt`
   against itself once the plugin exists.
@@ -300,5 +378,13 @@ implementation plans, then the plugin repo is created and `mononet` adopts it.
   resolve in sub-spec 3/4.
 - **`.scholar/` vs existing conventions** — confirm the config directory name
   and that it does not collide with `superpowers`/repo conventions.
+- **Thesis milestone schema** — the shape of `milestones.yml` (institution
+  gates are time-boxed and vary); keep configurable, resolve in sub-spec 1.
 
 None of these block writing the sub-specs.
+
+### Deferred (future work, out of current scope)
+
+- **Cross-repo thesis aggregation** — pulling papers that live in a separate
+  repo (e.g. company work) into a thesis roll-up. Deliberately excluded now
+  (§1). Capture as a self-contained GitHub issue when this spec is finalized.
