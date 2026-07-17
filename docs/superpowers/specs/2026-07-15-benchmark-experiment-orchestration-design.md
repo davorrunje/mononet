@@ -45,22 +45,35 @@ timeline. Two consequences:
   therefore drives a **mixed device pool** — `["cuda:0", "cuda:1", "cpu"×N]` — and each
   experiment declares its execution class.
 
-## Decision: not Snakemake
+## Tooling decision: `doit` core + custom symbol-hash & fan-out
 
-The user considered Snakemake. On a single host it is net cost:
+Re-weighed build-vs-buy at the *layer* level (an earlier draft evaluated only Snakemake
+and jumped to fully-custom). The orchestrator decomposes into layers that answer
+differently:
 
-- Its one genuine advantage — cluster/SLURM executor plugins that place tasks across
-  nodes — never applies here.
-- Its scheduler duplicates the existing `gpu_pool.fan_out`.
-- Its **file-timestamp staleness model actively fights** the declared-symbol-closure
-  model chosen below: any edit to a shared file (`mononet/<backend>/layers.py`) would
-  mark the entire graph stale, defeating selective re-execution unless simulated with
-  `params`/checkpoint hacks.
-- It introduces a heavyweight dependency and a `.smk` DSL that Claude would *also* have
-  to learn to reuse — reintroducing the "writes from scratch" problem one layer up,
-  against the repo's deliberate light-dependency posture.
+- **Symbol-closure staleness** — the priority-#1 feature (change `MonoResidual` → rerun
+  only the experiments that declared it). **No standard tool does symbol-level**; it is
+  `inspect.getsource` hashing, a small custom module in *every* option.
+- **DAG + up-to-date checking + task state + parallel CLI** — **adopt `doit`**. It is a
+  pure-Python task runner whose defining feature is pluggable `uptodate` callables: we hand
+  it our symbol-closure hash as the staleness check, generate its tasks from the TOML
+  `ExperimentSpec` registry, and get the dependency graph, state persistence, `-n`
+  parallelism, and a maintained CLI for free — the most error-prone machinery we would
+  otherwise own and maintain. `doit` is light (no daemon, minimal deps), so it does **not**
+  trip the anti-heavy-dependency posture that (correctly) ruled out Snakemake.
+- **Fan-out over the heterogeneous 5090/3090/CPU pool** (device-pinning + work-stealing) —
+  stays the existing `gpu_pool.fan_out`; `doit`'s built-in parallelism is not device-aware.
+- **Streaming progress/ETA, `render` write-back, committed-JSON provenance** — stay custom;
+  no standard tool serves the single-host heterogeneous case well, and committed JSON is
+  more git-native and reproducible than an MLflow/W&B store.
 
-We build a lightweight, dataclass-native orchestrator instead.
+Rejected alternatives: **Snakemake** — file-*mtime* staleness fights symbol-closure, heavy
+`.smk` DSL. **Fully-custom** — cohesive, but we own the DAG/state/CLI `doit` gives for free.
+**DVC** — recognized and git-integrated, but staleness is file-content-level, so an edit to
+`layers.py` reruns everything downstream: it loses the symbol-level selectivity that is
+priority #1. **Dagster / Ray** — powerful asset-versioning / resource scheduling, but heavy
+platform/daemon deps, overkill for a single host, and their version field is still a manual
+per-asset string we would compute ourselves.
 
 ## Architecture
 
@@ -71,17 +84,25 @@ New subpackage under the repo-only `benchmarks/`. Nothing here ships in the whee
 ```
 benchmarks/_common/experiments/
 ├── spec.py         # ExperimentSpec (frozen dataclass) — the declarative unit
-├── registry.py     # discover/load TOML specs; filter by group / stale
-├── provenance.py   # closure hashing + sidecar read/write + staleness diff
-├── executor.py     # mixed CPU/GPU work-stealing pool (wraps gpu_pool.fan_out)
-└── cli.py          # Typer app: run / reconcile / status / render
+├── registry.py     # discover/load TOML specs; filter by group
+├── provenance.py   # closure hashing + committed sidecar + the doit `uptodate` callable
+├── executor.py     # mixed CPU/GPU work-stealing fan-out (wraps gpu_pool.fan_out)
+├── tasks.py        # doit task-creators: bind specs → doit tasks (uptodate=provenance, action=executor)
+└── cli.py          # Typer app (run/reconcile/status/render) wrapping doit
 ```
 
 - `spec.py`, `registry.py`, `provenance.py` are pure and hardware-free — unit-testable
   on CPU with no GPU and no training.
+- `tasks.py` is the **`doit` integration seam**: each experiment becomes a `doit` task
+  whose `uptodate` is the symbol-closure check (`provenance`) and whose action fans the
+  experiment's work across the device pool (`executor`). `doit` owns the DAG, the ordering
+  (`downstream` → `task_dep`), up-to-date evaluation, and task state (`.doit.db`,
+  git-ignored).
 - `executor.py` is the only module that touches subprocesses/devices; it reuses
   `gpu_pool.fan_out` rather than reimplementing fan-out.
-- `cli.py` uses **Typer** (`bench` dependency group only).
+- `cli.py` uses **Typer** and wraps `doit`: `reconcile` runs the out-of-date tasks in
+  scope, `status` is `doit`'s dry-run listing the stale set + prior ETA, `run` forces a
+  target, `render` is independent of `doit`. (`bench` dependency group only.)
 - Existing `runner.py`, `results.py`, `config.py`, `model_builder.py`, `search.py`, and
   the `*_report.py` modules are **unchanged** — the new layer orchestrates them.
 
@@ -216,6 +237,16 @@ when its own code closure is unchanged. Not built now (see Follow-ups).
 
 ## Executor and resumability
 
+**`doit` ↔ `gpu_pool` boundary.** `doit` decides *which* experiments are out-of-date (the
+symbol-hash `uptodate` plus the committed-result skip) and the order (`downstream` →
+`task_dep`); the *execution* of each task fans its work across the device pool via
+`gpu_pool.fan_out`. Two concurrency models, chosen at implementation: (i)
+**experiment-granular tasks** (default) — `doit` runs one experiment at a time and each
+task saturates the pool across its configs/seeds/trials; simple, no cross-experiment device
+contention; (ii) **item-granular tasks** under `doit -n` plus a shared device-lease shim —
+more cross-experiment concurrency for many tiny experiments, at the cost of a small lease
+coordinator. Start with (i).
+
 `executor.py` wraps `gpu_pool.fan_out` over a **mixed pool**. Each experiment's
 `exec_class` (`cpu` | `gpu`) routes its items to CPU slots or GPU devices; the
 work-stealing queue balances the heterogeneous GPUs automatically. Every command it
@@ -250,6 +281,13 @@ study name against the same `.db`; completed trials are persisted and skipped, a
 study fills the remaining `n_trials`. Intra-trial (epoch) checkpointing is deliberately
 **out of scope**: these trials are short and a dropped trial simply re-runs from the start
 of that trial, which is cheaper than the checkpoint bookkeeping would cost.
+
+**Experiment-level (`doit` state)** — `doit` persists each task's success and its
+`uptodate` values in `.doit.db` (git-ignored), so a killed `reconcile` restarts and skips
+already-completed experiments without recomputation, above the item level. The committed
+`.provenance.json` sidecars remain the durable, reviewable **source of truth** for
+staleness; `.doit.db` is a rebuildable local cache — deleting it costs a re-derivation of
+hashes, not results.
 
 ## Progress, ETA, and storage
 
@@ -364,9 +402,12 @@ mononet-bench render    [--group G | --all] [--check]         # regenerate every
 ```
 
 `status` is the pre-flight: it prints the stale set and the prior ETA without running
-anything — the check before kicking off an overnight `reconcile`. `render` closes the
-loop back into docs (see next section); `--check` fails without writing when any surface
-is stale, for use in pre-commit/CI.
+anything — the check before kicking off an overnight `reconcile`. Under the hood `status`
+is `doit`'s dry-run and `reconcile` runs `doit`'s out-of-date tasks in scope; the Typer
+wrapper adds the paper-friendly verbs, scope selection, the device pool, and the ETA
+table. `render` closes the loop back into docs (see next section) and is independent of
+`doit`; `--check` fails without writing when any surface is stale, for use in
+pre-commit/CI.
 
 ## Closing the loop: results back into docs and README
 
@@ -425,8 +466,10 @@ Two deliverables, distinct audiences:
 
 ## Dependencies
 
-Added to the **`bench` dependency group only** (never the wheel): `typer`, `rich`. Both
-are dev-tool dependencies for the repo-only benchmark harness.
+Added to the **`bench` dependency group only** (never the wheel): `doit` (DAG / up-to-date
+/ task-state / parallel CLI core), `typer` (the wrapping CLI), and `rich` (progress table).
+All three are pure-Python dev-tool dependencies for the repo-only benchmark harness; none
+pulls a daemon, server, or native binary.
 
 ## Migration
 
@@ -449,6 +492,10 @@ are dev-tool dependencies for the repo-only benchmark harness.
 - `spec.py` / `registry.py` / `provenance.py`: pure, unit-tested on CPU — grid expansion,
   group inheritance, TOML validation, and the staleness diff (edit a declared symbol's
   source → the right experiments go stale; edit an *undeclared* symbol → none do).
+- `tasks.py` / `doit`: the `uptodate` wiring reports a task out-of-date iff its declared
+  closure changed (editing a declared symbol → out-of-date; an undeclared one → up-to-date),
+  and experiment-level resume works (`.doit.db` skips a completed task on restart, and
+  rebuilds correctly after the DB is deleted since the committed sidecar is source of truth).
 - `executor.py`: a small end-to-end grid on CPU slots verifying fan-out, item-level
   resume (kill + restart skips completed items), and ledger append.
 - ETA: unit tests on the throughput calibration and the online-refinement update.
