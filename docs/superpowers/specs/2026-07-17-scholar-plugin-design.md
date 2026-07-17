@@ -28,11 +28,15 @@ researcher's, recorded with a named human sign-off** — is a hypothesis confirm
 or refuted, is a result real, is a paper worth publishing, what the thesis
 claims, is it defensible. The skills draft, keep the accounts, and advise; the
 researcher authors and decides. You cannot "run" the workflow to produce a paper
-or thesis — you drive it.
+or thesis — you drive it. Its dual is the **Understanding principle** (§2.2): the
+plugin will not let you advance a decision you cannot understand or defend — it
+grills and teaches until you can.
 
-Elaborated in §2.1; fully grounded, with verified sources and enforceable
+Elaborated in §2.1–§2.2; fully grounded, with verified sources and enforceable
 guardrails, in
-[`scholar/references/agency-principle.md`](../scholar/references/agency-principle.md).
+[`scholar/references/agency-principle.md`](../scholar/references/agency-principle.md)
+and
+[`scholar/references/understanding-and-grilling.md`](../scholar/references/understanding-and-grilling.md).
 
 ## 1. Goals & non-goals
 
@@ -132,7 +136,39 @@ LLM citation fabrication. The positive framing is the augmentation tradition
 with verified sources and the enforceable guardrails:
 [`scholar/references/agency-principle.md`](../scholar/references/agency-principle.md).
 
-### 2.2 The firewall
+### 2.2 Understanding principle
+
+The dual of §2.1. **Every material claim, decision, and method must be understood
+by the author to the standard a good mentor or reviewer would expect.** The plugin
+verifies *and builds* that understanding; it will not let a paper, thesis, or
+decision advance past something the author cannot explain or defend — silently.
+
+- **Why it must be checked, not assumed.** Self-assessed understanding is
+  unreliable until probed — the *illusion of explanatory depth* (Rozenblit & Keil
+  2002): we rate our grasp high until asked to explain, then it collapses. Probing
+  via retrieval + self-explanation (Roediger & Karpicke 2006; Chi et al. 1989)
+  both *reveals* and *builds* understanding.
+- **Two objects.** (1) *Your work* — claims, entailments, assumptions, cited
+  works, limitations, rival explanations, falsifiers (the viva/reviewer standard).
+  (2) *The methodology the skills embody* — the *why* behind the rigor kit and the
+  principles (preregistration, severity, power/MDE, TOST, PRISMA, the firewall).
+  Understanding must be *conceptual*, not merely procedural (Hiebert & Lefevre
+  1986); following rigor rituals blindly is **cargo-cult science** (Feynman 1974;
+  Gigerenzer 2004).
+- **Mechanism — the `grill` skill (§3.7):** a Socratic tutor-examiner, self-invoked
+  or fired automatically as a guardrail at material-decision checkpoints. On a
+  gap it *teaches* (source-grounded explanations + references) and re-probes. The
+  goal is growth, not producing work the author cannot understand.
+- **Interlock with agency.** The guardrail *stops, surfaces the gap, offers to
+  grill/teach, and records* — the human may override, but the override is logged
+  (so a gap can never be passed silently). It never grades the substance of a
+  novel claim or asserts an answer key; it teaches the established (methodology,
+  cited works) and, for novel claims, teaches how to reason and defend.
+
+Fully grounded, with sources and constraints, in
+[`scholar/references/understanding-and-grilling.md`](../scholar/references/understanding-and-grilling.md).
+
+### 2.3 The firewall
 
 The firewall that governs the workflow — each stage **human-driven**, the skill
 assisting and the researcher deciding (§2.1):
@@ -280,6 +316,32 @@ firewall (it adjudicates nothing; it reads existing state).
   qualitative judgment. This is documented so it cannot be quietly "improved"
   into a score later.
 
+### 3.7 Grilling & understanding (cross-cutting)
+
+The `grill` skill operationalizes §2.2 — a Socratic **tutor-examiner** whose goal
+is the author's growth; companion to `progress` (both cross-cutting, both
+respecting the firewall by producing evidence the human acts on).
+
+- **Targets:** `claim | cited-work | methodology`, with stage presets —
+  `hypothesis-testing` → strategy (assumptions/entailments/falsifiers/rivals);
+  `paper-synthesis` → positioning (novelty, citation support); the thesis
+  defensibility gate → a full **mock viva**.
+- **Loop:** probe → detect gap → **teach** (explain + link references) → re-probe
+  (the retrieval-practice loop that builds, not just audits, understanding).
+- **Invocation:** (1) **self-invoked** on demand; (2) automatic **guardrail** at
+  material-decision checkpoints (findings verdict, publish decision, thesis
+  defensibility) and when a method's rationale is undemonstrated.
+- **Guardrail semantics:** stop, surface, offer to grill/teach, **record**; the
+  human may override with the override logged (agency, §2.1) — not a hard block.
+  *(Open item: whether the thesis defensibility gate is made blocking.)*
+- **Records:** an `understanding` status in the artifact frontmatter (fed to the
+  `progress` roll-up) + optional grill transcript; unanswered probes and logged
+  overrides are the accountability trail.
+- **Constraints (§2.2):** ask, don't grade substance; teach the established
+  (methodology, cited work) freely and source-grounded; never assert a novel
+  claim's answer; settled-vs-contested calibration; depth by stakes; anti-Goodhart
+  (reward articulable understanding, not ritual completion).
+
 ## 4. Plugin repo layout
 
 Standalone repo, distributed as a Claude Code plugin. Working name `scholar`;
@@ -298,7 +360,8 @@ scholar/                                  # plugin repo root
 │   ├── thesis/SKILL.md                   # framing | synthesis (optional, top level)
 │   ├── literature/SKILL.md               # scout | position
 │   ├── dataset/SKILL.md                  # init/register/fetch/verify/mirror/audit
-│   └── progress/SKILL.md                 # status | dashboard (cross-cutting, read-only)
+│   ├── progress/SKILL.md                 # status | dashboard (cross-cutting, read-only)
+│   └── grill/SKILL.md                    # claim|cited-work|methodology; self + guardrail (cross-cutting)
 ├── resources/                            # cross-skill shared material
 │   ├── contracts/
 │   │   └── experiment-backend.md         # the 4-capability contract
@@ -313,11 +376,11 @@ scholar/                                  # plugin repo root
 
 `resources/references/` carries the verified-source digests produced during
 brainstorming: the four existing research-workflow reference docs (on PR #128)
-plus the six generated this session — **citation scouting**, **related-works
+plus the seven generated this session — **citation scouting**, **related-works
 synthesis**, **dataset-management standards**, **dataset tooling / mirror
-architecture**, **thesis-by-publication & progress tracking**, and the
-**agency principle** (already persisted at
-`scholar/references/agency-principle.md`). These are the evidentiary base for the
+architecture**, **thesis-by-publication & progress tracking**, the
+**agency principle**, and **the understanding principle & grilling** (all already
+persisted under `scholar/references/`). These are the evidentiary base for the
 sub-specs and must be persisted, not left in conversation.
 
 ## 5. Plugin↔consumer boundary
@@ -397,13 +460,15 @@ therefore be genuinely domain-neutral and self-documenting from day one — its
 This meta-spec defers detail to four sub-specs (each date-prefixed under
 `docs/superpowers/specs/`, migrating to the plugin repo per §9):
 
-1. **Lifecycle & pipeline skills + rigor kit + progress** — the three-level
-   mirror (incl. the `thesis` level and the kappa/defensibility gate), the five
-   pipeline skills, staged-doc templates, firewall, flywheels, the cross-cutting
-   `progress` skill (status frontmatter + generated dashboard + anti-Goodhart
-   principle), and the rigor kit. *(Largely the current
-   `2026-07-15-hypothesis-*` / `paper-*` specs, refactored to the contracts,
-   plus thesis + progress.)*
+1. **Lifecycle & pipeline skills + rigor kit + progress + grill** — the
+   three-level mirror (incl. the `thesis` level and the kappa/defensibility gate),
+   the five pipeline skills, staged-doc templates, firewall, flywheels, the
+   cross-cutting `progress` skill (status frontmatter + generated dashboard +
+   anti-Goodhart), the cross-cutting `grill` skill (Understanding principle §2.2:
+   self + guardrail invocation, teaching loop, non-grading/source-grounded stance),
+   and the rigor kit (whose methods are also `grill` targets). *(Largely the
+   current `2026-07-15-hypothesis-*` / `paper-*` specs, refactored to the
+   contracts, plus thesis + progress + grill.)*
 2. **Literature capability** — `scout`/`position`, the citation-graph toolchain
    (OpenAlex + Semantic Scholar; snowballing; SciCite intent; concept matrix;
    PRISMA log), the bib + triage registry, and backlog linkage. *(Grounded by
@@ -428,9 +493,9 @@ The scientific-workflow work currently lives inside `mononet`. It relocates:
 - **PR #127** (benchmark experiment orchestration) → **stays in `mononet`** as
   its implementation of the experiment-backend contract; it is re-described as
   "mononet's experiment backend" rather than a general facility.
-- The methodology digests (this session's six + #128's four) → become
-  `resources/references/` in the plugin. The agency-principle digest is already
-  staged at `docs/superpowers/scholar/references/agency-principle.md`.
+- The methodology digests (this session's seven + #128's four) → become
+  `resources/references/` in the plugin. This session's seven are already staged
+  under `docs/superpowers/scholar/references/`.
 - `mononet` becomes the reference **consumer**: it runs `research-init adopt`
   against itself once the plugin exists.
 
