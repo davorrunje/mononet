@@ -341,6 +341,18 @@ respecting the firewall by producing evidence the human acts on).
   (methodology, cited work) freely and source-grounded; never assert a novel
   claim's answer; settled-vs-contested calibration; depth by stakes; anti-Goodhart
   (reward articulable understanding, not ritual completion).
+- **Mentor/reviewer personas.** The grill/advise voice offers a small set of
+  **author-selectable** personas (derived from Lee × Gatfield, *not* personality
+  theory): *sounding board*, *critical examiner* (the default), *directive
+  editor*, and an opt-in *devil's advocate*. Chosen by three author-controllable
+  levers — self-selected (default), task/stage-*suggested* (keyed to the artifact,
+  overridable), and feedback-calibrated ("too harsh" / "push harder"). Autonomy
+  support (SDT) is constant; only directiveness and challenge-intensity vary.
+  **Matching to an *inferred personality* is forbidden** — it is unsupported (the
+  learning-styles myth) and would violate agency; the rule is *match the voice to
+  the task and the author's stated choice, never to an inferred personality.*
+  Grounded in
+  [`scholar/references/mentor-personas.md`](../scholar/references/mentor-personas.md).
 
 ## 4. Plugin repo layout
 
@@ -376,12 +388,13 @@ scholar/                                  # plugin repo root
 
 `resources/references/` carries the verified-source digests produced during
 brainstorming: the four existing research-workflow reference docs (on PR #128)
-plus the seven generated this session — **citation scouting**, **related-works
+plus the eight generated this session — **citation scouting**, **related-works
 synthesis**, **dataset-management standards**, **dataset tooling / mirror
 architecture**, **thesis-by-publication & progress tracking**, the
-**agency principle**, and **the understanding principle & grilling** (all already
-persisted under `scholar/references/`). These are the evidentiary base for the
-sub-specs and must be persisted, not left in conversation.
+**agency principle**, **the understanding principle & grilling**, and **mentor /
+reviewer personas** (all already persisted under `scholar/references/`). These are
+the evidentiary base for the sub-specs and must be persisted, not left in
+conversation.
 
 ## 5. Plugin↔consumer boundary
 
@@ -493,8 +506,8 @@ The scientific-workflow work currently lives inside `mononet`. It relocates:
 - **PR #127** (benchmark experiment orchestration) → **stays in `mononet`** as
   its implementation of the experiment-backend contract; it is re-described as
   "mononet's experiment backend" rather than a general facility.
-- The methodology digests (this session's seven + #128's four) → become
-  `resources/references/` in the plugin. This session's seven are already staged
+- The methodology digests (this session's eight + #128's four) → become
+  `resources/references/` in the plugin. This session's eight are already staged
   under `docs/superpowers/scholar/references/`.
 - `mononet` becomes the reference **consumer**: it runs `research-init adopt`
   against itself once the plugin exists.
