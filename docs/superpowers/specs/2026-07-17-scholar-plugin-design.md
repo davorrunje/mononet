@@ -37,6 +37,9 @@
 
 ### Non-goals
 
+- **No autonomous research.** The skills assist; they do not conduct research or
+  make material scientific decisions, and the workflow cannot be "run" to
+  produce a paper or thesis unattended. The researcher drives (see §2.1).
 - **No engineering workflow.** Design, planning, implementation, debugging, and
   test authoring are delegated to **`superpowers`** (brainstorming →
   writing-plans → implementation). `scholar` calls out to them; it does not
@@ -65,13 +68,48 @@ Its unit of work is a *scientific claim* and its lifecycle; its outputs are
 hypotheses, evidence, decisions, and papers. Everything that is "how do I build
 the thing that produces the evidence" is `superpowers`' job.
 
-The firewall that governs the workflow:
+### 2.1 Core principle — assistant, not researcher
+
+`scholar` skills are **assistants, not autonomous researchers.** They keep the
+accounts of a research program, advise as a mentor, and discuss as a colleague —
+but they do **not** perform independent research, and they do **not** make
+material decisions. The researcher is in the driving seat. This is the highest
+principle in the design; every other rule sits under it.
+
+- **Material decisions are the user's, and are recorded with a human sign-off +
+  date** (accountability): whether a hypothesis is confirmed / refuted, whether
+  a result is real, whether a paper is worth publishing, what the thesis claims,
+  whether it is defensible. A skill marshals the evidence and *advises*; the user
+  *decides*. Verdict/decision artifacts (`findings`, `decision`, thesis
+  defensibility) must name their human decision-maker.
+- **You author; the skill drafts.** A skill may draft prose, assemble a ledger,
+  format a section, or cross-check citations — but the scientific claims and
+  their wording are the user's. You cannot produce a paper or thesis by "running"
+  the workflow; you drive it. It automates a great deal and helps you explore and
+  understand, but you stay in the seat.
+- **Automation is for the mechanical and the mnemonic**, never the judgemental:
+  retrieval, bookkeeping, roll-ups, gap-surfacing, consistency checks,
+  discussion, exploration. Anywhere a scientific judgement is required, the skill
+  stops and asks rather than deciding.
+- This **subsumes and strengthens** the firewall (§2.2) and the anti-Goodhart
+  stance (§3.6): the system never adjudicates, scores, or decides on the
+  researcher's behalf.
+
+Aligns with research-integrity / authorship norms (ICMJE authorship criteria;
+COPE, ICML, and NeurIPS positions that AI tools cannot be authors and a human
+remains accountable for the work).
+
+### 2.2 The firewall
+
+The firewall that governs the workflow — each stage **human-driven**, the skill
+assisting and the researcher deciding (§2.1):
 
 - **Exploration proposes** (generates candidate hypotheses / papers).
 - **Resolution disposes** (tests a hypothesis to a verdict; develops a paper).
 - **Synthesis reports** (assembles the paper from confirmed evidence).
 
-No skill both proposes and adjudicates the same claim.
+No skill both proposes and adjudicates the same claim — and no skill adjudicates
+*at all* without the user's recorded decision.
 
 ## 3. Architecture overview
 
