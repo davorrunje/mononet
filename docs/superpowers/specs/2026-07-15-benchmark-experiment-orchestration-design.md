@@ -39,8 +39,9 @@ capabilities: **run** (execute a hypothesis's designed experiments — `run` / `
 **evidence** (a committed result carrying a *run-ref* in `.runs/<run-hash>.json` and a
 `.provenance.json` *provenance stamp*), **tables** (`render` managed blocks), and
 **is-current** (`render --check` / provenance diff). Those skills depend on the *contract*,
-not on this spec's internals — so an application paper with its own harness (e.g.
-`applications/pinn/`) can bind a different backend without changing them. Everything below
+not on this spec's internals — so a future paper with different execution needs could bind
+a different backend without changing them (this is the default; the PINN application paper,
+today a standalone draft, adopts *this* backend once the infra lands). Everything below
 is this backend's binding of those capabilities.
 
 ## Compute environment
