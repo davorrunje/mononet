@@ -36,7 +36,7 @@ stakes; anti-Goodhart. Personas per ADR-0016.
 
 - Consistent stance across stages; one place to maintain.
 - The guardrail records logged overrides (accountability) but the human still
-  drives; thesis-gate-blocking left as an open item.
+  drives; the thesis gate escalates to per-gap acknowledgement (ADR-0021).
 
 ## Rejected alternatives
 

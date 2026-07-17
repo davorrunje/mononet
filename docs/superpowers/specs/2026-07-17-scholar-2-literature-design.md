@@ -118,9 +118,10 @@ may be committed vs. mirror-only.
 
 ## 7. Open items
 
-- **Bib format** — BibTeX vs CSL-JSON (both Zotero-exportable; CSL-JSON is
-  JSON-native/richer, BibTeX is LaTeX-native). Lean CSL-JSON as source of truth
-  with BibTeX export; confirm in the plan.
+- **Bib format** — *resolved (ADR-0020):* **CSL-JSON is the source of truth**
+  (robust to parse/validate/manipulate — the skills append/join programmatically);
+  **BibTeX is exported on demand** (pandoc/Zotero) for LaTeX manuscripts. Authors
+  who prefer hand-editing `.bib` treat it as a generated view.
 - **Semantic Scholar key** — optional; degrade gracefully to OpenAlex-only if
   absent.
 - **scite.ai** (Supporting/Contrasting) — out of scope for v1 (paid); SciCite

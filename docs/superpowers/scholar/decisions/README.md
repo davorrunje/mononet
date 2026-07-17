@@ -30,5 +30,8 @@ Migrates to the plugin's `decisions/` alongside `resources/references/`.
 | [0016](0016-mentor-personas.md) | Mentor personas author-selectable; no personality inference | accepted |
 | [0017](0017-research-init-one-skill.md) | `research-init` one skill, init/adopt modes | accepted |
 | [0018](0018-git-native-source-of-truth.md) | Git-native plain text as source of truth; cross-repo out of scope | accepted |
+| [0019](0019-public-plugin-visibility.md) | Public plugin, named `scholar` | accepted |
+| [0020](0020-bib-format-csl-json.md) | CSL-JSON source of truth; BibTeX exported on demand | accepted |
+| [0021](0021-thesis-gate-per-gap-confirmation.md) | Thesis gate — per-gap acknowledged confirmation | accepted |
 
 Format: MADR (Markdown Any Decision Records). Deciders: Davor Runje (with Claude).

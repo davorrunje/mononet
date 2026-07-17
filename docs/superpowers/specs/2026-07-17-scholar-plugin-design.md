@@ -462,11 +462,14 @@ systematic record" problem that motivated this whole effort.
 
 ## 7. Distribution
 
-Distributed as a Claude Code plugin (git-repo marketplace install). Shared
-privately with company colleagues and with PhD peers; a public release is
-possible later but is not required for the initial audience. The plugin must
-therefore be genuinely domain-neutral and self-documenting from day one — its
-"users" include people who are not the author.
+Distributed as a **public** Claude Code plugin (git-repo marketplace install),
+named **`scholar`** (ADR-0019) — for the author's own repos, company colleagues,
+PhD peers, and the broader research community. The plugin must therefore be
+genuinely domain-neutral and self-documenting from day one — most "users" are not
+the author. A root `README.md` (staged at `docs/superpowers/scholar/README.md`)
+explains purpose + reasoning and links to the decision log and reference digests.
+A license must be chosen before release (suggest Apache-2.0 to match `mononet`, or
+MIT — see §10).
 
 ## 8. Sub-spec decomposition
 
@@ -517,11 +520,12 @@ implementation plans, then the plugin repo is created and `mononet` adopts it.
 
 ## 10. Open items to confirm before implementation
 
-- **Plugin repo name / marketplace** — `scholar` is the working name; confirm
-  the GitHub repo name and whether it is initially private (peers/colleagues)
-  or public.
-- **Bibliography format** — BibTeX vs CSL-JSON for `references.bib` (both
-  Zotero-exportable; CSL-JSON is richer/JSON-native, BibTeX is LaTeX-native).
+- **Plugin repo name / visibility** — *resolved:* public, named `scholar`
+  (ADR-0019).
+- **Bibliography format** — *resolved:* CSL-JSON as source of truth, BibTeX
+  exported on demand (ADR-0020).
+- **Plugin license** — *new open item* (public release, ADR-0019): pick a license
+  before first release; suggest Apache-2.0 (matches `mononet`) or MIT.
 - **`literature` one-skill-with-modes** — carried as decided (`scout`/`position`
   in one skill); reconfirm at sub-spec time.
 - **Mirror hash algorithm** — MD5 (lowest common denominator across Google

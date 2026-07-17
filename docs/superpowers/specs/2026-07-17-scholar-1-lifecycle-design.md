@@ -155,8 +155,11 @@ as an automatic **guardrail** at material-decision checkpoints. Integration poin
 - at the **thesis defensibility gate** → a full **mock viva**.
 
 **Guardrail semantics:** stop, surface the gap, offer to grill/teach, **record**;
-the human may override, override logged — not a hard block *(open item: whether the
-thesis defensibility gate is blocking)*. Never grades a novel claim's substance;
+the human may override, override logged — not a hard block. The **thesis
+defensibility gate escalates** (ADR-0021): instead of a single blanket override,
+the author must **acknowledge each surfaced gap in writing** (per-gap logged
+sign-off) — still non-blocking (the AI never adjudicates "critical"), but
+deliberate and fully on record at the highest-stakes decision. Never grades a novel claim's substance;
 teaches the established (methodology, cited work) source-grounded. **Mentor
 personas** (sounding board / critical examiner / directive editor / opt-in devil's
 advocate) are author-selectable, task/stage-suggested, feedback-calibrated —
@@ -199,8 +202,9 @@ every one.
 
 ## 10. Open items
 
-- **Thesis defensibility gate** — blocking vs. stop-and-confirm (default: stop and
-  confirm, logged override).
+- **Thesis defensibility gate** — *resolved (ADR-0021):* non-blocking, but with
+  per-gap acknowledged sign-off (heavier than the single-override used at other
+  gates).
 - **`design.md`/`plan.md` delegation seam** — the exact handoff to `superpowers`
   brainstorming/writing-plans (store paths under the hypothesis folder).
 - **Ledger format** — the Toulmin-sextet schema for `paper/ledger`; settle in the
