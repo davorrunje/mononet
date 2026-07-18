@@ -33,10 +33,10 @@ correctly forces the abstractions that deliver (2) and (3).
 ## Role as the default experiment backend
 
 This spec is **mononet's implementation of the *experiment-backend contract*** defined by
-the **`scholar`** plugin — <https://github.com/davorrunje/scholar>
+the **`honest-scholar`** plugin — <https://github.com/davorrunje/honest-scholar>
 (`resources/contracts/experiment-backend.md`) — which the scientific research-workflow
 skills consume. (The contract and those skills used to be drafted in-repo; they now live in
-the standalone `scholar` repo, released `v0.0.0`; mononet is a *consumer*.) This backend,
+the standalone `honest-scholar` repo, released `v0.0.0`; mononet is a *consumer*.) This backend,
 bound as **`mononet-bench`**, provides the contract's four capabilities: **run** (execute a
 hypothesis's designed experiments — `run` / `reconcile`), **evidence** (a committed result
 carrying a *run-ref* in `.runs/<run-hash>.json` and a `.provenance.json` *provenance stamp*,
