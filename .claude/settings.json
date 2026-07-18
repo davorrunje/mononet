@@ -1,13 +1,20 @@
 {
   "enabledPlugins": {
     "superpowers@claude-plugins-official": false,
-    "superpowers@superpowers-dev": true
+    "superpowers@superpowers-dev": true,
+    "scholar@scholar": true
   },
   "extraKnownMarketplaces": {
     "superpowers-dev": {
       "source": {
         "source": "git",
         "url": "https://github.com/obra/superpowers.git"
+      }
+    },
+    "scholar": {
+      "source": {
+        "source": "github",
+        "repo": "davorrunje/scholar"
       }
     }
   }
