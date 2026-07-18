@@ -2,7 +2,7 @@
   "enabledPlugins": {
     "superpowers@claude-plugins-official": false,
     "superpowers@superpowers-dev": true,
-    "scholar@scholar": true
+    "honest-scholar@honest-scholar": true
   },
   "extraKnownMarketplaces": {
     "superpowers-dev": {
@@ -11,10 +11,10 @@
         "url": "https://github.com/obra/superpowers.git"
       }
     },
-    "scholar": {
+    "honest-scholar": {
       "source": {
         "source": "github",
-        "repo": "davorrunje/scholar"
+        "repo": "davorrunje/honest-scholar"
       }
     }
   }
