@@ -32,17 +32,20 @@ correctly forces the abstractions that deliver (2) and (3).
 
 ## Role as the default experiment backend
 
-This spec is the **default, reference implementation** of the *experiment-backend contract*
-consumed by the research-workflow skills (defined in
-[docs/research/README.md](../../research/README.md)). It provides the contract's four
-capabilities: **run** (execute a hypothesis's designed experiments — `run` / `reconcile`),
-**evidence** (a committed result carrying a *run-ref* in `.runs/<run-hash>.json` and a
-`.provenance.json` *provenance stamp*), **tables** (`render` managed blocks), and
-**is-current** (`render --check` / provenance diff). Those skills depend on the *contract*,
-not on this spec's internals — so a future paper with different execution needs could bind
-a different backend without changing them (this is the default; the PINN application paper,
-today a standalone draft, adopts *this* backend once the infra lands). Everything below
-is this backend's binding of those capabilities.
+This spec is **mononet's implementation of the *experiment-backend contract*** defined by
+the **`scholar`** plugin — <https://github.com/davorrunje/scholar>
+(`resources/contracts/experiment-backend.md`) — which the scientific research-workflow
+skills consume. (The contract and those skills used to be drafted in-repo; they now live in
+the standalone `scholar` repo, released `v0.0.0`; mononet is a *consumer*.) This backend,
+bound as **`mononet-bench`**, provides the contract's four capabilities: **run** (execute a
+hypothesis's designed experiments — `run` / `reconcile`), **evidence** (a committed result
+carrying a *run-ref* in `.runs/<run-hash>.json` and a `.provenance.json` *provenance stamp*,
+including the dataset `id+version+sha256`), **tables** (`render` managed blocks), and
+**is-current** (`render --check` / provenance diff). The skills depend on the *contract*,
+not on this spec's internals — so a project with different execution needs binds a different
+backend without changing them. This is the default backend; the PINN application paper,
+today a standalone draft, adopts *this* backend once the infra lands. Everything below is
+this backend's binding of those capabilities.
 
 ## Compute environment
 
