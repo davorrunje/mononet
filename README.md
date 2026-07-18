@@ -21,6 +21,11 @@ with the optional activation-split refinement (`mode="split"`) from:
 
 First-class support for **PyTorch**, **JAX** (Flax NNX), and **Keras 3**.
 
+> **Research workflow:** this project's research — hypotheses, benchmarks, and
+> follow-up papers — is run with **[scholar](https://github.com/davorrunje/scholar)**,
+> a standalone, domain-neutral research-workflow Claude Code plugin (enabled via
+> `.claude/settings.json`). It was extracted from this project's own design work.
+
 ## Install
 
     pip install "mononet[torch]"      # PyTorch
