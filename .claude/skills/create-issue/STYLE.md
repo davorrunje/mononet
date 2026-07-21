@@ -68,6 +68,18 @@ Pick from the repo's labels (`gh label list`). Always add **`follow-up`**
 - `bug` — something is wrong.
 - `documentation` — docs-only work.
 
+## Closing convention
+
+A closed issue records **how** it was resolved (see SKILL.md § Closing):
+
+- Resolved by a merged PR → the PR body's `Closes #NN` closes and links it
+  (nothing else needed). This is the mirror of the [`create-pr`](../create-pr/STYLE.md)
+  standard — keep the two in sync.
+- Resolved otherwise, or superseded → `gh issue close <N> --comment "Resolved in
+  <ref> — <one line>."` (add `--reason "not planned"` for won't-do / superseded).
+- Never close silently; never close a checklist/umbrella issue with open,
+  un-re-filed boxes.
+
 ## Self-containment check
 
 Before creating, confirm every answer is "yes":

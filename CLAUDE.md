@@ -46,7 +46,7 @@ Each sub-project spec sits below the parent meta-spec [2026-05-21-mononet-packag
 
 ### Follow-ups become GitHub issues
 
-Whenever you defer work, note a follow-up, or find a problem you won't fix now, **create a GitHub issue for it** — don't leave it only in a spec's "Follow-ups" list, a PR comment, a code `TODO`, or conversational memory. Each issue must be **self-contained**: a future session has only the repository content and the issue text (not this conversation or PR thread), so include the context, the exact repo locations, and acceptance criteria needed to complete it cold. Use the **create-issue** skill for the standard format: [.claude/skills/create-issue/SKILL.md](.claude/skills/create-issue/SKILL.md) (template in [STYLE.md](.claude/skills/create-issue/STYLE.md)).
+Whenever you defer work, note a follow-up, or find a problem you won't fix now, **create a GitHub issue for it** — don't leave it only in a spec's "Follow-ups" list, a PR comment, a code `TODO`, or conversational memory. Each issue must be **self-contained**: a future session has only the repository content and the issue text (not this conversation or PR thread), so include the context, the exact repo locations, and acceptance criteria needed to complete it cold. Use the **create-issue** skill for the standard format: [.claude/skills/create-issue/SKILL.md](.claude/skills/create-issue/SKILL.md) (template in [STYLE.md](.claude/skills/create-issue/STYLE.md)). That skill also defines the **closing** convention — a closed issue records *how* it was resolved (`Closes #NN` in the PR, or an explicit resolution comment); never close silently.
 
 ## Architecture
 
@@ -135,4 +135,4 @@ Full reference (including per-backend test invocations, security/static-analysis
 
 ## Pull requests
 
-PR conventions live in [PULL_REQUEST_GUIDE.md](PULL_REQUEST_GUIDE.md) (gh-CLI usage, description-file workflow, replying to review comments via REST + resolving review threads via GraphQL). Issues are tracked in this repo's GitHub Issues tab.
+PR conventions live in [PULL_REQUEST_GUIDE.md](PULL_REQUEST_GUIDE.md) (gh-CLI usage, description-file workflow, replying to review comments via REST + resolving review threads via GraphQL). The **create-pr** skill encodes the branch/checks/commit/body ritual and the `Closes #NN` convention: [.claude/skills/create-pr/SKILL.md](.claude/skills/create-pr/SKILL.md) (template in [STYLE.md](.claude/skills/create-pr/STYLE.md)). Issues are tracked in this repo's GitHub Issues tab.

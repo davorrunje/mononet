@@ -1,6 +1,6 @@
 ---
 name: create-issue
-description: Use when a follow-up, deferred task, or known problem is identified that will not be fixed now — turn it into a self-contained GitHub issue that a future session (with only the repo + the issue, not this conversation) can complete. Standard format lives in STYLE.md.
+description: Use when a follow-up, deferred task, or known problem is identified that will not be fixed now — turn it into a self-contained GitHub issue that a future session (with only the repo + the issue, not this conversation) can complete. Also defines how issues are CLOSED. Standard format lives in STYLE.md.
 ---
 
 # Create Issue
@@ -26,7 +26,11 @@ Invoke this whenever you would otherwise leave a loose end:
 
 If you catch yourself writing "we should eventually…" — stop and create the issue.
 
-## Process
+This skill also defines the **closing** standard (below); its `Closes #NN` half
+lives in the paired [`create-pr`](../create-pr/SKILL.md) skill — keep the two in
+sync.
+
+## Process (opening)
 
 1. **Gather repo-grounded context.** Before writing, look up the concrete
    anchors the issue needs: exact file paths, function/class names, line
@@ -56,6 +60,27 @@ If you catch yourself writing "we should eventually…" — stop and create the 
    "Follow-ups" list, replace that prose entry with a link to the issue so the
    spec and the tracker don't drift.
 
+## Closing
+
+An issue is never closed silently — a closed issue must record **how** it was
+resolved (the mirror of the `create-pr` `Closes #NN` rule). Two paths:
+
+- **Resolved by a PR** (the common case): the PR body carries `Closes #NN` (per
+  [`create-pr`](../create-pr/SKILL.md)), so merging the PR closes and links the
+  issue automatically. Nothing else to do.
+- **Resolved without a PR, or superseded / won't-do**: close it explicitly with a
+  one-line resolution comment naming the cause — never a bare close:
+
+  ```bash
+  gh issue close <N> --comment "Resolved in <PR/commit/issue> — <one-line what changed>."
+  # superseded / won't-do:
+  gh issue close <N> --reason "not planned" --comment "Superseded by #<M> — <why>."
+  ```
+
+For an **umbrella/checklist issue**, close it only when every box is done (or the
+remainder is re-filed as its own issue), and leave a comment mapping each item to
+the PR that fixed it.
+
 ## Red flags
 
 - "As we discussed" / "the figure we just made" / "the branch above" — the
@@ -64,3 +89,4 @@ If you catch yourself writing "we should eventually…" — stop and create the 
   STYLE.md body.
 - Deferring work with only a code `TODO` or a spec bullet and no issue.
 - Batching many unrelated follow-ups into one issue — one issue per deliverable.
+- Closing an issue with no resolution comment and no `Closes #NN` PR.
