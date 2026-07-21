@@ -1,0 +1,24 @@
+# Literature triage sidecar — decision layer over references.json.
+# Keyed by the CSL-JSON `id` (or DOI). role/disposition/rationale are material
+# classifications: propose from context, human confirms. Populated by
+# research-init (adopt) from docs/references/; extend via `literature scout/position`.
+
+runje-2023-cmnn:
+  role: anchor            # the foundational paper mononet implements (mode="mixed")
+  disposition: include
+  rationale: >-
+    Foundational construction (CMFCL, Eq. 7) that mononet's mode="mixed"
+    implements. The reproduction target for the cmnn-multibackend paper's
+    Tables 1 & 2. Covered by U.S. Patent 11,551,063 (see NOTICE.md).
+  digest: docs/references/2205.11775-runje-2023-constrained-mnn.md
+  pdf: docs/references/2205.11775v4.pdf
+
+sartor-2025-advancing-cmnn:
+  role: rival             # advancing construction; source of mononet's mode="split"
+  disposition: include
+  rationale: >-
+    Direct follow-up to Runje 2023. Source of mononet's mode="split"
+    parametrization (sigma(W+x+b) - sigma(W-x+b)); the closest competing
+    construction the monotone-constructions paper benchmarks against.
+  digest: docs/references/2505.02537-sartor-2025-advancing-cmnn.md
+  pdf: docs/references/2505.02537v2.pdf

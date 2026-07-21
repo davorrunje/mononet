@@ -1,0 +1,8 @@
+# Committed template — remote NAME and TYPE only, never credentials.
+# Copy to .honest-scholar/rclone.conf (gitignored) and fill in the secrets, then
+# set mirror.rclone_remote in config.yml to the remote name below.
+[mononet-mirror]
+type = s3
+# provider = ...
+# access_key_id = ...        # -> rclone.conf (gitignored), never here
+# secret_access_key = ...
