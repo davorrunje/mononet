@@ -44,6 +44,17 @@ Each sub-project spec sits below the parent meta-spec [2026-05-21-mononet-packag
 
 > Stale reference in the parent meta-spec: it mentions **MkDocs**, but the project migrated to **Sphinx + myst-nb** ([2026-05-22-sphinx-migration-design.md](docs/superpowers/specs/2026-05-22-sphinx-migration-design.md)). The Sphinx-based docs are the current source of truth — do not propose MkDocs changes.
 
+### Research workflow: honest-scholar (science layer)
+
+The scientific work runs on the **[honest-scholar](https://github.com/davorrunje/honest-scholar)** plugin (enabled in `.claude/settings.json`; CLI via `uv tool install honest-scholar` — deliberately **not** in `pyproject.toml`). It is the *science* layer (hypotheses → papers → thesis, plus `literature`, `dataset`, `progress`, `defend`), governed by **agency** (the author makes and signs every material decision; AI drafts) and **understanding** (`defend`). Its git-native content lives under [`docs/research/`](docs/research/) (papers, hypotheses, thesis), [`datasets.yml`](datasets.yml), and [`.honest-scholar/config.yml`](.honest-scholar/config.yml); `docs/research/` is excluded from the Sphinx build.
+
+honest-scholar **delegates outward** via two bindings in `.honest-scholar/config.yml`:
+
+- `engineering_backend: superpowers` — code work (design/plan/implement) hands off to the superpowers flow; **`docs/superpowers/` is the engineering record** the science layer cites.
+- `experiment_backend: benchmarks/` — the harness whose result JSONs `findings.md` cite as evidence (run-refs).
+
+Setup + rationale: [2026-07-21-honest-scholar-integration-design.md](docs/superpowers/specs/2026-07-21-honest-scholar-integration-design.md). Current state: [`docs/research/dashboard.md`](docs/research/dashboard.md). When doing scientific work (proposing/testing a hypothesis, positioning a paper, registering a dataset), **use the honest-scholar skills** and honor the named-sign-off requirement on verdicts.
+
 ### Follow-ups become GitHub issues
 
 Whenever you defer work, note a follow-up, or find a problem you won't fix now, **create a GitHub issue for it** — don't leave it only in a spec's "Follow-ups" list, a PR comment, a code `TODO`, or conversational memory. Each issue must be **self-contained**: a future session has only the repository content and the issue text (not this conversation or PR thread), so include the context, the exact repo locations, and acceptance criteria needed to complete it cold. Use the **create-issue** skill for the standard format: [.claude/skills/create-issue/SKILL.md](.claude/skills/create-issue/SKILL.md) (template in [STYLE.md](.claude/skills/create-issue/STYLE.md)). That skill also defines the **closing** convention — a closed issue records *how* it was resolved (`Closes #NN` in the PR, or an explicit resolution comment); never close silently.
