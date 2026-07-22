@@ -106,12 +106,21 @@ _(Seed rows are in this paper's `backlog.md`; promote as the design firms up.)_
    The low counts are intrinsic OpenAlex under-coverage. Added 7 method leads
    (incl. Lipschitz provably-monotonic nets, monotone-net approximation theory,
    MonoNet). **S2 contexts still pending** (S2 key returns HTTP 403 — inactive).
-3. **S2 activation (still pending):** obtain/activate `S2_API_KEY`
+3. ✅ **Deep research (web)** run 2026-07-22 —
+   [`paper/deep-research-2026-07-22.md`](deep-research-2026-07-22.md). 107-agent
+   fan-out with 3-vote adversarial verification; 12 findings. Recovered exactly the
+   sources the citation graph misses — **5 new**: Igel *Smooth Min-Max Monotonic
+   Networks* (ICML 2024), Vidot *Formal Monotony Analysis* (FMICS 2022), Monteiro
+   *Monotonicity Regularization* (UAI 2022), Wang *Monotone Cubic B-Splines* (2023),
+   Burdakov & Sysoev *Smoothed Monotonic Regression* (2017) — plus formal-methods/PL
+   venues (FMICS, OOPSLA) an ML-only search skips.
+4. **S2 activation (still pending):** obtain/activate `S2_API_KEY`
    (`honest-scholar keys set S2_API_KEY`) then re-run for SciCite intents/contexts
    and a fuller citation graph — the only real fix for the CMNN/Cano/Sartor
    under-coverage the sweep proved is intrinsic to keyless OpenAlex. Manually seed
    known method anchors OpenAlex misses (min-max/Sill, UMNN/Wehenkel-Louppe).
-4. Fix the empirical scope: which rival methods get re-implemented in the harness
+5. Fix the empirical scope: which rival methods get re-implemented in the harness
    (drives feasibility).
-5. `position --level paper` → move surviving leads into `references.json` +
-   `triage.yml` (first-pass 14 + sweep 7), then develop positioning → outline.
+6. `position --level paper` → move surviving leads into `references.json` +
+   `triage.yml` (first-pass 14 + sweep 7 + deep-research 5 new), then develop
+   positioning → outline.
