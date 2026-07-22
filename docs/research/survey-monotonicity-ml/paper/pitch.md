@@ -13,7 +13,7 @@ status:
   load-bearing: null
   understanding: {status: pending, unresolved: []}
   blockers:
-    - literature scout not yet run — coverage completeness (and the "gap" claim) unverified
+    - completeness sweep pending — first-pass keyless scout done (see paper/scout-2026-07-22.md); needs published-DOI anchors + S2_API_KEY to close the arXiv-vs-published citation split
     - empirical scope depends on how many rival methods we re-implement in the harness
   last-updated: 2026-07-22
 ---
@@ -94,9 +94,14 @@ _(Seed rows are in this paper's `backlog.md`; promote as the design firms up.)_
 
 ## Immediate next steps (paper-synthesis)
 
-1. **`literature scout --level paper`** on the forward-citation graphs of CMNN,
-   Sartor 2025, and Cano 2019 — confirm the gap, seed the method inventory, and
-   make coverage defensible. (Clears the first blocker above.)
-2. Fix the empirical scope: which rival methods get re-implemented in the harness
+1. ✅ **First-pass `literature scout --level paper`** run 2026-07-22 (keyless
+   OpenAlex) — [`paper/scout-2026-07-22.md`](scout-2026-07-22.md). 243 citing works
+   across 5 anchors; surfaced the method families + new-since-2023 leads (MonoKAN,
+   MoST, MCNet, isotonic-embedding, counterexample/positivity certification).
+2. **Completeness sweep:** add published-version anchors (CMNN@PMLR, Sartor@PMLR,
+   Cano@Neurocomputing) + `S2_API_KEY`, re-run to close the arXiv-split recall gap
+   and get SciCite intents.
+3. Fix the empirical scope: which rival methods get re-implemented in the harness
    (drives feasibility).
-3. Develop positioning → outline.
+4. `position --level paper` → move surviving leads into `references.json` +
+   `triage.yml`, then develop positioning → outline.
