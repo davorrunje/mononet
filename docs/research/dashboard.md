@@ -53,18 +53,26 @@ follow-on hypothesis for `monotone-constructions`.
 
 ## Datasets
 
-- **All 10 registered with verified SHA-256 fixity** — `dataset validate` →
-  `ok: true`, 0 warnings; `dataset verify` → ok for each:
-  - Tier A (committed via Git LFS, large-screen): `adult`, `german`, `lc`,
-    `polish`, `taiwan`.
-  - Tier A (committed via Git LFS, CMNN / Zenodo 7968969): `auto`, `heart`,
-    `compas`, `blog`, `loan` (author sign-off 2026-07-22).
-- **Datasheets complete** — every entry has a Gebru datasheet under
-  `docs/research/datasets/`; no `N/A` placeholders remain.
-- **Sensitivity (author-signed):** `pii` — `adult`, `german`, `lc`, `taiwan`,
-  `heart`, `compas`, `loan`; `none` — `polish`, `auto`, `blog`.
-- Harness wiring to load the CMNN five from the committed LFS copies (rather than
-  the runtime download cache) is tracked in #144.
+**All 10 registered with verified SHA-256 fixity** — `dataset validate` →
+`ok: true`, 0 warnings; `dataset verify` → ok for each; every entry has a Gebru
+datasheet under `docs/research/datasets/` (no `N/A` placeholders). Tier / license
+/ sensitivity are author-signed (2026-07-22).
+
+| dataset | group | tier | license | access | sensitivity | verify | datasheet |
+|---|---|---|---|---|---|---|---|
+| `adult` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+| `german` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+| `lc` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+| `polish` | large-screen | A (LFS) | CC-BY-4.0 | open | none | ✅ | ✅ |
+| `taiwan` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+| `auto` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | none | ✅ | ✅ |
+| `heart` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+| `compas` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+| `blog` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | none | ✅ | ✅ |
+| `loan` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+
+Harness wiring to load the CMNN five from the committed LFS copies (rather than
+the runtime download cache) is tracked in #144.
 
 ## Literature
 
