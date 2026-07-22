@@ -1,5 +1,16 @@
 # Preprocessed datasets for "Constrained Monotonic Neural Networks" (ICML 2023).
 # Source: https://zenodo.org/records/7968969  DOI: 10.5281/zenodo.7968969
 # License: CC-BY-4.0 (Runje & Shankaranarayana). NOT committed to git/LFS.
-# Maintainer: fill in real SHA-256 sums after the first download.
+# SHA-256 sums pinned 2026-07-22 from the first authenticated download; the same
+# fixity is mirrored (per train/test file) in the repo-root datasets.yml registry.
 [sha256]
+train_auto.csv = "3a826e341eeff0f121fadb4345dfa0bbed65dd7813f059ad8020087565a4409c"  # pragma: allowlist secret
+test_auto.csv = "f35372e4003a92bc8de844842fbaa64943787321e81c495e31f0950d2187347e"  # pragma: allowlist secret
+train_blog.csv = "7b1bee042befb4b7f0ff930181c73b67129d3e3701723c773459f37ad8ab3c8c"  # pragma: allowlist secret
+test_blog.csv = "58a946e4aaa85477c2dfc9a020b730710c7746c88cf6d5c158ea75d26f91d179"  # pragma: allowlist secret
+train_compas.csv = "dbf1725e3c3312e8daa21bf885e812c9f66abe975bb900a49e6220f757165120"  # pragma: allowlist secret
+test_compas.csv = "17f80dcd363a168335b09cfe29db1b095f6014815ac9fdfd7e247408cf63165c"  # pragma: allowlist secret
+train_heart.csv = "dae99df00efc249d1e3b69e90c963149d235fbecb0c274b6be0621b547702c5d"  # pragma: allowlist secret
+test_heart.csv = "46f459dd3f4dc6b0900c0ee5cdc847b17398975ae5d0829cb8124c395bf74faf"  # pragma: allowlist secret
+train_loan.csv = "dc2908c49d8bcd8b8f05a9e2b4c9b3a2740fb7b71af13b5dabbe0e6d130762b1"  # pragma: allowlist secret
+test_loan.csv = "881eae5649acb7537fb39a197c91d520860ff159c5d17f0b95e7945ab98dd516"  # pragma: allowlist secret
