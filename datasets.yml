@@ -1,14 +1,15 @@
 # Dataset registry for mononet benchmarks (honest-scholar `dataset` capability).
-# Written by research-init (adopt) from benchmarks/datasets/{sources.py,manifest.toml}
-# with real SHA-256 fixity over the committed (Git LFS) blobs.
+# Written by the honest-scholar `dataset` skill with real SHA-256 fixity over the
+# committed (Git LFS) blobs under benchmarks/data/.
 #
-# PROPOSED — tier / license / redistributable / sensitivity are MATERIAL
-# classifications awaiting the author's sign-off (agency principle).
-#
-# NOT YET REGISTERED: the 5 CMNN paper-reproduction datasets (auto, heart, compas,
-# blog, loan) are fetched at runtime (Zenodo 7968969, CC-BY-4.0) and not committed,
-# so no local bytes exist to hash. Registering them with real fixity is a tracked
-# follow-up — do it via `honest-scholar dataset fetch` + `verify`, not by hand.
+# SIGNED OFF — tier / license / redistributable / sensitivity are MATERIAL
+# classifications (agency principle), confirmed by the author:
+#   signed-off-by: Davor Runje
+#   signed-off-date: 2026-07-22
+# The 5 CMNN paper-reproduction datasets (auto, heart, compas, blog, loan) were
+# registered as Tier A (committed via Git LFS) per that sign-off; sensitivity for
+# each was confirmed (compas/heart/loan = pii, auto/blog = none). Every entry now
+# carries a real Gebru datasheet under docs/research/datasets/.
 #
 # Tiers: A = redistributable + committed in-repo (Git LFS under benchmarks/data/);
 #        B = fetchable from a canonical public source URL;
@@ -26,7 +27,7 @@ datasets:
     access: open
     source: https://archive.ics.uci.edu/dataset/2/adult
     sensitivity: pii
-    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    datasheet: docs/research/datasets/adult.md
     title: Adult / Census Income (UCI)
     description: Income classification; regen via benchmarks/datasets/prepare/adult.py.
     files:
@@ -45,7 +46,7 @@ datasets:
     access: open
     source: https://archive.ics.uci.edu/dataset/144/statlog+german+credit+data
     sensitivity: pii
-    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    datasheet: docs/research/datasets/german.md
     title: Statlog German Credit (UCI)
     description: Credit-risk classification; regen via benchmarks/datasets/prepare/german.py.
     files:
@@ -64,7 +65,7 @@ datasets:
     access: open
     source: https://zenodo.org/records/11295916
     sensitivity: pii
-    datasheet: "N/A + upstream Zenodo record; per-dataset Gebru datasheet is a follow-up"
+    datasheet: docs/research/datasets/lc.md
     title: Lending Club (Zenodo)
     description: Credit classification (largest screen dataset); regen via benchmarks/datasets/prepare/lc.py.
     files:
@@ -83,7 +84,7 @@ datasets:
     access: open
     source: https://archive.ics.uci.edu/static/public/365/polish+companies+bankruptcy+data.zip
     sensitivity: none
-    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    datasheet: docs/research/datasets/polish.md
     title: Polish Companies Bankruptcy (UCI)
     description: Company-level bankruptcy classification; regen via benchmarks/datasets/prepare/polish.py.
     files:
@@ -102,7 +103,7 @@ datasets:
     access: open
     source: https://archive.ics.uci.edu/static/public/350/default+of+credit+card+clients.zip
     sensitivity: pii
-    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    datasheet: docs/research/datasets/taiwan.md
     title: Default of Credit Card Clients (UCI)
     description: Credit-default classification; regen via benchmarks/datasets/prepare/taiwan.py.
     files:
@@ -112,3 +113,107 @@ datasets:
       - path: benchmarks/data/taiwan/test_taiwan.csv.gz
         sha256: dd2e936cd5069bbfeed63fd8637e3e90f964983c8c2e565b596fa635d6daff65  # pragma: allowlist secret
         size: 183709
+
+  # --- CMNN paper-reproduction datasets (Zenodo 7968969, CC-BY-4.0) ----------
+  # Redistributed by Runje & Shankaranarayana; committed via Git LFS (Tier A,
+  # author sign-off 2026-07-22). SHA-256 is over the gzipped committed bytes; the
+  # raw upstream .csv SHA-256 sums are pinned in benchmarks/datasets/manifest.toml.
+  - id: auto
+    version: "2026-07-22"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://zenodo.org/records/7968969
+    pid: doi:10.5281/zenodo.7968969
+    sensitivity: none
+    datasheet: docs/research/datasets/auto.md
+    title: Auto MPG (CMNN / Zenodo)
+    description: Fuel-economy regression; monotone-decreasing in Weight/Displacement/Horsepower.
+    files:
+      - path: benchmarks/data/auto/train_auto.csv.gz
+        sha256: 27cb5263d7f7a59084d07ab10a34de43f5681288c941672676f48a0bfbc19700  # pragma: allowlist secret
+        size: 8652
+      - path: benchmarks/data/auto/test_auto.csv.gz
+        sha256: 959580bc6d34e36abc6440d58dbe6f6a6f64d788520d7a87148c6f4ace317874  # pragma: allowlist secret
+        size: 3077
+
+  - id: heart
+    version: "2026-07-22"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://zenodo.org/records/7968969
+    pid: doi:10.5281/zenodo.7968969
+    sensitivity: pii
+    datasheet: docs/research/datasets/heart.md
+    title: Cleveland Heart Disease (CMNN / Zenodo)
+    description: Heart-disease classification; monotone-increasing in trestbps/chol.
+    files:
+      - path: benchmarks/data/heart/train_heart.csv.gz
+        sha256: c5246e04ab3538c0e9d351511b9c65608526c9ed248af2a8cd4b683285626c55  # pragma: allowlist secret
+        size: 8027
+      - path: benchmarks/data/heart/test_heart.csv.gz
+        sha256: 9a8f5f4aff7e50c454e6c8b9f0c4d6c465941f4fedd0f2302717f4a27c75fbb8  # pragma: allowlist secret
+        size: 2833
+
+  - id: compas
+    version: "2026-07-22"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://zenodo.org/records/7968969
+    pid: doi:10.5281/zenodo.7968969
+    sensitivity: pii
+    datasheet: docs/research/datasets/compas.md
+    title: ProPublica COMPAS Recidivism (CMNN / Zenodo)
+    description: Two-year-recidivism classification; monotone-increasing in prior/juvenile counts. Contains protected attributes (race, sex).
+    files:
+      - path: benchmarks/data/compas/train_compas.csv.gz
+        sha256: ee1b0cb196a610787d28f09a567a951eb3e18ba3028bfb1c24c45cb902c15260  # pragma: allowlist secret
+        size: 25271
+      - path: benchmarks/data/compas/test_compas.csv.gz
+        sha256: 4795e1e079ff903d0806b842690e4ae2431090ccbc9682362e0c564eba577a92  # pragma: allowlist secret
+        size: 6673
+
+  - id: blog
+    version: "2026-07-22"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://zenodo.org/records/7968969
+    pid: doi:10.5281/zenodo.7968969
+    sensitivity: none
+    datasheet: docs/research/datasets/blog.md
+    title: BlogFeedback (CMNN / Zenodo)
+    description: Comment-count regression (276 features); monotone-increasing in recent-activity features.
+    files:
+      - path: benchmarks/data/blog/train_blog.csv.gz
+        sha256: d6994808ef8061d7de21beaf81b23aae750ee9b65e9bc1e940fa48854b026da0  # pragma: allowlist secret
+        size: 2165910
+      - path: benchmarks/data/blog/test_blog.csv.gz
+        sha256: 974f69d53fcf52b5c5b64d7cf57077b188b63d7f63a6598da71974779432e9e5  # pragma: allowlist secret
+        size: 1414370
+
+  - id: loan
+    version: "2026-07-22"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://zenodo.org/records/7968969
+    pid: doi:10.5281/zenodo.7968969
+    sensitivity: pii
+    datasheet: docs/research/datasets/loan.md
+    title: Loan Default (CMNN / Zenodo)
+    description: Loan-default classification (largest CMNN dataset, anonymized features).
+    files:
+      - path: benchmarks/data/loan/train_loan.csv.gz
+        sha256: 16ee318b75d50122317d3d7fb20c578f65529ae2173cfd005f0683c8c6430c2d  # pragma: allowlist secret
+        size: 8704044
+      - path: benchmarks/data/loan/test_loan.csv.gz
+        sha256: ef0dca8c425ae2eaf8477a405d6ca0e77921d7ece0043d2d2575bfa5982c6411  # pragma: allowlist secret
+        size: 1461572
