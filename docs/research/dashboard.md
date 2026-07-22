@@ -55,21 +55,26 @@ follow-on hypothesis for `monotone-constructions`.
 
 **All 10 registered with verified SHA-256 fixity** — `dataset validate` →
 `ok: true`, 0 warnings; `dataset verify` → ok for each; every entry has a Gebru
-datasheet under `docs/research/datasets/` (no `N/A` placeholders). Tier / license
+datasheet under `docs/research/datasets/` (no `N/A` placeholders). All are
+**Tier A** (committed via Git LFS), **CC-BY-4.0**, **open** access; tier / license
 / sensitivity are author-signed (2026-07-22).
 
-| dataset | group | tier | license | access | sensitivity | verify | datasheet |
+`mono` = features carrying a declared monotone constraint (increasing +
+decreasing, from `benchmarks/datasets/spec.py`); `non-mono` = the rest. Feature
+counts include one-hot-expanded categoricals.
+
+| dataset | group | task | rows | features | mono | non-mono | sensitivity |
 |---|---|---|---|---|---|---|---|
-| `adult` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
-| `german` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
-| `lc` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
-| `polish` | large-screen | A (LFS) | CC-BY-4.0 | open | none | ✅ | ✅ |
-| `taiwan` | large-screen | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
-| `auto` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | none | ✅ | ✅ |
-| `heart` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
-| `compas` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
-| `blog` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | none | ✅ | ✅ |
-| `loan` | CMNN (Zenodo 7968969) | A (LFS) | CC-BY-4.0 | open | pii | ✅ | ✅ |
+| `adult` | large-screen | binary clf | 30,162 | 104 | 3 | 101 | pii |
+| `german` | large-screen | binary clf | 1,000 | 61 | 4 | 57 | pii |
+| `lc` | large-screen | binary clf | 1,054,624 | 35 | 3 | 32 | pii |
+| `polish` | large-screen | binary clf | 10,503 | 64 | 6 | 58 | none |
+| `taiwan` | large-screen | binary clf | 30,000 | 23 | 13 | 10 | pii |
+| `auto` | CMNN (Zenodo 7968969) | regression | 392 | 7 | 3 | 4 | none |
+| `heart` | CMNN (Zenodo 7968969) | binary clf | 303 | 13 | 2 | 11 | pii |
+| `compas` | CMNN (Zenodo 7968969) | binary clf | 6,172 | 13 | 4 | 9 | pii |
+| `blog` | CMNN (Zenodo 7968969) | regression | 54,270 | 276 | 9 | 267 | none |
+| `loan` | CMNN (Zenodo 7968969) | binary clf | 488,909 | 28 | 5 | 23 | pii |
 
 Harness wiring to load the CMNN five from the committed LFS copies (rather than
 the runtime download cache) is tracked in #144.
