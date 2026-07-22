@@ -213,3 +213,5 @@ benchmarks/results/size-ladder/_partial/
 # honest-scholar workflow (research-init adopt)
 .datasets-cache/
 .honest-scholar/rclone.conf
+# local key store (secrets) — never commit (honest-scholar#66)
+.honest-scholar/keys.json
