@@ -13,7 +13,7 @@ status:
   load-bearing: null
   understanding: {status: pending, unresolved: []}
   blockers:
-    - completeness sweep pending — first-pass keyless scout done (see paper/scout-2026-07-22.md); needs published-DOI anchors + S2_API_KEY to close the arXiv-vs-published citation split
+    - S2 contexts pending — keyless completeness sweep done (see paper/scout-2026-07-22-sweep.md); it proved the arXiv-vs-published split does not exist in OpenAlex (CMNN/Sartor have no PMLR record, Cano anchor already published) so recovery was 0; closing the intrinsic OpenAlex under-coverage now needs an active S2_API_KEY (currently HTTP 403)
     - empirical scope depends on how many rival methods we re-implement in the harness
   last-updated: 2026-07-22
 ---
@@ -98,10 +98,20 @@ _(Seed rows are in this paper's `backlog.md`; promote as the design firms up.)_
    OpenAlex) — [`paper/scout-2026-07-22.md`](scout-2026-07-22.md). 243 citing works
    across 5 anchors; surfaced the method families + new-since-2023 leads (MonoKAN,
    MoST, MCNet, isotonic-embedding, counterexample/positivity certification).
-2. **Completeness sweep:** add published-version anchors (CMNN@PMLR, Sartor@PMLR,
-   Cano@Neurocomputing) + `S2_API_KEY`, re-run to close the arXiv-split recall gap
-   and get SciCite intents.
-3. Fix the empirical scope: which rival methods get re-implemented in the harness
+2. ✅ **Completeness sweep (keyless)** run 2026-07-22 —
+   [`paper/scout-2026-07-22-sweep.md`](scout-2026-07-22-sweep.md). Verified anchor
+   records: CMNN/Sartor have **no** separate PMLR record in OpenAlex and Cano's
+   anchor was already the published Neurocomputing record, so the arXiv-vs-published
+   split does not exist here — published-record recovery was **0**; corpus stays 243.
+   The low counts are intrinsic OpenAlex under-coverage. Added 7 method leads
+   (incl. Lipschitz provably-monotonic nets, monotone-net approximation theory,
+   MonoNet). **S2 contexts still pending** (S2 key returns HTTP 403 — inactive).
+3. **S2 activation (still pending):** obtain/activate `S2_API_KEY`
+   (`honest-scholar keys set S2_API_KEY`) then re-run for SciCite intents/contexts
+   and a fuller citation graph — the only real fix for the CMNN/Cano/Sartor
+   under-coverage the sweep proved is intrinsic to keyless OpenAlex. Manually seed
+   known method anchors OpenAlex misses (min-max/Sill, UMNN/Wehenkel-Louppe).
+4. Fix the empirical scope: which rival methods get re-implemented in the harness
    (drives feasibility).
-4. `position --level paper` → move surviving leads into `references.json` +
-   `triage.yml`, then develop positioning → outline.
+5. `position --level paper` → move surviving leads into `references.json` +
+   `triage.yml` (first-pass 14 + sweep 7), then develop positioning → outline.
