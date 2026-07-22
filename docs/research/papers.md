@@ -11,6 +11,7 @@ a projection of each paper's `paper/pitch.md` frontmatter — regenerated into
 | `monotone-constructions` | `docs/research/monotone-constructions/` | `benchmarks` | drafting | aim-1, aim-2 |
 | `structure-preserving-pinns` | `docs/research/structure-preserving-pinns/` | `benchmarks` | drafting | aim-3 |
 | `injective-monotonic-flows` | `docs/research/injective-monotonic-flows/` | `benchmarks` | drafting | aim-3 |
+| `survey-monotonicity-ml` | `docs/research/survey-monotonicity-ml/` | `benchmarks` | drafting | — (background) |
 
 ## Paper scope (from the integration spec — a starting split, expected to evolve)
 
@@ -24,3 +25,7 @@ a projection of each paper's `paper/pitch.md` frontmatter — regenerated into
   PR #116). No results yet.
 - **`injective-monotonic-flows`** — strictly-monotonic primitives and normalizing
   flows. Sub-project D. Future; no results yet.
+- **`survey-monotonicity-ml`** — survey of monotonicity methods in ML (taxonomy +
+  reproducible benchmark + approximation-theory synthesis). Target: **TMLR**.
+  Doubles as the thesis background / related-work foundation and the PhD
+  **qualifying-exam** milestone. Promoted 2026-07-22 from the portfolio backlog.
