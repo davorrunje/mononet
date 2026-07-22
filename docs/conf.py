@@ -27,6 +27,7 @@ exclude_patterns = [
     "_build",
     "superpowers",
     "references",
+    "research",
 ]
 templates_path = ["_templates"]
 source_suffix = {

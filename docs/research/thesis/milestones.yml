@@ -1,0 +1,38 @@
+# Thesis program milestones — CONFIGURABLE, time-based.
+#
+# Institution gates vary and are deadline-driven, so they are never hard-coded:
+# edit this list to match your institution's progression. These are CALENDAR gates,
+# distinct from the defensibility/coverage state in kappa.md. `progress` surfaces
+# both. Milestones are REPORTED, never scored — an overdue milestone is a surfaced
+# gap, not a penalty (anti-Goodhart).
+#
+# Per milestone:
+#   status:        not-started | scheduled | passed
+#   date:          the scheduled or passed date (null if not-started)
+#   next-deadline: the next binding deadline for this gate (null if none / passed)
+
+milestones:
+  - name: proposal
+    status: not-started        # not-started | scheduled | passed
+    date: null
+    next-deadline: null
+
+  - name: candidacy
+    status: not-started
+    date: null
+    next-deadline: null
+
+  - name: annual-review
+    status: not-started
+    date: null
+    next-deadline: null
+
+  - name: submission
+    status: not-started
+    date: null
+    next-deadline: null
+
+  - name: defense
+    status: not-started
+    date: null
+    next-deadline: null

@@ -1,0 +1,114 @@
+# Dataset registry for mononet benchmarks (honest-scholar `dataset` capability).
+# Written by research-init (adopt) from benchmarks/datasets/{sources.py,manifest.toml}
+# with real SHA-256 fixity over the committed (Git LFS) blobs.
+#
+# PROPOSED — tier / license / redistributable / sensitivity are MATERIAL
+# classifications awaiting the author's sign-off (agency principle).
+#
+# NOT YET REGISTERED: the 5 CMNN paper-reproduction datasets (auto, heart, compas,
+# blog, loan) are fetched at runtime (Zenodo 7968969, CC-BY-4.0) and not committed,
+# so no local bytes exist to hash. Registering them with real fixity is a tracked
+# follow-up — do it via `honest-scholar dataset fetch` + `verify`, not by hand.
+#
+# Tiers: A = redistributable + committed in-repo (Git LFS under benchmarks/data/);
+#        B = fetchable from a canonical public source URL;
+#        C = manual acquisition (instructions only).
+
+version: 1
+
+datasets:
+  # --- Large-dataset screen (committed via Git LFS, CC-BY-4.0) ---------------
+  - id: adult
+    version: "2026-07-11"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://archive.ics.uci.edu/dataset/2/adult
+    sensitivity: pii
+    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    title: Adult / Census Income (UCI)
+    description: Income classification; regen via benchmarks/datasets/prepare/adult.py.
+    files:
+      - path: benchmarks/data/adult/train_adult.csv.gz
+        sha256: ebecb0b11d279a396a36bafec7bc4e1a7e693096189ed697cce0ce4348b2ddde  # pragma: allowlist secret
+        size: 329193
+      - path: benchmarks/data/adult/test_adult.csv.gz
+        sha256: 6483655db94cd86f33bb708d7a4ca1d84c6d57033f4ae534723b4619a2566264  # pragma: allowlist secret
+        size: 83479
+
+  - id: german
+    version: "2026-07-11"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://archive.ics.uci.edu/dataset/144/statlog+german+credit+data
+    sensitivity: pii
+    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    title: Statlog German Credit (UCI)
+    description: Credit-risk classification; regen via benchmarks/datasets/prepare/german.py.
+    files:
+      - path: benchmarks/data/german/train_german.csv.gz
+        sha256: 5fa83fe7e425dbd396f01566eb21e747e353174295fe6d2469a2dda07082fa97  # pragma: allowlist secret
+        size: 11641
+      - path: benchmarks/data/german/test_german.csv.gz
+        sha256: 3db8635fec4e91d381e81884e9aa1230223b3ce0fe5b095e81d5145104b82039  # pragma: allowlist secret
+        size: 3459
+
+  - id: lc
+    version: "2026-07-11"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://zenodo.org/records/11295916
+    sensitivity: pii
+    datasheet: "N/A + upstream Zenodo record; per-dataset Gebru datasheet is a follow-up"
+    title: Lending Club (Zenodo)
+    description: Credit classification (largest screen dataset); regen via benchmarks/datasets/prepare/lc.py.
+    files:
+      - path: benchmarks/data/lc/train_lc.csv.gz
+        sha256: 31ff8a71132e10841dda0c887bb59068aae6d715ab7d49a11374ceecd5751fce  # pragma: allowlist secret
+        size: 8789597
+      - path: benchmarks/data/lc/test_lc.csv.gz
+        sha256: 08c531d194843ff162d15c95e6e869ef168a9b634951e299c9f8f95f680ff803  # pragma: allowlist secret
+        size: 2406226
+
+  - id: polish
+    version: "2026-07-11"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://archive.ics.uci.edu/static/public/365/polish+companies+bankruptcy+data.zip
+    sensitivity: none
+    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    title: Polish Companies Bankruptcy (UCI)
+    description: Company-level bankruptcy classification; regen via benchmarks/datasets/prepare/polish.py.
+    files:
+      - path: benchmarks/data/polish/train_polish.csv.gz
+        sha256: 8bdf85742dae9751b1b82fc321fdd113cb76431f0434a085ecfc065d11742650  # pragma: allowlist secret
+        size: 1722346
+      - path: benchmarks/data/polish/test_polish.csv.gz
+        sha256: 1e2cd51c62f77556bbc4541729000d06d31948db40263ac4e0e59293d283aac1  # pragma: allowlist secret
+        size: 431127
+
+  - id: taiwan
+    version: "2026-07-11"
+    tier: A
+    license: CC-BY-4.0
+    redistributable: true
+    access: open
+    source: https://archive.ics.uci.edu/static/public/350/default+of+credit+card+clients.zip
+    sensitivity: pii
+    datasheet: "N/A + upstream UCI page; per-dataset Gebru datasheet is a follow-up"
+    title: Default of Credit Card Clients (UCI)
+    description: Credit-default classification; regen via benchmarks/datasets/prepare/taiwan.py.
+    files:
+      - path: benchmarks/data/taiwan/train_taiwan.csv.gz
+        sha256: 14b7392c1c30da4e87de6d374fb148164fa7f7eb6338e77d2b043610a85c8f1c  # pragma: allowlist secret
+        size: 732343
+      - path: benchmarks/data/taiwan/test_taiwan.csv.gz
+        sha256: dd2e936cd5069bbfeed63fd8637e3e90f964983c8c2e565b596fa635d6daff65  # pragma: allowlist secret
+        size: 183709

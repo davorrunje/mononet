@@ -1,0 +1,33 @@
+[
+  {
+    "id": "runje-2023-cmnn",
+    "type": "paper-conference",
+    "title": "Constrained Monotonic Neural Networks",
+    "author": [
+      { "family": "Runje", "given": "Davor" },
+      { "family": "Shankaranarayana", "given": "Sharath M." }
+    ],
+    "container-title": "Proceedings of the 40th International Conference on Machine Learning",
+    "collection-title": "PMLR",
+    "volume": "202",
+    "issued": { "date-parts": [[2023]] },
+    "DOI": "10.48550/arXiv.2205.11775",
+    "URL": "https://arxiv.org/abs/2205.11775"
+  },
+  {
+    "id": "sartor-2025-advancing-cmnn",
+    "type": "paper-conference",
+    "title": "Advancing Constrained Monotonic Neural Networks: Achieving Universal Approximation Beyond Bounded Activations",
+    "author": [
+      { "family": "Sartor", "given": "Davide" },
+      { "family": "Sinigaglia", "given": "Alberto" },
+      { "family": "Susto", "given": "Gian Antonio" }
+    ],
+    "container-title": "Proceedings of the 42nd International Conference on Machine Learning",
+    "collection-title": "PMLR",
+    "volume": "267",
+    "issued": { "date-parts": [[2025]] },
+    "DOI": "10.48550/arXiv.2505.02537",
+    "URL": "https://arxiv.org/abs/2505.02537"
+  }
+]

@@ -1,0 +1,49 @@
+# honest-scholar consumer config for mononet.
+# Written by research-init (adopt). The plugin ships generic logic; this file
+# records mononet's four consumer bindings. See:
+#   docs/superpowers/specs/2026-07-21-honest-scholar-integration-design.md
+
+# --- Engineering backend (design / plan / implement) ------------------------
+# honest-scholar delegates all engineering to a bound backend via the
+# engineering-delegation contract. mononet uses the superpowers methodology
+# (brainstorming -> spec -> plan -> implement); its record lives in
+# docs/superpowers/{specs,plans}/.
+engineering_backend:
+  name: superpowers
+  design: superpowers:brainstorming        # -> docs/superpowers/specs/
+  plan: superpowers:writing-plans          # -> docs/superpowers/plans/
+  implement: superpowers:executing-plans
+  specs_dir: docs/superpowers/specs
+  plans_dir: docs/superpowers/plans
+
+# --- Experiment backend (run / evidence / tables / is-current) --------------
+# The repo-local benchmark harness that implements the experiment-backend
+# contract. findings.md cite its result JSONs as evidence (run-refs).
+# NOTE: a redesign of this binding is tracked as a follow-up (see PR #127).
+experiment_backend:
+  name: benchmarks
+  root: benchmarks/
+  run: benchmarks/run.py
+  search: benchmarks/search.py
+  results_dir: benchmarks/results
+  results_format: json                     # _common/results.py schema
+  run_ref_scheme: "path"                   # run-ref://<results_dir>/<subdir>/<file>.json
+
+# --- Literature anchors -----------------------------------------------------
+# Seed works the `literature` capability ranks around.
+literature:
+  anchors:
+    - id: runje-2023-cmnn
+      doi: 10.48550/arXiv.2205.11775
+      role: anchor
+    - id: sartor-2025-advancing-cmnn
+      doi: 10.48550/arXiv.2505.02537
+      role: rival
+  references: docs/research/literature/references.json   # CSL-JSON, source of truth
+  triage: docs/research/literature/triage.yml
+
+# --- Private dataset mirror (rclone) ----------------------------------------
+# Deferred: no private mirror configured yet. Fill rclone.conf (gitignored) from
+# rclone.conf.example and set the remote name here to enable `dataset mirror`.
+mirror:
+  rclone_remote: null
