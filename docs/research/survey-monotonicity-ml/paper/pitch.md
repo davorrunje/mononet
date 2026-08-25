@@ -122,5 +122,6 @@ _(Seed rows are in this paper's `backlog.md`; promote as the design firms up.)_
 5. Fix the empirical scope: which rival methods get re-implemented in the harness
    (drives feasibility).
 6. `position --level paper` → move surviving leads into `references.json` +
-   `triage.yml` (first-pass 14 + sweep 7 + deep-research 5 new), then develop
+   `triage.yml` (first-pass 14 + sweep 7 + deep-research 5 new + author-supplied 1,
+   see [`paper/leads-author-supplied.md`](leads-author-supplied.md)), then develop
    positioning → outline.
