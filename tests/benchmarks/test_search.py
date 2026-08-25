@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+import json
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 import pytest
 
@@ -5,16 +10,28 @@ pytest.importorskip("optuna")
 pytest.importorskip("torch")
 
 from benchmarks._common.bundle import DatasetBundle
-from benchmarks._common.search import StudyResult, final_eval, flavor_name, search
+from benchmarks._common.search import (
+    StudyResult,
+    _primary_metric,
+    final_eval,
+    flavor_name,
+    search,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
-def _bundle() -> DatasetBundle:
+def _bundle(task: str = "regression") -> DatasetBundle:
     rng = np.random.default_rng(0)
     X = rng.normal(size=(120, 5))
-    y = (X[:, 0] + 0.1 * rng.normal(size=120)).astype(np.float64)
+    if task == "binary_classification":
+        y = (X[:, 0] > 0).astype(np.float64)
+    else:
+        y = (X[:, 0] + 0.1 * rng.normal(size=120)).astype(np.float64)
     return DatasetBundle(
         name="syn",
-        task="regression",
+        task=task,  # type: ignore[arg-type]
         X_train=X,
         y_train=y,
         X_test=X[:30],
@@ -24,6 +41,14 @@ def _bundle() -> DatasetBundle:
         feature_names=tuple(f"f{i}" for i in range(5)),
         metadata={},
     )
+
+
+def test_primary_metric_is_roc_auc_for_binary_classification() -> None:
+    assert _primary_metric(_bundle(task="binary_classification")) == "roc_auc"
+
+
+def test_primary_metric_is_mse_for_regression() -> None:
+    assert _primary_metric(_bundle(task="regression")) == "mse"
 
 
 def test_flavor_name() -> None:
@@ -93,6 +118,38 @@ def test_search_objective_is_fold_mean() -> None:
         assert np.isfinite(res.best_value)
 
 
+def test_classification_final_eval_reports_roc_auc_and_accuracy() -> None:
+    # With roc_auc as the classification primary, final_eval must still compute
+    # and store accuracy alongside it in each ResultRow's scores dict.
+    from benchmarks._common.config import BenchmarkConfig, OptimizerSpec
+    from benchmarks._common.runner import run
+
+    b = _bundle(task="binary_classification")
+    cfg = BenchmarkConfig(
+        dataset="syn",
+        backend="torch",
+        mode="switch",
+        residual=False,
+        depth=1,
+        width=8,
+        activation="elu",
+        convex_fraction=0.5,
+        embed_hidden=(8,),
+        dropout=0.0,
+        optimizer=OptimizerSpec("adam", 1e-2, 0.0),
+        lr_decay=None,
+        batch_size=32,
+        epochs=2,
+        early_stopping=None,
+        seeds=(0,),
+        metrics=("roc_auc", "accuracy"),
+    )
+    rows = run(cfg, b)
+    assert rows
+    assert "roc_auc" in rows[0].scores
+    assert "accuracy" in rows[0].scores
+
+
 def test_final_eval_reports_all_seeds() -> None:
     b = _bundle()
     res = search(
@@ -106,7 +163,7 @@ def test_final_eval_reports_all_seeds() -> None:
     )
     # 6 seeds > the old top_k=5 default, so all-seeds reporting is observable:
     # the old best-5-of-6 would give n_selected == 5; the new behaviour gives 6.
-    agg = final_eval(
+    agg, rows = final_eval(
         b,
         res.best_params,
         mode="switch",
@@ -118,3 +175,39 @@ def test_final_eval_reports_all_seeds() -> None:
     assert np.isfinite(agg.mean)
     assert agg.n_seeds == 6
     assert agg.n_selected == 6  # all seeds reported, no best-k selection
+    assert len(rows) == 6
+
+
+def test_run_dataset_persists_secondary_accuracy_for_classification(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Classification run_dataset records secondary["accuracy"] alongside roc_auc.
+
+    `final_eval` computes both `roc_auc` (primary) and `accuracy` for every
+    classification seed, but the committed rec previously stored only the
+    primary metric's Aggregate — dropping accuracy from the persisted JSON.
+    """
+    from benchmarks._common.search import run_dataset
+
+    bundle = _bundle(task="binary_classification")
+
+    def fake_load(name: str, *, data_dir: Any) -> DatasetBundle:
+        return bundle
+
+    monkeypatch.setattr("benchmarks.datasets.registry.load", fake_load)
+
+    paths = run_dataset(
+        "syn",
+        backend="torch",
+        flavors=(("switch", False, False),),
+        n_trials=2,
+        epochs=1,
+        final_seeds=range(3),
+        n_splits=2,
+        out_dir=tmp_path,
+    )
+    rec = json.loads(paths[0].read_text())
+    assert rec["test_metric"] == "roc_auc"
+    sec = rec["secondary"]["accuracy"]
+    assert np.isfinite(sec["iqm"])
+    assert len(sec["values"]) == 3

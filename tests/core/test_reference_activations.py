@@ -65,3 +65,21 @@ def test_unknown_activation_raises() -> None:
 def test_unknown_gate_token_raises() -> None:
     with pytest.raises(ValueError, match="unknown gate token"):
         ref.apply_gate("bogus", np.zeros(3))
+
+
+def test_softplus_gate_value_and_gradient() -> None:
+    zero = np.array(0.0)
+    # value at 0 is ln 2 (unlike scaled_elu's eps and shifted_elu's 1)
+    assert ref.apply_gate("softplus", zero) == pytest.approx(np.log(2.0))
+    # strictly positive everywhere, including well into the negative side
+    x = np.linspace(-20.0, 20.0, 200)
+    assert np.all(ref.apply_gate("softplus", x) > 0.0)
+    # gradient is nonzero on the negative side (no dead zone): sigmoid(-5) > 0
+    h = 1e-6
+    neg = -5.0
+    d = (
+        ref.apply_gate("softplus", np.array(neg + h))
+        - ref.apply_gate("softplus", np.array(neg - h))
+    ) / (2 * h)
+    assert d == pytest.approx(1.0 / (1.0 + np.exp(-neg)), abs=1e-4)
+    assert d > 1e-3

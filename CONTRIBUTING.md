@@ -9,11 +9,11 @@ covers the development workflow.
 accepted inbound=outbound under section 5 of that license: unless you state
 otherwise, any contribution you intentionally submit for inclusion is
 licensed under Apache-2.0, with no additional terms. No CLA is required. See
-[`NOTICE.md`](NOTICE.md).
+[`NOTICE.md`](https://github.com/davorrunje/mononet/blob/main/NOTICE.md).
 
 ## Development environments
 
-The repo ships five devcontainer flavors. Pick the one matching your
+The repo ships four devcontainer flavors. Pick the one matching your
 hardware:
 
 | Flavor          | When to use                                                      |
@@ -22,7 +22,6 @@ hardware:
 | `gpu-torch`     | GPU benchmarks against the paper's PyTorch baseline.             |
 | `gpu-jax`       | GPU work with JAX (Flax NNX).                                    |
 | `gpu-keras`     | GPU work with Keras 3 (backed by JAX with CUDA 12 by default).   |
-| `proofs`        | Reviewing the Lean 4 / mathlib4 formalization under `proofs/` (CPU, no ML extras). |
 
 In VS Code, `Ctrl/Cmd+Shift+P` → `Dev Containers: Reopen in Container`,
 then pick the flavor by name.
@@ -46,7 +45,7 @@ Working locally, you do those steps yourself.
 ## Claude Code (plugins & sessions)
 
 The Claude Code plugins this repo uses are declared in
-[`.devcontainer/claude-plugins.txt`](.devcontainer/claude-plugins.txt) and
+[`.devcontainer/claude-plugins.txt`](https://github.com/davorrunje/mononet/blob/main/.devcontainer/claude-plugins.txt) and
 installed by `.devcontainer/shared/provision-claude-plugins.sh` (idempotent,
 user scope). That one script is the source of truth for both environments:
 
@@ -132,7 +131,7 @@ re-execute them before a release, see "Release process" below.
 
 The full maintainer runbook — one-time Trusted-Publishing setup, the Bump
 Version action, TestPyPI rehearsal, and the GitHub-Release-triggered publish —
-lives in [`docs/releasing.md`](docs/releasing.md).
+lives in [`docs/about/releasing.md`](https://github.com/davorrunje/mononet/blob/main/docs/about/releasing.md).
 
 ## Commit messages
 
@@ -141,13 +140,13 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Pull requests
 
-See [`PULL_REQUEST_GUIDE.md`](PULL_REQUEST_GUIDE.md) for repo-specific
+See [`PULL_REQUEST_GUIDE.md`](https://github.com/davorrunje/mononet/blob/main/PULL_REQUEST_GUIDE.md) for repo-specific
 PR conventions. New issues go to the project's GitHub Issues tab.
 
 ## Coding conventions
 
 - Python 3.11+, line length 88 (ruff).
-- MyST field-list docstrings on all public functions and classes (`:param x: ...`, `:returns: ...`, `:raises X: ...`). Types come from signature annotations, never `:type:`/`:rtype:`. See [the spec](docs/superpowers/specs/2026-05-22-myst-docstrings-design.md) for the canonical format.
+- MyST field-list docstrings on all public functions and classes (`:param x: ...`, `:returns: ...`, `:raises X: ...`). Types come from signature annotations, never `:type:`/`:rtype:`. See [the spec](https://github.com/davorrunje/mononet/blob/main/docs/superpowers/specs/2026-05-22-myst-docstrings-design.md) for the canonical format.
 - Strict mypy throughout. Type hints on every function and method.
 - Stdlib `dataclasses` for simple value objects; avoid adding new
   runtime dependencies without discussion.
@@ -157,4 +156,4 @@ PR conventions. New issues go to the project's GitHub Issues tab.
 
 ## Reporting security issues
 
-See [`SECURITY.md`](SECURITY.md).
+See [`SECURITY.md`](https://github.com/davorrunje/mononet/blob/main/SECURITY.md).

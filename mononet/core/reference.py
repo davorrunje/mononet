@@ -60,8 +60,9 @@ def concave_reflection(
 def apply_gate(token: str, raw: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
     """Resolve a gate string token and apply it to a raw parameter.
 
-    :param token: `shifted_elu` (value 1, derivative 1 at 0) or `scaled_elu`
-        (value `ε`, derivative 1 at 0).
+    :param token: `shifted_elu` (value 1, derivative 1 at 0), `scaled_elu`
+        (value `ε`, derivative 1 at 0), or `softplus` (value `ln 2`, gradient
+        `sigmoid`, no dead zone).
     :param raw: Raw learnable gate parameter.
     :returns: A strictly-positive gate value.
     :raises ValueError: If the token is unknown.
@@ -72,6 +73,8 @@ def apply_gate(token: str, raw: npt.NDArray[np.floating]) -> npt.NDArray[np.floa
         return np.maximum(raw, 0.0) + _GATE_EPS * np.exp(  # type: ignore[no-any-return]
             np.minimum(raw, 0.0) / _GATE_EPS
         )
+    if token == "softplus":
+        return np.logaddexp(0.0, raw)  # type: ignore[no-any-return]
     raise ValueError(f"unknown gate token {token!r}")
 
 
@@ -128,7 +131,7 @@ def monotonic_residual(
     activation: ActivationSpec,
     convex_fraction: float = 0.5,
     alpha_gate: str = "shifted_elu",
-    beta_gate: str = "scaled_elu",
+    beta_gate: str = "softplus",
     skip_weight: npt.NDArray[np.floating] | None = None,
 ) -> npt.NDArray[np.floating]:
     """Dual-gated monotone residual block (NumPy reference).

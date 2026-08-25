@@ -18,7 +18,20 @@ Mode = Literal["switch", "absolute"]
 
 @dataclass(frozen=True, slots=True)
 class MonoConfig:
-    """Hyperparameters for a single monotonic dense layer."""
+    """Hyperparameters for a single monotonic dense layer.
+
+    :param units: Number of output units; must be positive.
+    :param mode: Construction mode — `"absolute"` (the paper's `|W|`
+        construction, default) or `"switch"` (the activation-switch variant).
+    :param activation: Base activation applied by the layer (default
+        `identity`).
+    :param convex_fraction: Fraction of output units with a convex activation
+        (absolute mode); must be in `[0, 1]`.
+    :param init: Weight-initialization spec.
+    :param bias: Whether the layer includes a bias term.
+    :raises ValueError: If `units` is not positive, `mode` is unknown, or
+        `convex_fraction` is outside `[0, 1]`.
+    """
 
     units: int
     mode: Mode = "absolute"
@@ -80,17 +93,28 @@ class MonoResidualConfig:
     Gate fields are string tokens only; a custom callable gate or `F`
     module is not serialized.
 
+    :param units: Number of output units; must be positive.
+    :param mode: Construction mode for the default `F` — `"absolute"`
+        (default) or `"switch"`.
     :param activation: Base activation for the default `F`. Required
         (keyword-only, no default) since a custom `F` is not representable
         here.
+    :param alpha_gate: Gate token for the skip path.
+    :param beta_gate: Gate token for the residual (transform) path.
+    :param init: Weight-initialization spec.
+    :param near_zero_scale: Scale applied to the default `F`'s last-layer
+        weight (bias zeroed) so the block starts near-identity. `0.0`
+        reproduces exact-zero (not recommended — see `MonoResidual`).
+    :raises ValueError: If `units` is not positive or `mode` is unknown.
     """
 
     units: int
     mode: Mode = "absolute"
     activation: ActivationSpec = field(kw_only=True)
     alpha_gate: str = "shifted_elu"
-    beta_gate: str = "scaled_elu"
+    beta_gate: str = "softplus"
     init: InitSpec = field(default_factory=InitSpec)
+    near_zero_scale: float = 1e-3
 
     def __post_init__(self) -> None:
         """Validate units and mode."""
@@ -108,6 +132,7 @@ class MonoResidualConfig:
             "alpha_gate": self.alpha_gate,
             "beta_gate": self.beta_gate,
             "init": {"scheme": self.init.scheme, "seed": self.init.seed},
+            "near_zero_scale": self.near_zero_scale,
         }
 
     def to_json(self) -> str:
@@ -124,6 +149,7 @@ class MonoResidualConfig:
             alpha_gate=data["alpha_gate"],
             beta_gate=data["beta_gate"],
             init=InitSpec(scheme=data["init"]["scheme"], seed=data["init"]["seed"]),
+            near_zero_scale=data["near_zero_scale"],
         )
 
     @classmethod

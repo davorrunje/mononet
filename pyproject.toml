@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mononet"
-version = "0.0.0a0"
+version = "0.0.0a1"
 description = "Unconstrained monotonic neural networks for PyTorch, JAX, and Keras"
 authors = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
 maintainers = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
@@ -55,17 +55,30 @@ keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.4.30"]
 dev = [
     "ipython==9.15.0",
     "ipykernel==7.3.0",
-    "mypy==2.1.0",
+    "mypy==2.2.0",
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "nest-asyncio==1.6.0",
     "hypothesis>=6.115",
 ]
+
+# Application research code (applications/) is out of the wheel and has its own
+# opt-in groups, mirroring `bench`. Shared app deps live in `applications`;
+# per-paper groups include it and add their specifics. Work on an application
+# with e.g. `uv sync --extra jax --group pinn`.
+applications = [
+    "matplotlib>=3.8",
+]
+pinn = [
+    {include-group = "applications"},
+    "optax>=0.2",
+    "optuna>=4.0",
+]
 docs = [
     "sphinx==9.0.4; python_version < '3.12'",
     "sphinx==9.1.0; python_version >= '3.12'",
-    "pydata-sphinx-theme==0.19.0",
+    "pydata-sphinx-theme==0.20.0",
     "sphinx-autodoc2==0.5.0",
     "myst-nb==1.4.0",
     "sphinx-copybutton==0.5.2",
@@ -79,10 +92,10 @@ docs = [
 ]
 lint = [
     "pre-commit==4.6.0",
-    "mypy==2.1.0",
+    "mypy==2.2.0",
     "types-pyyaml==6.0.12.20260518",
     "types-setuptools==83.0.0.20260706",
-    "ruff==0.15.20",
+    "ruff==0.15.21",
     "bandit==1.9.4",
     "semgrep==1.168.0",
     "codespell==2.4.2",
@@ -131,7 +144,7 @@ include = ["mononet"]
 include = ["mononet"]
 
 [tool.mypy]
-files = ["mononet", "tests", "benchmarks"]
+files = ["mononet", "tests", "benchmarks", "applications"]
 strict = true
 strict_bytes = true
 local_partial_types = true
@@ -165,8 +178,19 @@ module = [
     "mononet.jax.layers",
     "mononet.keras.layers",
     "benchmarks._common.model_builder",
+    "benchmarks.monoresidual_gate_ablation",
+    "applications.pinn.models.torch.builders",
+    "applications.pinn.models.jax.builders",
 ]
 disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+# jax 0.10.2 types `jax.jit` such that mypy flags the bare `@jax.jit` as an
+# untyped decorator (jax 0.10.1 does not). CI's static-analysis job resolves the
+# newer jax outside the lockfile, so relax this one check for the JAX trainer
+# (the codebase's only jit-decorated function).
+module = ["applications.pinn.training.jax_trainer"]
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
 addopts = '--cov=mononet --cov=docs/examples --cov-append --cov-branch --cov-report=term-missing'
@@ -193,6 +217,7 @@ include = [
     "docs/**/*.py",
     "tools/**/*.py",
     "benchmarks/**/*.py",
+    "applications/**/*.py",
     "pyproject.toml",
 ]
 exclude = ["docs/docs_src"]
@@ -240,6 +265,10 @@ ignore = [
 "tools/**/*.py" = [
     "D103",     # missing docstring in public function (CLI entry points)
     "T20",      # flake8-print (tools use print for user feedback)
+]
+
+"applications/**/experiments/*.py" = [
+    "T201",     # CLI entry points print their JSON artifact to stdout
 ]
 
 "tests/**/*.py" = [

@@ -6,4 +6,5 @@
 license
 changelog
 contributing
+releasing
 ```
