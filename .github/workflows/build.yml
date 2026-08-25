@@ -21,10 +21,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=dev --group=lint
       - name: Run static analysis
@@ -36,10 +36,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=dev --group=lint
       - uses: actions/cache@v6
@@ -56,10 +56,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=docs
       - name: Build docs (strict)
@@ -85,10 +85,10 @@ jobs:
           - { os: windows-latest, python-version: "3.13", backend: keras }
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[${{ matrix.extra || matrix.backend }}]" --group=dev --group=bench
       - name: Run tests
@@ -105,10 +105,10 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=dev
       - name: Run combined-backend coverage
@@ -125,7 +125,7 @@ jobs:
       # gate above is the real, token-independent enforcement. See PR description.
       - name: Upload coverage to Codecov
         if: ${{ env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ env.CODECOV_TOKEN }}
           files: coverage.xml
