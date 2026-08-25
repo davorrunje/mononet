@@ -42,6 +42,38 @@ Working locally, you do those steps yourself.
 > goes stale, reset it with `docker volume rm <compose-project>_mononet-venv`
 > (find the name via `docker volume ls | grep mononet-venv`) and rebuild.
 
+### GPU flavors: host driver preflight
+
+The three `gpu-*` flavors pass `--gpus=all`, so they cannot start unless the
+**host** NVIDIA driver is loaded and the NVIDIA Container Toolkit is installed.
+Docker's native failure for this is opaque:
+
+```
+error running prestart hook #0: exit status 1 …
+nvidia-container-cli: initialization error: nvml error: driver not loaded
+```
+
+To turn that into something actionable, the GPU flavors run
+[`.devcontainer/shared/gpu-preflight.sh`](https://github.com/davorrunje/mononet/blob/main/.devcontainer/shared/gpu-preflight.sh)
+as their `initializeCommand` (on the host, before the container starts). It
+checks for an NVIDIA GPU, a working `nvidia-smi`, and `nvidia-container-cli`,
+and on failure prints the specific cause plus the fix.
+
+The most common cause is a **kernel upgrade without a matching NVIDIA module
+build**: the running kernel has no `nvidia.ko`, so NVML is dead. `apt upgrade`
+holds the module package back whenever it needs a driver-version bump, which
+makes this recur silently after routine updates. On Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install -y linux-modules-nvidia-<branch>-open-generic-hwe-24.04 nvidia-driver-<branch>-open
+sudo modprobe nvidia_uvm && nvidia-smi          # no reboot needed if no module is loaded yet
+docker run --rm --gpus all ubuntu:24.04 nvidia-smi -L   # verify the container path
+```
+
+Set `MONONET_SKIP_GPU_PREFLIGHT=1` to bypass the check (e.g. a remote Docker
+context whose GPUs aren't visible from your machine).
+
 ## Claude Code (plugins & sessions)
 
 The Claude Code plugins this repo uses are declared in
