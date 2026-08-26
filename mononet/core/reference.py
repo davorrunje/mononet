@@ -157,3 +157,7 @@ def monotonic_residual(
     f = monotonic_dense(x, weights, bias, mode, activation, convex_fraction)
     skip = x if skip_weight is None else x @ np.exp(skip_weight)
     return apply_gate(alpha_gate, alpha) * skip + apply_gate(beta_gate, beta) * f
+
+# CI probe for #169: this line changes the file hash without regenerating the
+# equivalence cases, so tools/check-reference-hash.sh must fail. Reverted in the
+# next commit.
