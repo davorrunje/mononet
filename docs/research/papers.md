@@ -1,7 +1,7 @@
 # Paper registry
 
 Maps `paper-id` → root + experiment-backend binding. All papers bind the same
-backend (the `benchmarks/` harness; see `.honest-scholar/config.yml`). Status is
+backend (the `benchmarks/` harness; see `.defendable-science/config.yml`). Status is
 a projection of each paper's `paper/pitch.md` frontmatter — regenerated into
 `dashboard.md` by `progress`, never hand-edited there.
 

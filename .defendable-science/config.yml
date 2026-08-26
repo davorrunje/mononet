@@ -1,10 +1,10 @@
-# honest-scholar consumer config for mononet.
+# defendable-science consumer config for mononet.
 # Written by research-init (adopt). The plugin ships generic logic; this file
 # records mononet's four consumer bindings. See:
-#   docs/superpowers/specs/2026-07-21-honest-scholar-integration-design.md
+#   docs/superpowers/specs/2026-07-21-defendable-science-integration-design.md
 
 # --- Engineering backend (design / plan / implement) ------------------------
-# honest-scholar delegates all engineering to a bound backend via the
+# defendable-science delegates all engineering to a bound backend via the
 # engineering-delegation contract. mononet uses the superpowers methodology
 # (brainstorming -> spec -> plan -> implement); its record lives in
 # docs/superpowers/{specs,plans}/.

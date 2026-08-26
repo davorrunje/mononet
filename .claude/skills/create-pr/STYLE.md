@@ -11,7 +11,7 @@ The concrete templates for landing changes in this repo. See
 - `<area>` mirrors the commit-scope / issue vocabulary: `bench`, `docs`, `torch`,
   `jax`, `keras`, `core`, `ci`, `build`, `feat`, `fix`, `chore`, `refactor`.
 - `<slug>` is a short kebab-case description: `feat/alternate-construction`,
-  `docs/claude-md`, `chore/honest-scholar-integration`.
+  `docs/claude-md`, `chore/defendable-science-integration`.
 
 ## Commit message
 
