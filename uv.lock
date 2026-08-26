@@ -1006,7 +1006,7 @@ wheels = [
 
 [[package]]
 name = "defendable-science"
-version = "0.2.1"
+version = "0.2.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pooch" },
@@ -1014,9 +1014,9 @@ dependencies = [
     { name = "requests" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/68/51/168fc56d5b623af51369ae00a3cc3eb86582c4fbd8846bd35ab32b20bf16/defendable_science-0.2.1.tar.gz", hash = "sha256:d9376bc6f3b4e845fb0d0dfc11cbf7a3585756a75a07e11de64cbdbfba84bbe5", size = 51680, upload-time = "2026-08-25T20:13:47.697Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6b/6c/933d089488e788f1b4ec7392c77547a1d7152f3271f5f7fd963d0d632139/defendable_science-0.2.2.tar.gz", hash = "sha256:2bc863af64306f5d830b37a92b5dc52160a24207404832f9b067380380ce0f35", size = 51681, upload-time = "2026-08-26T21:46:58.056Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/7f/57f93f49db70c592889c17977ab8a4d1917b52b4cede1bafe65c14b38ff3/defendable_science-0.2.1-py3-none-any.whl", hash = "sha256:030902ec3aa7351b00bb6c9ccfef7b6961051ba346bb0d55a39b7b31d3061c8a", size = 58565, upload-time = "2026-08-25T20:13:46.276Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/39/bca77c57af2b8d6b163b5e0051a3738e3bb100becab0726a091737f7cd46/defendable_science-0.2.2-py3-none-any.whl", hash = "sha256:7e6103c5702210b48839b762f5c9e56cc8a93ae609077731c30370dccdc02816", size = 58564, upload-time = "2026-08-26T21:46:56.817Z" },
 ]
 
 [[package]]
@@ -2968,7 +2968,7 @@ bench = [
     { name = "xgboost", specifier = "==3.2.0" },
 ]
 dev = [
-    { name = "defendable-science", specifier = "==0.2.1" },
+    { name = "defendable-science", specifier = "==0.2.2" },
     { name = "hypothesis", specifier = "==6.165.10" },
     { name = "ipykernel", specifier = "==7.3.0" },
     { name = "ipython", specifier = "==9.16.1" },
