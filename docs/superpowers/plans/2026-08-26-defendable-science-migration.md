@@ -155,7 +155,10 @@ Expected: `git status` shows **nothing** for the ignored file (only tracked chan
 - [ ] **Step 8: Commit**
 
 ```bash
-git add -A .claude/settings.json .gitignore .defendable-science .honest-scholar
+# NOT `git add -A ... .honest-scholar`: that path no longer exists after the
+# `git mv`, and the failed pathspec aborts the whole `git add`, staging nothing.
+git add -A .claude/settings.json .gitignore .defendable-science
+git diff --cached --stat   # confirm all four files are staged
 git commit --no-gpg-sign -m "$(cat <<'MSG'
 chore: point the plugin, config dir and ignores at defendable-science
 
