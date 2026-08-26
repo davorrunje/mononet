@@ -96,11 +96,21 @@ if [ -n "${BASH_VERSION:-}" ]; then
     GIT_PS1_SHOWDIRTYSTATE=1      # * unstaged, + staged
     GIT_PS1_SHOWSTASHSTATE=1      # $ stashed
     GIT_PS1_SHOWUNTRACKEDFILES=1  # % untracked
-    GIT_PS1_SHOWUPSTREAM=auto     # </>/= vs upstream
+    GIT_PS1_SHOWUPSTREAM=auto     # < behind, > ahead, = in sync
     export GIT_PS1_SHOWDIRTYSTATE GIT_PS1_SHOWSTASHSTATE \
         GIT_PS1_SHOWUNTRACKEDFILES GIT_PS1_SHOWUPSTREAM
 
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\w\[\033[00m\]\[\033[01;33m\]$(__git_ps1 " (%s)")\[\033[00m\]\$ '
+    # __git_ps1 appends the upstream marker last, and "=" (in sync) is the
+    # normal state -- worth no pixels. Drop it and keep < / > / <> , which do
+    # say something. Everything else passes through untouched.
+    __mononet_git_ps1() {
+        local s
+        s=$(__git_ps1 "%s") || return 0
+        [ -n "$s" ] || return 0
+        printf ' (%s)' "${s%=}"
+    }
+
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\w\[\033[00m\]\[\033[01;33m\]$(__mononet_git_ps1)\[\033[00m\]\$ '
 
     case "$TERM" in
         xterm* | rxvt* | screen* | tmux*)
