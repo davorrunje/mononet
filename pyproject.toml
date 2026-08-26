@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mononet"
-version = "0.0.0a1"
+version = "0.0.1a0"
 description = "Unconstrained monotonic neural networks for PyTorch, JAX, and Keras"
 authors = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
 maintainers = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.15"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE.md"]
@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
@@ -60,7 +61,8 @@ dev = [
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "nest-asyncio==1.6.0",
-    "hypothesis>=6.115",
+    "hypothesis==6.165.10",
+    "defendable-science==0.2.1",
 ]
 docs = [
     "sphinx==9.0.4; python_version < '3.12'",
@@ -141,7 +143,7 @@ files = ["mononet", "tests", "benchmarks"]
 strict = true
 strict_bytes = true
 local_partial_types = true
-python_version = "3.11"
+python_version = "3.12"  # TODO: should cover all version
 ignore_missing_imports = true
 install_types = true
 non_interactive = true
