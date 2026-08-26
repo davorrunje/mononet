@@ -1,7 +1,7 @@
 # Datasheet — `auto` (Auto MPG)
 
 *Gebru-style datasheet for the `auto` entry in [`datasets.yml`](../../../datasets.yml).
-Drafted by the honest-scholar `dataset` skill; classifications are author-signed
+Drafted by the defendable-science `dataset` skill; classifications are author-signed
 in the registry header.*
 
 ## Motivation

@@ -1,4 +1,4 @@
-# honest-scholar integration — design
+# defendable-science integration — design
 
 **Date:** 2026-07-21
 **Status:** approved (brainstorming) — execution in progress
@@ -6,19 +6,19 @@
 
 ## Purpose
 
-Adopt the released [`honest-scholar`](https://github.com/davorrunje/honest-scholar)
-plugin (v0.1.0, on PyPI, docs at <https://honest-scholar.science>) as the
+Adopt the released [`defendable-science`](https://github.com/davorrunje/defendable-science)
+plugin (v0.1.0, on PyPI, docs at <https://defendable.science>) as the
 research-workflow driver for `mononet`, and onboard this repository onto it with
 the plugin's own `research-init` skill in **`adopt`** mode.
 
-`honest-scholar` is the domain-neutral *science* layer (hypothesis → paper →
+`defendable-science` is the domain-neutral *science* layer (hypothesis → paper →
 thesis, plus `literature`, `dataset`, `progress`, `defend`). `mononet` is one
 **consumer** of it — in fact the reference `research-init adopt` target. This
 document records how the two fit together and the concrete steps to wire them up.
 
 ## Background: current state
 
-- **`honest-scholar` is released** (v0.1.0): 10 skills (`research-init`,
+- **`defendable-science` is released** (v0.1.0): 10 skills (`research-init`,
   `hypothesis-exploration`, `hypothesis-testing`, `paper-exploration`,
   `paper-synthesis`, `thesis`, `literature`, `dataset`, `progress`, `defend`) +
   a companion PyPI CLI. It governs by two principles — **agency** (humans make
@@ -46,12 +46,12 @@ document records how the two fit together and the concrete steps to wire them up
 
 ## Architecture: three layers
 
-`honest-scholar` sits on top and **delegates outward** through its two contracts
+`defendable-science` sits on top and **delegates outward** through its two contracts
 rather than reimplementing engineering or experiments:
 
 | Layer | Owned by | Binding |
 |---|---|---|
-| **Science** — hypotheses, papers, thesis, literature, datasets, defend, progress | `honest-scholar` plugin | n/a (the plugin) |
+| **Science** — hypotheses, papers, thesis, literature, datasets, defend, progress | `defendable-science` plugin | n/a (the plugin) |
 | **Engineering** — design, plan, implement, test | superpowers methodology | `engineering_backend: superpowers` |
 | **Experiment** — run, evidence, tables, is-current | `benchmarks/` harness | `experiment_backend: benchmarks/` |
 
@@ -62,7 +62,7 @@ rather than reimplementing engineering or experiments:
   evidence produced by the **experiment backend**.
 
 This keeps both existing systems intact: no rework of superpowers, no rework of
-the benchmark harness — only new binding metadata in `.honest-scholar/config.yml`.
+the benchmark harness — only new binding metadata in `.defendable-science/config.yml`.
 
 ## Plan
 
@@ -70,18 +70,18 @@ the benchmark harness — only new binding metadata in `.honest-scholar/config.y
 
 Edit `.claude/settings.json` (mirrors the existing superpowers install):
 
-- add `honest-scholar` to `extraKnownMarketplaces`
-  (`source: { source: github, repo: davorrunje/honest-scholar }`, `ref: v0.1.0`);
-- enable `honest-scholar@honest-scholar` in `enabledPlugins`.
+- add `defendable-science` to `extraKnownMarketplaces`
+  (`source: { source: github, repo: davorrunje/defendable-science }`, `ref: v0.1.0`);
+- enable `defendable-science@defendable-science` in `enabledPlugins`.
 
 Install the CLI **isolated** from mononet's ML environment:
 
 ```bash
-uv tool install honest-scholar
-honest-scholar doctor
+uv tool install defendable-science
+defendable-science doctor
 ```
 
-Do **not** add `honest-scholar` to `pyproject.toml` — it must not enter the ML
+Do **not** add `defendable-science` to `pyproject.toml` — it must not enter the ML
 dependency tree. The `literature`, `dataset`, `defend`, and `progress` skills
 call this CLI.
 
@@ -109,7 +109,7 @@ optional `thesis/` tree is included.
 
 Scaffold + populate:
 
-- `.honest-scholar/config.yml` bindings: `engineering_backend: superpowers`,
+- `.defendable-science/config.yml` bindings: `engineering_backend: superpowers`,
   `experiment_backend: benchmarks/`, literature anchors = the two papers, rclone
   remote deferred (placeholder + `.example`).
 - **Literature** → `docs/research/literature/references.json` (CSL-JSON) +
@@ -139,13 +139,13 @@ review, and does not commit as part of the skill.
 ### 4. Commit + PR
 
 Commit the settings/skill changes, the spec, and the generated `docs/research/`,
-`datasets.yml`, and `.honest-scholar/` scaffolding on
-`chore/honest-scholar-integration`; open a PR. Use honest-scholar's commit
+`datasets.yml`, and `.defendable-science/` scaffolding on
+`chore/defendable-science-integration`; open a PR. Use defendable-science's commit
 trailers on the adopt-generated artifacts:
 
 ```
-Generated-with: honest-scholar (https://github.com/davorrunje/honest-scholar)
-HonestScholar-Skill: research-init
+Generated-with: defendable-science (https://github.com/davorrunje/defendable-science)
+DefendableScience-Skill: research-init
 ```
 
 ### 5. Supersede stale design PRs
@@ -169,17 +169,17 @@ Create self-contained issues (per the `create-issue` skill) for:
   front door.
 - **Experiment-backend binding hardening / possible redesign.** PR #127
   (benchmark-experiment-orchestration) stays open; it is the experiment-backend
-  *implementation* the honest-scholar contract binds to. Track a possible
+  *implementation* the defendable-science contract binds to. Track a possible
   redesign of the benchmark backend against the contract.
 
 ## Non-goals
 
-- Rewriting or migrating `docs/superpowers/` into honest-scholar's doc tree — the
+- Rewriting or migrating `docs/superpowers/` into defendable-science's doc tree — the
   superpowers record stays; it *is* the engineering backend.
-- Adding `honest-scholar` to `pyproject.toml` or otherwise into the ML env.
+- Adding `defendable-science` to `pyproject.toml` or otherwise into the ML env.
 - Folding the open feature PRs this session (deferred — §6).
 
-## Guardrails (from honest-scholar)
+## Guardrails (from defendable-science)
 
 - Human confirms every material classification (dataset license/tier,
   result→hypothesis mapping, retroactive verdicts).
