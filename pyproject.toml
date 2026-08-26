@@ -62,7 +62,7 @@ dev = [
     "pytest-cov==7.1.0",
     "nest-asyncio==1.6.0",
     "hypothesis==6.165.10",
-    "defendable-science==0.2.1",
+    "defendable-science==0.2.2",
 ]
 docs = [
     "sphinx==9.0.4; python_version < '3.12'",
