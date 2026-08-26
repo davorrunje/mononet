@@ -53,6 +53,16 @@ repos:
 
 -   repo: local
     hooks:
+    -   id: typecheck
+        name: Type check (this environment's Python)
+        entry: "tools/typecheck-pre-commit.sh"
+        language: python
+        types: [python]
+        require_serial: true
+        verbose: true
+
+-   repo: local
+    hooks:
     -   id: reference-hash
         name: Equivalence REFERENCE_HASH matches reference.py
         entry: "tools/check-reference-hash.sh"

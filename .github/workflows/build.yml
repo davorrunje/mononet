@@ -30,6 +30,41 @@ jobs:
       - name: Run static analysis
         run: ./tools/static-analysis.sh
 
+  python-versions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      list: ${{ steps.expand.outputs.list }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v9.0.0
+      # PEP 723 metadata in the script means uv resolves `packaging` into a
+      # throwaway environment; no setup-python and no project sync needed.
+      - name: Expand requires-python into a version list
+        id: expand
+        run: |
+          list="$(uv run --script tools/supported_pythons.py --json)"
+          echo "resolved: ${list}"
+          echo "list=${list}" >> "$GITHUB_OUTPUT"
+
+  typecheck:
+    needs: [python-versions]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(needs.python-versions.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v9.0.0
+      # No setup-python: `uv run --python` in tools/typecheck.sh fetches the
+      # interpreter, so the matrix value is the only place the version appears.
+      - name: Type check
+        run: ./tools/typecheck.sh ${{ matrix.python-version }}
+
   pre-commit:
     runs-on: ubuntu-latest
     permissions:
@@ -95,7 +130,7 @@ jobs:
         env:
           MONONET_TEST_BACKEND: ${{ matrix.backend }}
           KERAS_BACKEND: jax
-        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/test_top_level_imports.py --no-cov -v
+        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/tools tests/test_top_level_imports.py --no-cov -v
 
   coverage:
     runs-on: ubuntu-latest
@@ -135,7 +170,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [static-analysis, pre-commit, docs-smoke, test, coverage]
+    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck, python-versions]
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1 # nosemgrep

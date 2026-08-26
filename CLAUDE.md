@@ -125,6 +125,7 @@ uv run pytest -m "not slow"                          # exclude slow tests
 uv run ruff check --exit-non-zero-on-fix             # lint
 uv run ruff format                                   # format
 uv run mypy                                          # strict type check
+./tools/typecheck-all.sh                             # strict type check, every supported Python
 uv run pre-commit run --all-files                    # all hooks
 ./tools/build-docs.sh                                # one-shot Sphinx docs build
 ./tools/serve-docs.sh                                # live preview

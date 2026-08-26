@@ -143,7 +143,13 @@ files = ["mononet", "tests", "benchmarks"]
 strict = true
 strict_bytes = true
 local_partial_types = true
-python_version = "3.12"  # TODO: should cover all version
+# No `python_version`: mypy would then apply it to the grammar it parses every
+# file with, including dependency stubs, and the stubs installed differ per
+# version (uv.lock resolves numpy 2.4.6 below 3.12, 2.5.2 at or above). Pinning
+# any single value breaks a bare `uv run mypy` in some environment. Left unset,
+# mypy targets the interpreter it runs under, which by construction matches the
+# stubs beside it. Explicit targets come from tools/typecheck-all.sh, which
+# pairs each --python-version with an environment resolved for it. See #167.
 ignore_missing_imports = true
 install_types = true
 non_interactive = true
