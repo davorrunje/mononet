@@ -30,6 +30,21 @@ jobs:
       - name: Run static analysis
         run: ./tools/static-analysis.sh
 
+  reference-hash:
+    # tools/check-reference-hash.sh also runs as a pre-commit hook, but that
+    # hook omits the `manual` stage and so never runs in CI's pre-commit job --
+    # and a contributor without hooks installed, or using --no-verify, bypasses
+    # it entirely. Without this job a stale REFERENCE_HASH reaches main with
+    # green CI, and the equivalence suite then validates every backend against
+    # an outdated ground truth. Needs no Python: the guard is git plus shell.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Equivalence vectors match mononet/core/reference.py
+        run: ./tools/check-reference-hash.sh
+
   python-versions:
     runs-on: ubuntu-latest
     permissions:
@@ -170,7 +185,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck, python-versions]
+    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck, python-versions, reference-hash]
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1 # nosemgrep
