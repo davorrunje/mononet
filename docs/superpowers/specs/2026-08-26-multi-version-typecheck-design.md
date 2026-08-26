@@ -83,11 +83,17 @@ does not parse on 3.11 or 3.12. Filed as
 
 ### 1. Version list — derived, not duplicated
 
-`tools/supported-pythons.py` reads `[project] requires-python` from
+`tools/supported_pythons.py` reads `[project] requires-python` from
 `pyproject.toml` with `tomllib`, expands it against candidate versions 3.9–3.20
 using `packaging.specifiers.SpecifierSet`, and prints one version per line, or a
 JSON array with `--json` for the CI matrix. Both dependencies are already
 available (`tomllib` is stdlib on 3.11+; `packaging` 26.3 is installed).
+
+The script carries a PEP 723 inline metadata header declaring `packaging`, so
+`uv run --script` executes it in a throwaway environment (~0.2 s) without
+syncing the project — which is what lets the CI matrix job read the list before
+any environment exists. The underscore in the filename is deliberate: a hyphen
+would make the module unimportable and untestable.
 
 Adding 3.15 to `requires-python` then extends the local sweep and the CI matrix
 with no second edit. This is the issue's central acceptance criterion.
@@ -173,7 +179,7 @@ mean the hook set CI verifies no longer matches the hook set developers run.
       output names each version
 - [ ] introducing a deliberate 3.11-only type error (e.g. a stdlib symbol added in
       3.12) fails the 3.11 leg and only that leg; reverted afterwards
-- [ ] `tools/supported-pythons.py` emits `3.11 3.12 3.13 3.14` for the current
+- [ ] `tools/supported_pythons.py` emits `3.11 3.12 3.13 3.14` for the current
       `requires-python`, and emits five entries if it is temporarily widened to
       `<3.16`
 - [ ] the 3.11 environment resolves numpy 2.4.6 and the others 2.5.2 — the
