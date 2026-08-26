@@ -13,9 +13,10 @@ status:
   load-bearing: null
   understanding: {status: pending, unresolved: []}
   blockers:
-    - S2 contexts pending — keyless completeness sweep done (see paper/scout-2026-07-22-sweep.md); it proved the arXiv-vs-published split does not exist in OpenAlex (CMNN/Sartor have no PMLR record, Cano anchor already published) so recovery was 0; closing the intrinsic OpenAlex under-coverage now needs an active S2_API_KEY (currently HTTP 403)
+    - S2 re-scout not yet run — the keyless completeness sweep (see paper/scout-2026-07-22-sweep.md) proved the arXiv-vs-published split does not exist in OpenAlex (CMNN/Sartor have no PMLR record, Cano anchor already published) so recovery was 0; the residual under-coverage is intrinsic to keyless OpenAlex. S2_API_KEY is now ACTIVE (verified 2026-08-26: contexts + SciCite intents returned), so the re-scout is unblocked but not yet done — the whole corpus below predates it
+    - leads not yet in the registry — all 27 leads live only in this folder's markdown records; references.json + triage.yml still hold the 2 anchors only, so no downstream skill (paper-synthesis, digest, thesis) can see this work
     - empirical scope depends on how many rival methods we re-implement in the harness
-  last-updated: 2026-07-22
+  last-updated: 2026-08-26
 ---
 
 # Pitch: A survey of monotonicity methods in machine learning
@@ -105,7 +106,9 @@ _(Seed rows are in this paper's `backlog.md`; promote as the design firms up.)_
    split does not exist here — published-record recovery was **0**; corpus stays 243.
    The low counts are intrinsic OpenAlex under-coverage. Added 7 method leads
    (incl. Lipschitz provably-monotonic nets, monotone-net approximation theory,
-   MonoNet). **S2 contexts still pending** (S2 key returns HTTP 403 — inactive).
+   MonoNet). **S2 contexts were still pending at the time of this pass** (the key
+   returned HTTP 403); the key is active as of 2026-08-26, so this corpus is the
+   keyless floor, not the final set.
 3. ✅ **Deep research (web)** run 2026-07-22 —
    [`paper/deep-research-2026-07-22.md`](deep-research-2026-07-22.md). 107-agent
    fan-out with 3-vote adversarial verification; 12 findings. Recovered exactly the
@@ -114,11 +117,15 @@ _(Seed rows are in this paper's `backlog.md`; promote as the design firms up.)_
    *Monotonicity Regularization* (UAI 2022), Wang *Monotone Cubic B-Splines* (2023),
    Burdakov & Sysoev *Smoothed Monotonic Regression* (2017) — plus formal-methods/PL
    venues (FMICS, OOPSLA) an ML-only search skips.
-4. **S2 activation (still pending):** obtain/activate `S2_API_KEY`
-   (`defendable-science keys set S2_API_KEY`) then re-run for SciCite intents/contexts
-   and a fuller citation graph — the only real fix for the CMNN/Cano/Sartor
-   under-coverage the sweep proved is intrinsic to keyless OpenAlex. Manually seed
-   known method anchors OpenAlex misses (min-max/Sill, UMNN/Wehenkel-Louppe).
+4. ✅ **S2 activated** 2026-08-26 — `S2_API_KEY` and `OPENALEX_MAILTO` are both in
+   the key store and verified live (`literature enrich --context` returns citation
+   contexts + SciCite intents; `isInfluential` populated). **The re-scout itself is
+   still to run** — the only real fix for the CMNN/Cano/Sartor under-coverage the
+   sweep proved is intrinsic to keyless OpenAlex. Widen the anchor set at the same
+   time with the method anchors the OpenAlex forward-graph structurally misses
+   (min-max/Sill 1997, UMNN/Wehenkel & Louppe 2019, the Lipschitz/Nolte line,
+   Kim & Lee ICLR 2023) plus family-specific anchors for flows/injective, which
+   stays thin at 4 hits.
 5. Fix the empirical scope: which rival methods get re-implemented in the harness
    (drives feasibility).
 6. `position --level paper` → move surviving leads into `references.json` +
