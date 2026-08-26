@@ -2,10 +2,9 @@
 set -e
 
 echo "Running mypy..."
-# --group bench: mypy type-checks benchmarks/, which imports typer/optuna/etc.
-# `uv run` syncs its own venv to [tool.uv] default-groups (no bench), so without
-# this the Typer decorator resolves to Any and disallow_untyped_decorators fails.
-uv run --group bench mypy
+# benchmarks/ imports typer/optuna/etc., so mypy needs the `bench` group. It is
+# in [tool.uv] default-groups for exactly that reason -- no flag needed here.
+uv run mypy
 
 echo "Running bandit..."
 uv run bandit -c pyproject.toml -r mononet

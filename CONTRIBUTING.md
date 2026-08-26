@@ -109,7 +109,7 @@ container.
 ```bash
 git clone https://github.com/davorrunje/mononet.git
 cd mononet
-uv sync                            # install runtime + dev + docs + lint
+uv sync                            # install runtime + dev + docs + lint + bench
 uv run pre-commit install          # install git hooks (devcontainers do this for you)
 ```
 

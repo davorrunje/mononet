@@ -98,7 +98,13 @@ bench = [
 ]
 
 [tool.uv]
-default-groups = ["dev", "docs", "lint"]
+# `bench` is a default group even though the benchmark harness is not part of
+# the wheel: [tool.mypy] files includes `benchmarks`, and [tool.pytest] testpaths
+# includes `tests/benchmarks`. Without it, a plain `uv sync` leaves typer and
+# scikit-learn absent, so `uv run mypy` fails on benchmarks/search.py (typer
+# resolves to Any under ignore_missing_imports, tripping
+# disallow_untyped_decorators) and `uv run pytest` errors during collection.
+default-groups = ["dev", "docs", "lint", "bench"]
 override-dependencies = [
     "click>=8.2.1",  # semgrep pins <8.2, but typer 0.24+ requires >=8.2.1
 ]
