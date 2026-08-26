@@ -4,10 +4,32 @@
 # Sourced from ~/.bashrc and ~/.zshrc by install-shell-prompt.sh. Replaces the
 # stock "user@host:cwd$" prompt with "cwd (branch)$" -- the user and host are
 # noise inside a container, the branch is not -- and wires up completion for
-# the CLIs that do not ship a completion file (gh, uv).
+# the CLIs that do not ship a completion file (gh, uv), fzf key bindings,
+# EDITOR/PAGER, and history defaults. The packages behind this are installed by
+# shared/install_common_tools.sh.
 #
 # A virtualenv prefix (e.g. "(mononet) ") is still prepended by the activate
 # script via VIRTUAL_ENV_PROMPT / PS1 rewriting, so it survives this.
+
+# The image has no editor and no pager alternative until
+# install_common_tools.sh runs; git then resolves core.editor -> EDITOR ->
+# /usr/bin/editor. Set these only when the caller has not.
+if [ -z "${EDITOR:-}" ] && command -v vim >/dev/null 2>&1; then
+    EDITOR=vim
+    export EDITOR
+fi
+[ -z "${VISUAL:-}" ] && [ -n "${EDITOR:-}" ] && export VISUAL="$EDITOR"
+# -F: skip the pager for output that fits one screen. -R: keep git/gh colors.
+# -X: leave the output on screen after quitting. Matches git's own default.
+[ -z "${LESS:-}" ] && export LESS="-FRX"
+
+# The stock rc keeps 1000 lines with no timestamps, which is not much history
+# for a long-lived container.
+HISTSIZE=100000
+HISTFILESIZE=200000
+HISTCONTROL=ignoreboth:erasedups
+HISTTIMEFORMAT='%F %T '
+export HISTSIZE HISTFILESIZE HISTCONTROL HISTTIMEFORMAT
 
 # Cache dir for generated completion scripts (gh/uv emit them on stdout;
 # regenerating on every shell start would cost a subprocess each).
@@ -86,6 +108,25 @@ if [ -n "${BASH_VERSION:-}" ]; then
             ;;
     esac
 
+    shopt -s histappend globstar
+
+    # Readline: Up/Down search history by what is already typed rather than
+    # walking it blindly; completion ignores case and lists on first ambiguity.
+    if [[ $- == *i* ]]; then
+        bind '"\e[A": history-search-backward' 2>/dev/null
+        bind '"\e[B": history-search-forward' 2>/dev/null
+        bind 'set completion-ignore-case on' 2>/dev/null
+        bind 'set show-all-if-ambiguous on' 2>/dev/null
+        bind 'set colored-stats on' 2>/dev/null
+    fi
+
+    # fzf: Ctrl-R fuzzy history, Ctrl-T file picker, Alt-C cd. The Debian
+    # package ships the bindings as an example file rather than sourcing them.
+    # Must come after the bind calls above -- fzf rebinds Ctrl-R.
+    # shellcheck disable=SC1091
+    [ -r /usr/share/doc/fzf/examples/key-bindings.bash ] &&
+        . /usr/share/doc/fzf/examples/key-bindings.bash
+
 elif [ -n "${ZSH_VERSION:-}" ]; then
 
     # oh-my-zsh runs compinit itself; only do it when nothing else has.
@@ -97,6 +138,26 @@ elif [ -n "${ZSH_VERSION:-}" ]; then
 
     _mononet_completion gh zsh completion -s zsh
     _mononet_completion uv zsh generate-shell-completion zsh
+
+    setopt APPEND_HISTORY SHARE_HISTORY HIST_IGNORE_ALL_DUPS \
+        HIST_IGNORE_SPACE EXTENDED_GLOB
+    HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+    SAVEHIST=$HISTFILESIZE
+
+    # Same prefix-search-on-arrow behaviour as the bash half.
+    autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+    zle -N up-line-or-beginning-search
+    zle -N down-line-or-beginning-search
+    bindkey '^[[A' up-line-or-beginning-search
+    bindkey '^[[B' down-line-or-beginning-search
+
+    for _mononet_fzf in /usr/share/doc/fzf/examples/completion.zsh \
+        /usr/share/doc/fzf/examples/key-bindings.zsh
+    do
+        # shellcheck disable=SC1090
+        [ -r "$_mononet_fzf" ] && . "$_mononet_fzf"
+    done
+    unset _mononet_fzf
 
     autoload -Uz vcs_info
     zstyle ':vcs_info:*' enable git
