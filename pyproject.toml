@@ -200,7 +200,9 @@ exclude_also = [
 [tool.ruff]
 fix = true
 line-length = 88
-target-version = "py311"
+# No `target-version`: ruff infers it from [project] requires-python, so the
+# floor is declared in exactly one place. Verified: with this unset, ruff
+# reports `unresolved_target_version = 3.11` for ">=3.11,<3.15".
 include = [
     "mononet/**/*.py",
     "mononet/**/*.pyi",
