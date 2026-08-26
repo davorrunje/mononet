@@ -151,10 +151,13 @@ enforces. The exception is type checking across versions: the `typecheck` hook
 checks only the interpreter in your environment, while CI runs `mypy` against
 every version in `requires-python` (one status check each). Run
 `./tools/typecheck-all.sh` before pushing if you touched anything
-typing-sensitive — it takes about a minute warm, and the first run downloads an
-interpreter per version. The same
-checks run on demand whether or not the hooks are installed: `uv run pre-commit
-run --all-files` for the lot, or the individual commands above piecemeal.
+typing-sensitive. Each isolated leg installs the CPU backends (`torch`, `jax`,
+`keras`) so those layers are actually type-checked instead of resolving to
+`Any` — the first run downloads a few GB of wheels per Python version, and
+each version takes roughly half a minute once its environment is warm. The
+same checks run on demand whether or not the hooks are installed: `uv run
+pre-commit run --all-files` for the lot, or the individual commands above
+piecemeal.
 
 ## Building docs
 

@@ -36,5 +36,11 @@ fi
 env_root="${MONONET_TYPECHECK_ENV_ROOT:-${XDG_CACHE_HOME:-$HOME/.cache}/mononet-typecheck}"
 
 echo "Running mypy for Python ${version}..."
+# --extra all-cpu: without a framework installed, ignore_missing_imports makes
+# every torch/jax/keras symbol resolve to Any, so mono.torch/jax/keras layers
+# and benchmarks/_common/model_builder.py are never really type-checked. Only
+# the isolated env gets this: the ambient .venv may carry torch-gpu, which
+# pyproject.toml's [tool.uv] conflicts table declares mutually exclusive with
+# all-cpu, so adding it there would fail to resolve or blow away the ambient env.
 UV_PROJECT_ENVIRONMENT="${env_root}/mypy-${version}" \
-  exec uv run --python "${version}" mypy --python-version "${version}"
+  exec uv run --extra all-cpu --python "${version}" mypy --python-version "${version}"

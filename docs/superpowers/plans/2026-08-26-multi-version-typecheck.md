@@ -319,7 +319,7 @@ MSG
 **Interfaces:**
 - Consumes: `uv run --script tools/supported_pythons.py` from Task 1 (newline form).
 - Produces:
-  - `tools/typecheck.sh` — no argument: mypy in the ambient environment. One argument (`3.11`): mypy isolated for that version. Exit status is mypy's.
+  - `tools/typecheck.sh` — no argument: mypy in the ambient environment. One argument (`3.11`): mypy isolated for that version, with `--extra all-cpu` so `torch`/`jax`/`keras` are installed and actually type-checked instead of resolving to `Any`. Exit status is mypy's.
   - `tools/typecheck-all.sh` — no arguments; runs every supported version, exits 1 listing the failures.
   - `tools/typecheck-pre-commit.sh` — no arguments; `cd`s to the repo root and calls `tools/typecheck.sh` with no argument. Task 3 wires this into `.pre-commit-config.yaml`.
   - Environment root: `${MONONET_TYPECHECK_ENV_ROOT:-${XDG_CACHE_HOME:-$HOME/.cache}/mononet-typecheck}`.
@@ -358,8 +358,14 @@ fi
 env_root="${MONONET_TYPECHECK_ENV_ROOT:-${XDG_CACHE_HOME:-$HOME/.cache}/mononet-typecheck}"
 
 echo "Running mypy for Python ${version}..."
+# --extra all-cpu: without a framework installed, ignore_missing_imports makes
+# every torch/jax/keras symbol resolve to Any, so mono.torch/jax/keras layers
+# and benchmarks/_common/model_builder.py are never really type-checked. Only
+# the isolated env gets this: the ambient .venv may carry torch-gpu, which
+# pyproject.toml's [tool.uv] conflicts table declares mutually exclusive with
+# all-cpu, so adding it there would fail to resolve or blow away the ambient env.
 UV_PROJECT_ENVIRONMENT="${env_root}/mypy-${version}" \
-  exec uv run --python "${version}" mypy --python-version "${version}"
+  exec uv run --extra all-cpu --python "${version}" mypy --python-version "${version}"
 ```
 
 - [ ] **Step 2: Verify both forms of `typecheck.sh`**

@@ -68,6 +68,13 @@ change lands green rather than uncovering a backlog of type errors. The 3.11 row
 also confirms the mechanism: that environment resolved numpy 2.4.6, so the sweep
 genuinely exercises the dependency fork.
 
+> **Note:** these figures were measured before `--extra all-cpu` was added to
+> the isolated invocation (see Design §2). With the extra, each environment
+> also installs `torch`/`jax`/`keras`, so per-leg cost is roughly 32 s and
+> 2.8 GB rather than the numbers above — confirmed on a deep 3.11 leg
+> (`Success: no issues found in 184 source files`, exit 0, 32.5 s, 2.8 GB),
+> with no previously-masked errors surfacing.
+
 ## Scope
 
 **In scope:** running mypy against every supported Python version, locally and in
@@ -108,8 +115,19 @@ with no second edit. This is the issue's central acceptance criterion.
 
   ```bash
   env_root="${MONONET_TYPECHECK_ENV_ROOT:-${XDG_CACHE_HOME:-$HOME/.cache}/mononet-typecheck}"
-  UV_PROJECT_ENVIRONMENT="${env_root}/mypy-$v" uv run --python "$v" mypy --python-version "$v"
+  UV_PROJECT_ENVIRONMENT="${env_root}/mypy-$v" uv run --extra all-cpu --python "$v" mypy --python-version "$v"
   ```
+
+  `--extra all-cpu` is there so the isolated environment actually has
+  `torch`/`jax`/`keras` installed. Without it, `ignore_missing_imports = true`
+  makes every framework symbol in `mononet/torch/layers.py`,
+  `mononet/jax/layers.py`, `mononet/keras/layers.py`, and
+  `benchmarks/_common/model_builder.py` resolve to `Any`, so those files are
+  never really type-checked. It is deliberately absent from the ambient
+  (no-argument) branch: the developer's own `.venv` may carry `torch-gpu`,
+  which `pyproject.toml`'s `[tool.uv] conflicts` table declares mutually
+  exclusive with `all-cpu`, so adding it there would either fail to resolve or
+  re-resolve and destroy the working environment.
 
 `UV_PROJECT_ENVIRONMENT` is load-bearing, not hygiene. Without it,
 `uv run --python 3.11` rebuilds the project's own `.venv` on 3.11 and destroys the
