@@ -166,12 +166,22 @@ narrower than CI.
 bandit and semgrep stay out of the matrix deliberately — matrixing the whole
 `static-analysis` job would run them four times for identical results.
 
-## Known duplication
+## What CI's pre-commit job does and does not cover
 
-CI's `pre-commit` job runs hooks with `--hook-stage manual --all-files`, so the new
-`typecheck` hook adds one ambient mypy (~15 s) that overlaps the matrix's 3.13 leg.
-This is accepted: the alternative is excluding the hook from that job, which would
-mean the hook set CI verifies no longer matches the hook set developers run.
+The `typecheck` hook omits `stages:`, so it inherits `default_stages:
+[pre-commit, pre-merge-commit]` and **not** `manual` — which is the stage CI's
+`pre-commit` job runs (`--hook-stage manual --all-files`). Verified: at that
+stage pre-commit runs only the eight hooks that declare `manual` explicitly, so
+`typecheck` does not run there. Neither do `static-analysis`, `reference-hash`
+or `docs`, all of which predate this change.
+
+This is the right outcome rather than a gap, and is left alone: mypy in CI comes
+from the `typecheck` matrix job, which covers every supported version instead of
+re-running the 3.13 leg a second time under a different job. Adding `manual` to
+the hook would buy nothing but a duplicate run.
+
+The consequence for developers is the one already stated in §5: the hook checks
+one interpreter, CI checks four.
 
 ## Verification
 

@@ -576,7 +576,7 @@ Insert immediately after the existing `static-analysis` hook block (before the `
         verbose: true
 ```
 
-The `stages` key is deliberately omitted so the hook inherits `default_stages: [pre-commit, pre-merge-commit]` **plus** the `manual` stage used by the CI `pre-commit` job — matching how `lint` and `static-analysis` are declared.
+The `stages` key is deliberately omitted, so the hook inherits `default_stages: [pre-commit, pre-merge-commit]` — matching the existing `static-analysis` hook, which also omits it. Note this means the hook does **not** run in CI's `pre-commit` job, which uses `--hook-stage manual`: only hooks declaring `manual` explicitly (such as `lint`) run there. That is intended — mypy in CI comes from the `typecheck` matrix job in Task 4, which covers every version rather than re-running one.
 
 - [ ] **Step 2: Verify the hook runs and passes**
 
