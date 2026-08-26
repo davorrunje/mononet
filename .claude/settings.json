@@ -1,6 +1,5 @@
 {
   "enabledPlugins": {
-    "superpowers@claude-plugins-official": false,
     "superpowers@superpowers-dev": true,
     "defendable-science@defendable-science": true
   },
