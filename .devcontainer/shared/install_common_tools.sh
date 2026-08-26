@@ -25,6 +25,15 @@ for _vol in "${CLAUDE_CONFIG_DIR:-}" /workspaces/mononet/.venv; do
 done
 unset _vol
 
+# bash-completion — the base image ships completion *scripts* under
+# /usr/share/bash-completion/completions but not the loader that sources them,
+# so `git sta<TAB>` does nothing and __git_ps1 is undefined. Installing the
+# package makes ~/.bashrc's stock completion block fire.
+if [ ! -r /usr/share/bash-completion/bash_completion ]; then
+  echo -e "\033[32mInstalling bash-completion...\033[0m"
+  sudo apt-get update && sudo apt-get install -y bash-completion
+fi
+
 # git-lfs — required to pull committed benchmark datasets under benchmarks/data/
 if ! command -v git-lfs >/dev/null 2>&1; then
   echo -e "\033[32mInstalling git-lfs...\033[0m"

@@ -1,14 +1,51 @@
 # shellcheck shell=bash
-# Git-aware prompt for the mononet devcontainer.
+# Git-aware prompt and tab completion for the mononet devcontainer.
 #
 # Sourced from ~/.bashrc and ~/.zshrc by install-shell-prompt.sh. Replaces the
 # stock "user@host:cwd$" prompt with "cwd (branch)$" -- the user and host are
-# noise inside a container, the branch is not.
+# noise inside a container, the branch is not -- and wires up completion for
+# the CLIs that do not ship a completion file (gh, uv).
 #
 # A virtualenv prefix (e.g. "(mononet) ") is still prepended by the activate
 # script via VIRTUAL_ENV_PROMPT / PS1 rewriting, so it survives this.
 
+# Cache dir for generated completion scripts (gh/uv emit them on stdout;
+# regenerating on every shell start would cost a subprocess each).
+_mononet_comp_cache="${XDG_CACHE_HOME:-$HOME/.cache}/mononet-shell"
+
+# _mononet_completion <tool> <shell> <arg>...
+# Cache `<tool> <arg>...` output once, then source it.
+_mononet_completion() {
+    local tool=$1 shell=$2
+    shift 2
+    command -v "$tool" >/dev/null 2>&1 || return 0
+    local cache="$_mononet_comp_cache/$tool.$shell"
+    if [ ! -s "$cache" ]; then
+        mkdir -p "$_mononet_comp_cache"
+        "$tool" "$@" > "$cache" 2>/dev/null || { rm -f "$cache"; return 0; }
+    fi
+    # shellcheck disable=SC1090
+    . "$cache"
+}
+
 if [ -n "${BASH_VERSION:-}" ]; then
+
+    # The stock ~/.bashrc sources the bash-completion loader when present, but
+    # only some images ship it; load it here too so this file works standalone.
+    # (install_common_tools.sh apt-installs the package.)
+    if ! declare -F _completion_loader >/dev/null 2>&1 && ! shopt -oq posix; then
+        for _mononet_bc in \
+            /usr/share/bash-completion/bash_completion \
+            /etc/bash_completion
+        do
+            # shellcheck disable=SC1090
+            [ -r "$_mononet_bc" ] && . "$_mononet_bc" && break
+        done
+        unset _mononet_bc
+    fi
+
+    _mononet_completion gh bash completion -s bash
+    _mononet_completion uv bash generate-shell-completion bash
 
     # Debian ships __git_ps1 in git-sh-prompt, but the container has no
     # bash-completion loader to source it, so do it ourselves.
@@ -50,6 +87,16 @@ if [ -n "${BASH_VERSION:-}" ]; then
     esac
 
 elif [ -n "${ZSH_VERSION:-}" ]; then
+
+    # oh-my-zsh runs compinit itself; only do it when nothing else has.
+    if ! whence -w compdef >/dev/null 2>&1; then
+        autoload -Uz compinit && compinit -u
+    fi
+    zstyle ':completion:*' menu select
+    zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+
+    _mononet_completion gh zsh completion -s zsh
+    _mononet_completion uv zsh generate-shell-completion zsh
 
     autoload -Uz vcs_info
     zstyle ':vcs_info:*' enable git
