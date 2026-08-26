@@ -158,7 +158,7 @@ narrower than CI.
 
 | Job | Change |
 |---|---|
-| `python-versions` | **new** — emits `outputs.list` from `supported-pythons.py --json` |
+| `python-versions` | **new** — emits `outputs.list` from `supported_pythons.py --json` |
 | `typecheck` | **new** — `needs: [python-versions]`, `matrix.python-version: ${{ fromJson(...) }}`, runs `tools/typecheck.sh $v`. Needs only checkout + `setup-uv`; no `setup-python`, since `uv run --python` fetches the interpreter |
 | `static-analysis` | unchanged in shape; its script no longer runs mypy |
 | `check` | `needs` gains `typecheck`, so a failing version blocks merge |
