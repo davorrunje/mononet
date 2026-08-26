@@ -72,7 +72,7 @@ docs = [
     "sphinx-design==0.7.0",
     "sphinx-togglebutton==0.4.5",
     "sphinx-autobuild==2025.8.25",
-    "sphinx-polyversion==2.0.0",
+    "sphinx-polyversion==3.0.0",
     "linkify-it-py==2.1.0",
     "cairosvg==2.9.0",
     "nbconvert==7.17.1",
