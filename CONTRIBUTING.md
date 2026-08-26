@@ -136,7 +136,8 @@ does.
 ```bash
 uv run ruff check --exit-non-zero-on-fix    # lint
 uv run ruff format                           # format
-uv run mypy                                  # strict type check
+uv run mypy                                  # strict type check, this env's Python
+./tools/typecheck-all.sh                     # strict type check, every supported Python
 uv run bandit -c pyproject.toml -r mononet   # security scan
 uv run semgrep scan --config auto --error    # semgrep
 uv run pre-commit run --all-files            # everything pre-commit runs
@@ -144,7 +145,13 @@ uv run pre-commit run --all-files            # everything pre-commit runs
 
 `pre-commit` **is the full gate**: on every commit it runs all of the above
 plus the docs build, codespell, secret detection, and file-hygiene hooks — so a
-clean `git commit` means the change already passes what CI enforces. The same
+clean `git commit` means the change already passes almost everything CI
+enforces. The exception is type checking across versions: the `typecheck` hook
+checks only the interpreter in your environment, while CI runs `mypy` against
+every version in `requires-python` (one status check each). Run
+`./tools/typecheck-all.sh` before pushing if you touched anything
+typing-sensitive — it takes about a minute warm, and the first run downloads an
+interpreter per version. The same
 checks run on demand whether or not the hooks are installed: `uv run pre-commit
 run --all-files` for the lot, or the individual commands above piecemeal.
 
