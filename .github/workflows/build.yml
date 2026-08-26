@@ -130,7 +130,7 @@ jobs:
         env:
           MONONET_TEST_BACKEND: ${{ matrix.backend }}
           KERAS_BACKEND: jax
-        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/test_top_level_imports.py --no-cov -v
+        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/tools tests/test_top_level_imports.py --no-cov -v
 
   coverage:
     runs-on: ubuntu-latest
@@ -170,7 +170,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck]
+    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck, python-versions]
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1 # nosemgrep

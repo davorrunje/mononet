@@ -5,7 +5,7 @@
 # failure hides how much is broken. Exits non-zero naming the failures.
 set -uo pipefail
 
-cd "$(dirname "$0")"/..
+cd "$(dirname "$0")"/.. || exit 1
 
 mapfile -t versions < <(uv run --script tools/supported_pythons.py)
 

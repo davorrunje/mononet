@@ -17,6 +17,13 @@ cd "$(dirname "$0")"/..
 
 version="${1:-}"
 
+# A present-but-invalid argument must fail loudly: silently falling through to
+# the ambient run would report success for a version that was never checked.
+if [ "$#" -gt 0 ] && ! printf '%s' "${version}" | grep -qE '^3\.[0-9]+$'; then
+  echo "usage: $(basename "$0") [3.X]   (got: '${version}')" >&2
+  exit 2
+fi
+
 if [ -z "${version}" ]; then
   echo "Running mypy (ambient environment)..."
   exec uv run mypy

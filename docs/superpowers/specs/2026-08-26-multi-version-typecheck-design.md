@@ -107,12 +107,20 @@ with no second edit. This is the issue's central acceptance criterion.
 - **with a version** — run it isolated:
 
   ```bash
-  UV_PROJECT_ENVIRONMENT=".venvs/mypy-$v" uv run --python "$v" mypy --python-version "$v"
+  env_root="${MONONET_TYPECHECK_ENV_ROOT:-${XDG_CACHE_HOME:-$HOME/.cache}/mononet-typecheck}"
+  UV_PROJECT_ENVIRONMENT="${env_root}/mypy-$v" uv run --python "$v" mypy --python-version "$v"
   ```
 
 `UV_PROJECT_ENVIRONMENT` is load-bearing, not hygiene. Without it,
 `uv run --python 3.11` rebuilds the project's own `.venv` on 3.11 and destroys the
-working environment. `.venvs/` is added to `.gitignore`.
+working environment. The environments themselves live outside the repository,
+under `${XDG_CACHE_HOME:-$HOME/.cache}/mononet-typecheck/` by default (override
+with `MONONET_TYPECHECK_ENV_ROOT`), for two reasons: the workspace is a bind
+mount in every devcontainer flavor (which is exactly why `.venv` is mounted as
+a container-private volume instead), so multi-GB per-version environments there
+would cost host disk and bind-mount I/O; and the cache directory shares a
+filesystem with `~/.cache/uv`, letting uv hardlink wheels into each environment
+instead of copying them.
 
 `tools/typecheck-all.sh` loops every supported version, runs **all** of them even
 after one fails, and exits non-zero naming which versions failed — a partial

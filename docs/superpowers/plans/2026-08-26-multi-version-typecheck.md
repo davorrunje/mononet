@@ -682,10 +682,10 @@ Change `check`'s `needs` from
 to
 
 ```yaml
-    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck]
+    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck, python-versions]
 ```
 
-`python-versions` is intentionally left out: if it fails, `typecheck` is *skipped*, and `alls-green` fails on a skipped needed job — so the failure still blocks the merge instead of passing silently.
+`python-versions` is listed explicitly (alongside `typecheck`, which was already there) so that a failure in it is attributable to the job that caused it, rather than relying on `alls-green`'s treatment of skipped jobs.
 
 - [ ] **Step 3: Validate the workflow locally**
 

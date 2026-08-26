@@ -143,8 +143,9 @@ uv run semgrep scan --config auto --error    # semgrep
 uv run pre-commit run --all-files            # everything pre-commit runs
 ```
 
-`pre-commit` **is the full gate**: on every commit it runs all of the above
-plus the docs build, codespell, secret detection, and file-hygiene hooks — so a
+`pre-commit` **is the full gate** for everything above except the sweep: on
+every commit it runs `ruff`, `mypy` (ambient), `bandit`, `semgrep`, plus the
+docs build, codespell, secret detection, and file-hygiene hooks — so a
 clean `git commit` means the change already passes almost everything CI
 enforces. The exception is type checking across versions: the `typecheck` hook
 checks only the interpreter in your environment, while CI runs `mypy` against
