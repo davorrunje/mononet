@@ -16,14 +16,18 @@ released tags pin specific dependency versions for their own docs builds,
 switch ``env`` to ``Pip.factory(...)`` or an equivalent isolating env class.
 
 Refs are enumerated from **local** ``refs/heads/*`` (branches) and
-``refs/tags/*`` (tags), not from ``refs/remotes/origin/*``. ``sphinx-polyversion``
-2.0's parser misclassifies remote-tracking refs (the ``\\w+`` alternative in its
-ref regex greedily consumes ``"remotes"``), so we leave ``remote`` unset and
-require the caller to have the desired branches/tags present locally. In CI,
+``refs/tags/*`` (tags), not from ``refs/remotes/origin/*``: ``remote`` is left
+unset, so the caller must have the desired branches/tags present locally. In CI,
 ``actions/checkout`` with ``fetch-depth: 0`` and ``fetch-tags: true`` gives us
 ``refs/heads/main`` and ``refs/tags/v*`` locally. For local dev, run
 ``git fetch --tags && git branch -f main origin/main`` before invoking this
 driver.
+
+(This started as a workaround: ``sphinx-polyversion`` 2.0's ref regex
+misclassified remote-tracking refs because its ``\w+`` alternative consumed
+``"remotes"``. 3.0 tries the ``remotes/`` alternative first and parses them
+correctly, so setting ``remote`` is now viable if enumerating remote refs ever
+becomes preferable.)
 """
 
 from __future__ import annotations
@@ -56,10 +60,13 @@ root = Path(__file__).resolve().parent.parent
 DefaultDriver(
     root=root,
     output_dir=OUTPUT_DIR,
+    # No ``buffer_size``: 2.x streamed each ref's export through an asyncio
+    # pipe and needed the default 64 KiB limit raised. 3.0 checks refs out with
+    # ``git worktree add`` + ``shutil.copytree`` instead, so the parameter was
+    # removed and export size is no longer bounded by a pipe buffer.
     vcs=Git(
         branch_regex=BRANCH_REGEX,
         tag_regex=TAG_REGEX,
-        buffer_size=1 * 10**9,  # 1 GB; large enough for the worktree exports
         predicate=file_predicate([src]),
     ),
     builder=SphinxBuilder(src, args=SPHINX_ARGS),

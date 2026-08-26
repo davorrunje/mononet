@@ -44,16 +44,18 @@ Each sub-project spec sits below the parent meta-spec [2026-05-21-mononet-packag
 
 > Stale reference in the parent meta-spec: it mentions **MkDocs**, but the project migrated to **Sphinx + myst-nb** ([2026-05-22-sphinx-migration-design.md](docs/superpowers/specs/2026-05-22-sphinx-migration-design.md)). The Sphinx-based docs are the current source of truth — do not propose MkDocs changes.
 
-### Research workflow: honest-scholar (science layer)
+### Research workflow: defendable-science (science layer)
 
-The scientific work runs on the **[honest-scholar](https://github.com/davorrunje/honest-scholar)** plugin (enabled in `.claude/settings.json`; CLI via `uv tool install honest-scholar` — deliberately **not** in `pyproject.toml`). It is the *science* layer (hypotheses → papers → thesis, plus `literature`, `dataset`, `progress`, `defend`), governed by **agency** (the author makes and signs every material decision; AI drafts) and **understanding** (`defend`). Its git-native content lives under [`docs/research/`](docs/research/) (papers, hypotheses, thesis), [`datasets.yml`](datasets.yml), and [`.honest-scholar/config.yml`](.honest-scholar/config.yml); `docs/research/` is excluded from the Sphinx build.
+The scientific work runs on the **[defendable-science](https://github.com/davorrunje/defendable-science)** plugin (enabled in `.claude/settings.json`, marketplace pinned to `v0.2.1`; CLI pinned as `defendable-science==0.2.1` in the `dev` dependency group, so `uv sync` installs it in every devcontainer flavor and the version is reproducible from the lockfile). It is the *science* layer (hypotheses → papers → thesis, plus `literature`, `dataset`, `progress`, `defend`), governed by **agency** (the author makes and signs every material decision; AI drafts) and **understanding** (`defend`). Its git-native content lives under [`docs/research/`](docs/research/) (papers, hypotheses, thesis), [`datasets.yml`](datasets.yml), and [`.defendable-science/config.yml`](.defendable-science/config.yml); `docs/research/` is excluded from the Sphinx build.
 
-honest-scholar **delegates outward** via two bindings in `.honest-scholar/config.yml`:
+defendable-science **delegates outward** via two bindings in `.defendable-science/config.yml`:
 
 - `engineering_backend: superpowers` — code work (design/plan/implement) hands off to the superpowers flow; **`docs/superpowers/` is the engineering record** the science layer cites.
 - `experiment_backend: benchmarks/` — the harness whose result JSONs `findings.md` cite as evidence (run-refs).
 
-Setup + rationale: [2026-07-21-honest-scholar-integration-design.md](docs/superpowers/specs/2026-07-21-honest-scholar-integration-design.md). Current state: [`docs/research/dashboard.md`](docs/research/dashboard.md). When doing scientific work (proposing/testing a hypothesis, positioning a paper, registering a dataset), **use the honest-scholar skills** and honor the named-sign-off requirement on verdicts.
+Setup + rationale: [2026-07-21-defendable-science-integration-design.md](docs/superpowers/specs/2026-07-21-defendable-science-integration-design.md). Current state: [`docs/research/dashboard.md`](docs/research/dashboard.md). When doing scientific work (proposing/testing a hypothesis, positioning a paper, registering a dataset), **use the defendable-science skills** and honor the named-sign-off requirement on verdicts.
+
+**Research contact email:** `davor.runje@fer.hr` (the author's academic address) is the canonical email for all research-facing use — OpenAlex polite-pool `mailto`, Semantic Scholar / API registrations, paper author metadata, and correspondence. It is already the `authors`/`maintainers` email in `pyproject.toml` and the security contact in `SECURITY.md`; keep new research artifacts consistent with it. (This is distinct from the git commit identity.) **Secrets** (`S2_API_KEY`, etc.) live in the defendable-science key store, which by default is **`$XDG_CONFIG_HOME/defendable-science/keys.json`** (falling back to `~/.config/...`, created mode `0600`) — deliberately outside the repository; set keys via `defendable-science keys set <NAME>` (hidden prompt, or `dsci keys set <NAME>`), and `defendable-science keys check` to verify presence. The in-repo path `.defendable-science/keys.json` is a legacy opt-in only, reachable by setting `DEFENDABLE_SCIENCE_KEYS_PATH`, which this repo does not set; it remains gitignored regardless.
 
 ### Follow-ups become GitHub issues
 
@@ -123,6 +125,7 @@ uv run pytest -m "not slow"                          # exclude slow tests
 uv run ruff check --exit-non-zero-on-fix             # lint
 uv run ruff format                                   # format
 uv run mypy                                          # strict type check
+./tools/typecheck-all.sh                             # strict type check, every supported Python
 uv run pre-commit run --all-files                    # all hooks
 ./tools/build-docs.sh                                # one-shot Sphinx docs build
 ./tools/serve-docs.sh                                # live preview

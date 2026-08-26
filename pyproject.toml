@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mononet"
-version = "0.0.0a1"
+version = "0.0.1a0"
 description = "Unconstrained monotonic neural networks for PyTorch, JAX, and Keras"
 authors = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
 maintainers = [{ name = "Davor Runje", email = "davor.runje@fer.hr" }]
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.15"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE.md"]
@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
@@ -53,14 +54,15 @@ keras-gpu   = ["keras>=3.5", "jax[cuda12]>=0.4.30"]
 
 [dependency-groups]
 dev = [
-    "ipython==9.15.0",
+    "ipython==9.16.1",
     "ipykernel==7.3.0",
-    "mypy==2.2.0",
+    "mypy==2.3.1",
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "nest-asyncio==1.6.0",
-    "hypothesis>=6.115",
+    "hypothesis==6.165.10",
+    "defendable-science==0.2.1",
 ]
 docs = [
     "sphinx==9.0.4; python_version < '3.12'",
@@ -72,33 +74,39 @@ docs = [
     "sphinx-design==0.7.0",
     "sphinx-togglebutton==0.4.5",
     "sphinx-autobuild==2025.8.25",
-    "sphinx-polyversion==2.0.0",
+    "sphinx-polyversion==3.0.0",
     "linkify-it-py==2.1.0",
     "cairosvg==2.9.0",
     "nbconvert==7.17.1",
 ]
 lint = [
-    "pre-commit==4.6.0",
-    "mypy==2.2.0",
-    "types-pyyaml==6.0.12.20260518",
-    "types-setuptools==83.0.0.20260706",
-    "ruff==0.15.21",
+    "pre-commit==4.6.2",
+    "mypy==2.3.1",
+    "types-pyyaml==6.0.12.20260815",
+    "types-setuptools==84.0.0.20260812",
+    "ruff==0.16.4",
     "bandit==1.9.4",
-    "semgrep==1.169.0",
-    "codespell==2.4.2",
+    "semgrep==1.174.0",
+    "codespell==2.4.3",
     "detect-secrets==1.5.0",
 ]
 bench = [
     "scikit-learn==1.9.0",
-    "pandas==3.0.3",
-    "matplotlib==3.11.0",
+    "pandas==3.0.5",
+    "matplotlib==3.11.1",
     "xgboost==3.2.0",
     "optuna==4.9.0",
-    "typer==0.26.8",
+    "typer==0.27.1",
 ]
 
 [tool.uv]
-default-groups = ["dev", "docs", "lint"]
+# `bench` is a default group even though the benchmark harness is not part of
+# the wheel: [tool.mypy] files includes `benchmarks`, and [tool.pytest] testpaths
+# includes `tests/benchmarks`. Without it, a plain `uv sync` leaves typer and
+# scikit-learn absent, so `uv run mypy` fails on benchmarks/search.py (typer
+# resolves to Any under ignore_missing_imports, tripping
+# disallow_untyped_decorators) and `uv run pytest` errors during collection.
+default-groups = ["dev", "docs", "lint", "bench"]
 override-dependencies = [
     "click>=8.2.1",  # semgrep pins <8.2, but typer 0.24+ requires >=8.2.1
 ]
@@ -135,7 +143,13 @@ files = ["mononet", "tests", "benchmarks"]
 strict = true
 strict_bytes = true
 local_partial_types = true
-python_version = "3.11"
+# No `python_version`: mypy would then apply it to the grammar it parses every
+# file with, including dependency stubs, and the stubs installed differ per
+# version (uv.lock resolves numpy 2.4.6 below 3.12, 2.5.2 at or above). Pinning
+# any single value breaks a bare `uv run mypy` in some environment. Left unset,
+# mypy targets the interpreter it runs under, which by construction matches the
+# stubs beside it. Explicit targets come from tools/typecheck-all.sh, which
+# pairs each --python-version with an environment resolved for it. See #167.
 ignore_missing_imports = true
 install_types = true
 non_interactive = true
@@ -186,7 +200,9 @@ exclude_also = [
 [tool.ruff]
 fix = true
 line-length = 88
-target-version = "py311"
+# No `target-version`: ruff infers it from [project] requires-python, so the
+# floor is declared in exactly one place. Verified: with this unset, ruff
+# reports `unresolved_target_version = 3.11` for ">=3.11,<3.15".
 include = [
     "mononet/**/*.py",
     "mononet/**/*.pyi",

@@ -210,6 +210,16 @@ cython_debug/
 benchmarks/results/size-ladder/_partial/
 .venv-keras
 
-# honest-scholar workflow (research-init adopt)
+# defendable-science workflow (research-init adopt)
 .datasets-cache/
+.defendable-science/rclone.conf
+# local key store (secrets) — never commit (defendable-science#66)
+.defendable-science/keys.json
+# content-addressed Tier-B dataset cache (defendable-science `dataset fetch|verify`)
+.defendable-science/cache/
+
+# tombstone: stale pre-rename working copies (honest-scholar -> defendable-science).
+# Drop this block after a release or two once no working copy still holds these.
+.honest-scholar/keys.json
 .honest-scholar/rclone.conf
+.honest-scholar/cache/

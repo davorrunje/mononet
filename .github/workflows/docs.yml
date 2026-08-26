@@ -23,17 +23,17 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v9.0.0
 
       - name: Install dependencies
         run: uv sync --group docs --extra all-cpu
 
       - name: Ensure local main ref exists
-        # sphinx-polyversion 2.0 enumerates only local refs; on tag-push or
+        # docs/poly.py enumerates local refs only; on tag-push or
         # workflow_dispatch triggers HEAD may be detached without a local main.
         # On push-to-main triggers HEAD is already on `main`, in which case
         # creating it again would fail ("cannot force update the branch used

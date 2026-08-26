@@ -21,14 +21,64 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=dev --group=lint
       - name: Run static analysis
         run: ./tools/static-analysis.sh
+
+  reference-hash:
+    # tools/check-reference-hash.sh also runs as a pre-commit hook, but that
+    # hook omits the `manual` stage and so never runs in CI's pre-commit job --
+    # and a contributor without hooks installed, or using --no-verify, bypasses
+    # it entirely. Without this job a stale REFERENCE_HASH reaches main with
+    # green CI, and the equivalence suite then validates every backend against
+    # an outdated ground truth. Needs no Python: the guard is git plus shell.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Equivalence vectors match mononet/core/reference.py
+        run: ./tools/check-reference-hash.sh
+
+  python-versions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      list: ${{ steps.expand.outputs.list }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v9.0.0
+      # PEP 723 metadata in the script means uv resolves `packaging` into a
+      # throwaway environment; no setup-python and no project sync needed.
+      - name: Expand requires-python into a version list
+        id: expand
+        run: |
+          list="$(uv run --script tools/supported_pythons.py --json)"
+          echo "resolved: ${list}"
+          echo "list=${list}" >> "$GITHUB_OUTPUT"
+
+  typecheck:
+    needs: [python-versions]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(needs.python-versions.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v9.0.0
+      # No setup-python: `uv run --python` in tools/typecheck.sh fetches the
+      # interpreter, so the matrix value is the only place the version appears.
+      - name: Type check
+        run: ./tools/typecheck.sh ${{ matrix.python-version }}
 
   pre-commit:
     runs-on: ubuntu-latest
@@ -36,10 +86,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=dev --group=lint
       - uses: actions/cache@v6
@@ -56,10 +106,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=docs
       - name: Build docs (strict)
@@ -73,29 +123,29 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         backend: [torch, jax, keras]
         include:
           - { os: ubuntu-latest,  backend: torch, extra: torch-cpu }
-          - { os: macos-latest,   python-version: "3.13", backend: torch }
-          - { os: macos-latest,   python-version: "3.13", backend: jax }
-          - { os: macos-latest,   python-version: "3.13", backend: keras }
-          - { os: windows-latest, python-version: "3.13", backend: torch }
-          - { os: windows-latest, python-version: "3.13", backend: jax }
-          - { os: windows-latest, python-version: "3.13", backend: keras }
+          - { os: macos-latest,   python-version: "3.14", backend: torch }
+          - { os: macos-latest,   python-version: "3.14", backend: jax }
+          - { os: macos-latest,   python-version: "3.14", backend: keras }
+          - { os: windows-latest, python-version: "3.14", backend: torch }
+          - { os: windows-latest, python-version: "3.14", backend: jax }
+          - { os: windows-latest, python-version: "3.14", backend: keras }
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[${{ matrix.extra || matrix.backend }}]" --group=dev --group=bench
       - name: Run tests
         env:
           MONONET_TEST_BACKEND: ${{ matrix.backend }}
           KERAS_BACKEND: jax
-        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/test_top_level_imports.py --no-cov -v
+        run: pytest tests/core "tests/${{ matrix.backend }}" tests/equivalence tests/benchmarks tests/tools tests/test_top_level_imports.py --no-cov -v
 
   coverage:
     runs-on: ubuntu-latest
@@ -105,10 +155,10 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v9.0.0
       - name: Install dependencies
         run: uv pip install --system -e ".[all-cpu]" --group=dev
       - name: Run combined-backend coverage
@@ -125,7 +175,7 @@ jobs:
       # gate above is the real, token-independent enforcement. See PR description.
       - name: Upload coverage to Codecov
         if: ${{ env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ env.CODECOV_TOKEN }}
           files: coverage.xml
@@ -135,7 +185,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [static-analysis, pre-commit, docs-smoke, test, coverage]
+    needs: [static-analysis, pre-commit, docs-smoke, test, coverage, typecheck, python-versions, reference-hash]
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1 # nosemgrep

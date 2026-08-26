@@ -42,6 +42,38 @@ Working locally, you do those steps yourself.
 > goes stale, reset it with `docker volume rm <compose-project>_mononet-venv`
 > (find the name via `docker volume ls | grep mononet-venv`) and rebuild.
 
+### GPU flavors: host driver preflight
+
+The three `gpu-*` flavors pass `--gpus=all`, so they cannot start unless the
+**host** NVIDIA driver is loaded and the NVIDIA Container Toolkit is installed.
+Docker's native failure for this is opaque:
+
+```
+error running prestart hook #0: exit status 1 …
+nvidia-container-cli: initialization error: nvml error: driver not loaded
+```
+
+To turn that into something actionable, the GPU flavors run
+[`.devcontainer/shared/gpu-preflight.sh`](https://github.com/davorrunje/mononet/blob/main/.devcontainer/shared/gpu-preflight.sh)
+as their `initializeCommand` (on the host, before the container starts). It
+checks for an NVIDIA GPU, a working `nvidia-smi`, and `nvidia-container-cli`,
+and on failure prints the specific cause plus the fix.
+
+The most common cause is a **kernel upgrade without a matching NVIDIA module
+build**: the running kernel has no `nvidia.ko`, so NVML is dead. `apt upgrade`
+holds the module package back whenever it needs a driver-version bump, which
+makes this recur silently after routine updates. On Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install -y linux-modules-nvidia-<branch>-open-generic-hwe-24.04 nvidia-driver-<branch>-open
+sudo modprobe nvidia_uvm && nvidia-smi          # no reboot needed if no module is loaded yet
+docker run --rm --gpus all ubuntu:24.04 nvidia-smi -L   # verify the container path
+```
+
+Set `MONONET_SKIP_GPU_PREFLIGHT=1` to bypass the check (e.g. a remote Docker
+context whose GPUs aren't visible from your machine).
+
 ## Claude Code (plugins & sessions)
 
 The Claude Code plugins this repo uses are declared in
@@ -77,7 +109,7 @@ container.
 ```bash
 git clone https://github.com/davorrunje/mononet.git
 cd mononet
-uv sync                            # install runtime + dev + docs + lint
+uv sync                            # install runtime + dev + docs + lint + bench
 uv run pre-commit install          # install git hooks (devcontainers do this for you)
 ```
 
@@ -104,17 +136,28 @@ does.
 ```bash
 uv run ruff check --exit-non-zero-on-fix    # lint
 uv run ruff format                           # format
-uv run mypy                                  # strict type check
+uv run mypy                                  # strict type check, this env's Python
+./tools/typecheck-all.sh                     # strict type check, every supported Python
 uv run bandit -c pyproject.toml -r mononet   # security scan
 uv run semgrep scan --config auto --error    # semgrep
 uv run pre-commit run --all-files            # everything pre-commit runs
 ```
 
-`pre-commit` **is the full gate**: on every commit it runs all of the above
-plus the docs build, codespell, secret detection, and file-hygiene hooks — so a
-clean `git commit` means the change already passes what CI enforces. The same
-checks run on demand whether or not the hooks are installed: `uv run pre-commit
-run --all-files` for the lot, or the individual commands above piecemeal.
+`pre-commit` **is the full gate** for everything above except the sweep: on
+every commit it runs `ruff`, `mypy` (ambient), `bandit`, `semgrep`, plus the
+docs build, codespell, secret detection, and file-hygiene hooks — so a
+clean `git commit` means the change already passes almost everything CI
+enforces. The exception is type checking across versions: the `typecheck` hook
+checks only the interpreter in your environment, while CI runs `mypy` against
+every version in `requires-python` (one status check each). Run
+`./tools/typecheck-all.sh` before pushing if you touched anything
+typing-sensitive. Each isolated leg installs the CPU backends (`torch`, `jax`,
+`keras`) so those layers are actually type-checked instead of resolving to
+`Any` — the first run downloads a few GB of wheels per Python version, and
+each version takes roughly half a minute once its environment is warm. The
+same checks run on demand whether or not the hooks are installed: `uv run
+pre-commit run --all-files` for the lot, or the individual commands above
+piecemeal.
 
 ## Building docs
 

@@ -20,7 +20,7 @@ status:
 `docs/superpowers/specs/2026-07-05-deep-residual-accuracy-design.md`, which stated the design and decision rule before
 the runs. The design/plan/implement engineering is recorded there and in the
 paired plan under `docs/superpowers/plans/` (engineering backend, per
-`.honest-scholar/config.yml`).*
+`.defendable-science/config.yml`).*
 
 ## Decisive comparison
 
