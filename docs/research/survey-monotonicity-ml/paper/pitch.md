@@ -115,7 +115,7 @@ _(Seed rows are in this paper's `backlog.md`; promote as the design firms up.)_
    Burdakov & Sysoev *Smoothed Monotonic Regression* (2017) — plus formal-methods/PL
    venues (FMICS, OOPSLA) an ML-only search skips.
 4. **S2 activation (still pending):** obtain/activate `S2_API_KEY`
-   (`honest-scholar keys set S2_API_KEY`) then re-run for SciCite intents/contexts
+   (`defendable-science keys set S2_API_KEY`) then re-run for SciCite intents/contexts
    and a fuller citation graph — the only real fix for the CMNN/Cano/Sartor
    under-coverage the sweep proved is intrinsic to keyless OpenAlex. Manually seed
    known method anchors OpenAlex misses (min-max/Sill, UMNN/Wehenkel-Louppe).

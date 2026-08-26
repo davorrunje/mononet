@@ -1,6 +1,6 @@
 # Literature scout — completeness sweep — `survey-monotonicity-ml`
 
-*honest-scholar `literature`, mode=scout, level=paper. Sweep run 2026-07-22,
+*defendable-science `literature`, mode=scout, level=paper. Sweep run 2026-07-22,
 **keyless OpenAlex** (polite pool, `mailto=davor.runje@fer.hr`). This is a
 **delta / superseding sweep** over the first pass
 [`scout-2026-07-22.md`](scout-2026-07-22.md) — read that first for method,
@@ -173,7 +173,7 @@ this sweep:
 
 ## Remaining next steps
 
-1. **Activate S2** (`honest-scholar keys set S2_API_KEY`) and re-run in this repo's
+1. **Activate S2** (`defendable-science keys set S2_API_KEY`) and re-run in this repo's
    `position --level paper` flow to obtain SciCite **intents/contexts**
    (Method-vs-Background) and, likely, a **larger citation graph** than keyless
    OpenAlex — this is the only real fix for the CMNN/Cano/Sartor under-coverage that
