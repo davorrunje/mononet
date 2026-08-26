@@ -17,7 +17,7 @@ repos:
     hooks:
     -   id: pyupgrade
         stages: [pre-commit, pre-merge-commit, manual]
-        args: [--py313-plus]
+        args: [--py311-plus]  # the floor of requires-python; see tests/tools/test_version_targets.py
 
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.4.2
