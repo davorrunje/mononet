@@ -19,7 +19,7 @@
   `docs/superpowers/specs/2026-08-26-defendable-science-migration-design.md` and
   `docs/superpowers/plans/2026-08-26-defendable-science-migration.md` (this plan).
   Both document the rename and contain "before" columns; rewriting them destroys their meaning. This is the single easiest way to silently ruin this migration.
-- The seven existing commits carrying `HonestScholar-Skill:` are immutable. History keeps the old name; that is correct, not a gap.
+- The existing commits carrying `HonestScholar-Skill:` are immutable — two reachable from `origin/main` (eight across all refs, including unmerged branches). History keeps the old name; that is correct, not a gap.
 - Commit on the current branch `chore/defendable-science-migration`, never `main`. Use `git commit --no-gpg-sign`, ending messages with `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`.
 - Do not run `uv sync` — the project `.venv` is a torch-GPU environment that is slow to rebuild. `defendable-science==0.2.1` is already installed.
 
@@ -408,7 +408,7 @@ Follow the **create-pr** skill (`.claude/skills/create-pr/SKILL.md`). The body m
 After CI passes, tell the maintainer explicitly:
 - restart the Claude session and confirm the `defendable-science` skills are listed;
 - if any machine has `uv tool install honest-scholar`, run `uv tool uninstall honest-scholar` (none is installed in this container);
-- if any machine holds `.honest-scholar/keys.json`, move it to `.defendable-science/keys.json` by hand — it is gitignored, so no commit carries it and a fresh clone will not reveal its absence until a key lookup fails.
+- if any machine holds `.honest-scholar/keys.json`, move it by hand to the `defendable-science` 0.2.1 default store — `$XDG_CONFIG_HOME/defendable-science/keys.json` (falling back to `~/.config/...`, mode `0600`), not `.defendable-science/keys.json` (that in-repo path is legacy/opt-in only, via `DEFENDABLE_SCIENCE_KEYS_PATH`, which this repo does not set) — it is gitignored, so no commit carries it and a fresh clone will not reveal its absence until a key lookup fails.
 
 ---
 

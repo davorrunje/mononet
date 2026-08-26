@@ -73,8 +73,10 @@ The alternative — fixing only references that would dangle, and leaving
 attributions as historical fact — has a real precedent: upstream's own changelog
 leaves pre-`0.2.0` entries unedited because "those releases really did ship under
 that name." It was considered and rejected in favour of a repository where the
-former name survives in exactly one place: the seven existing commits carrying
-the `HonestScholar-Skill:` trailer, which are immutable and correctly so.
+former name survives in exactly one place: the existing commits carrying the
+`HonestScholar-Skill:` trailer, which are immutable and correctly so — two
+reachable from `origin/main` (eight across all refs, including unmerged
+branches).
 
 The dated spec `2026-07-21-honest-scholar-integration-design.md` is renamed to
 `2026-07-21-defendable-science-integration-design.md`, keeping its date. Its two
@@ -110,10 +112,14 @@ demonstrate that configuration is *read from the new path*, not merely that
 commands exit 0.
 
 **Secrets do not move with git.** `.honest-scholar/keys.json` is gitignored. It
-does not exist in the working container, so nothing is at risk here, but any
-machine holding one must move it to `.defendable-science/keys.json` by hand —
-`git mv` will not carry it and a fresh clone will not reveal its absence until a
-key lookup fails.
+does not exist in the working container, so nothing is at risk here, but on
+`defendable-science` 0.2.1 the default key store is out of repo —
+`$XDG_CONFIG_HOME/defendable-science/keys.json` (falling back to
+`~/.config/...`, mode `0600`) — so any machine holding the old file should move
+it there, not into `.defendable-science/keys.json`. The in-repo path is a
+legacy/opt-in location, reachable only by setting `DEFENDABLE_SCIENCE_KEYS_PATH`,
+which this repo does not set. `git mv` will not carry either path and a fresh
+clone will not reveal its absence until a key lookup fails.
 
 **The plugin cannot be verified in-session.** Whether Claude Code resolves and
 loads `defendable-science@defendable-science` is only observable after the

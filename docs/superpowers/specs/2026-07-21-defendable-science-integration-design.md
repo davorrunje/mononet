@@ -1,8 +1,18 @@
 # defendable-science integration — design
 
 **Date:** 2026-07-21
-**Status:** approved (brainstorming) — execution in progress
+**Status:** superseded by [2026-08-26-defendable-science-migration-design.md](2026-08-26-defendable-science-migration-design.md)
 **Owner:** Davor Runje
+
+> **Superseded.** This document records the honest-scholar-era integration.
+> Its plugin/CLI/config details are superseded by
+> [2026-08-26-defendable-science-migration-design.md](2026-08-26-defendable-science-migration-design.md).
+> In particular: (a) the CLI is now pinned in the `dev` dependency group rather
+> than kept out of `pyproject.toml`, and (b) the marketplace ref is now
+> `v0.2.1` — `v0.1.0` predates the `honest-scholar` → `defendable-science`
+> rename and cannot resolve the current plugin id. The decisions below are left
+> as originally written; they are the record of what was decided at the time,
+> not current policy.
 
 ## Purpose
 

@@ -217,3 +217,9 @@ benchmarks/results/size-ladder/_partial/
 .defendable-science/keys.json
 # content-addressed Tier-B dataset cache (defendable-science `dataset fetch|verify`)
 .defendable-science/cache/
+
+# tombstone: stale pre-rename working copies (honest-scholar -> defendable-science).
+# Drop this block after a release or two once no working copy still holds these.
+.honest-scholar/keys.json
+.honest-scholar/rclone.conf
+.honest-scholar/cache/
