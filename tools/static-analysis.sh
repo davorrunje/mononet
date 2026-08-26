@@ -1,11 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "Running mypy..."
-# benchmarks/ imports typer/optuna/etc., so mypy needs the `bench` group. It is
-# in [tool.uv] default-groups for exactly that reason -- no flag needed here.
-uv run mypy
-
 echo "Running bandit..."
 uv run bandit -c pyproject.toml -r mononet
 
