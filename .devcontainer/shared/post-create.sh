@@ -11,6 +11,9 @@ cd /workspaces/mononet
 echo ">>> installing pre-commit hooks"
 uv run pre-commit install --install-hooks
 
+echo ">>> installing git-aware shell prompt"
+bash .devcontainer/shared/install-shell-prompt.sh
+
 echo ">>> provisioning Claude Code plugins"
 bash .devcontainer/shared/provision-claude-plugins.sh
 

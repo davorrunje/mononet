@@ -25,6 +25,44 @@ for _vol in "${CLAUDE_CONFIG_DIR:-}" /workspaces/mononet/.venv; do
 done
 unset _vol
 
+# Interactive-shell tooling. The base image is minimized and ships none of
+# this:
+#   bash-completion  the completion *scripts* under
+#                    /usr/share/bash-completion/completions are present but the
+#                    loader that sources them is not, so `git sta<TAB>` does
+#                    nothing and __git_ps1 is undefined
+#   vim              no editor at all -- /usr/bin/editor does not exist, so
+#                    `git commit` without -m, `git rebase -i` and interactive
+#                    `gh` all fail
+#   less             no pager either; git/gh/man dump unpaged to stdout
+#   jq tree          routine CLI work (`gh ... --json` piping, listings)
+#   fzf htop btop    fuzzy history/file search (Ctrl-R, Ctrl-T), process views
+#   nvtop            GPU process view; useful only in the gpu-* flavors, but
+#                    installed everywhere to keep one shared tool list
+# Only the missing ones are installed, in a single apt-get, so re-runs are
+# cheap. Shell wiring for these lives in shared/shell-prompt.sh.
+_shell_pkgs=()
+[ -r /usr/share/bash-completion/bash_completion ] || _shell_pkgs+=(bash-completion)
+for _entry in vim less jq tree fzf htop btop nvtop; do
+  command -v "${_entry}" >/dev/null 2>&1 || _shell_pkgs+=("${_entry}")
+done
+if [ ${#_shell_pkgs[@]} -gt 0 ]; then
+  echo -e "\033[32mInstalling shell tooling: ${_shell_pkgs[*]}\033[0m"
+  sudo apt-get update &&
+    sudo apt-get install -y --no-install-recommends "${_shell_pkgs[@]}"
+fi
+unset _shell_pkgs _entry
+
+# /etc/dpkg/dpkg.cfg.d/excludes drops /usr/share/doc/* on this image, and
+# Debian ships fzf's shell key bindings (Ctrl-R, Ctrl-T, Alt-C) there rather
+# than in a sourced location. Pull just those files back in.
+if command -v fzf >/dev/null 2>&1 &&
+  [ ! -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
+  echo -e "\033[32mRestoring fzf shell key bindings...\033[0m"
+  sudo apt-get install -y --reinstall \
+    -o DPkg::Options::="--path-include=/usr/share/doc/fzf/examples/*" fzf
+fi
+
 # git-lfs — required to pull committed benchmark datasets under benchmarks/data/
 if ! command -v git-lfs >/dev/null 2>&1; then
   echo -e "\033[32mInstalling git-lfs...\033[0m"
