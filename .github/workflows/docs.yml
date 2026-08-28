@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.0.1
 
       - name: Install dependencies
         run: uv sync --group docs --extra all-cpu
