@@ -67,7 +67,7 @@ dev = [
 docs = [
     "sphinx==9.0.4; python_version < '3.12'",
     "sphinx==9.1.0; python_version >= '3.12'",
-    "pydata-sphinx-theme==0.20.0",
+    "pydata-sphinx-theme==0.21.0",
     "sphinx-autodoc2==0.5.0",
     "myst-nb==1.4.0",
     "sphinx-copybutton==0.5.2",
@@ -75,7 +75,7 @@ docs = [
     "sphinx-togglebutton==0.4.5",
     "sphinx-autobuild==2025.8.25",
     "sphinx-polyversion==3.0.0",
-    "linkify-it-py==2.1.0",
+    "linkify-it-py==2.1.1",
     "cairosvg==2.9.0",
     "nbconvert==7.17.1",
 ]
