@@ -139,10 +139,10 @@ DATASETS_SPEC: dict[str, DatasetSpec] = {
 }
 
 # Synthetic depth-probe datasets (#99): generator-backed, ignore `data_dir`.
-# d=6, n_train=16000, n_test=4000 for all; c pinned per level
+# d=6, n_train=32000 (>20k -> large-batch band), n_test=4000 for all; c pinned per level
 # (low=1, mid=2, high=4); one distinct seed per key.
 _SYNTH_D = 6
-_SYNTH_N_TRAIN = 16000
+_SYNTH_N_TRAIN = 32000
 _SYNTH_N_TEST = 4000
 _SYNTH_FEATURES = tuple(f"x{i}" for i in range(_SYNTH_D))
 _SYNTH_LEVELS: tuple[tuple[str, int], ...] = (("low", 1), ("mid", 2), ("high", 4))
